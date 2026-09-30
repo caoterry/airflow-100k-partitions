@@ -4,3 +4,4 @@ airflow_home/
 __pycache__/
 bench/results/profiles/logs-*/
 bench/results/profiles/*.log
+private/

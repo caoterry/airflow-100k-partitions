@@ -46,6 +46,9 @@ Read this first if you are picking the work up (new session, different model, or
 - `patches/patch_e_partition_key_mutex.py` run against E1: ACC1 4 → 3 runs, never concurrent, ACC5 admitted immediately (answers doc Q3.2). Reverted afterwards; site-packages is as-shipped again.
 - E5 at 10k (v3): works with paged event pull + persistent ledger; ledger writer race throttles throughput (dynamic-batching.md §5a).
 
+- HA test (2 schedulers, same laptop): partition 10k creation 143 → 67 s, completion 207 → 93 s (split 5,000/5,000 by job id);
+  flat expand 30k 114 → 191 s (contention; second scheduler unaffected). Second scheduler stopped afterwards.
+
 ## Suggested next steps (pick by available time)
 1. Review `docs/answers-to-mwaa-discussion.md` with Terry; tighten wording; decide what goes back onto Confluence.
 2. Learning notes: `docs/learning/` — three code walks (scheduler loop → expansion; task success → asset registration → APDR;

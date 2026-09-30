@@ -177,6 +177,7 @@ Not within intentions at 100k; feasible with care at 10k. Measured on 3.3.2 (det
 | metadata growth | `dag_run` ≈ 0.8 KB, `task_instance` ≈ 1 KB per row | ~65 GB/year at 100k runs/day without retention; APDR not cleanable |
 | `max_active_runs` | DAG-wide, default 16 | 100k queued runs drain at ≤16 concurrent |
 | DAG count / workers / schedulers on MWAA | environment class | ≤ 4,000 DAGs (mw1.2xlarge), 2–5 schedulers, ≤ 25 (50) workers |
+| what a 2nd scheduler buys | measured with two schedulers on one box | partition-run creation and completion ≈ 2× faster (`SKIP LOCKED` splits the work); a large `expand()` gets *slower* (contention) but only blocks the scheduler that owns the run |
 
 At 10k/day with emitters serialized and ≤ 900 keys each, an APDR index (self-hosted only), `max_active_runs` raised and
 retention in place, the partition path works; 100k/day needs the upstream fixes in the report's §7.

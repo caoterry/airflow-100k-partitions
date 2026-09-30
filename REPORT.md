@@ -204,6 +204,20 @@ The 100k run (200 emitters × 500 keys, serialized with `max_active_tis_per_dagr
 5. **Scheduler memory stayed flat** (155 MB peak) — unlike dynamic task mapping, the partition path never holds 100k ORM
    objects at once.
 
+### 4.2b Two schedulers (HA) — does adding schedulers help?
+
+Same laptop, a second `airflow scheduler` process against the same Postgres (both share 8 cores, so absolute numbers are
+pessimistic; the *ratios* are the point):
+
+| scenario | 1 scheduler | 2 schedulers | reading |
+|---|---|---|---|
+| flat expand 30k (scheduler-only) | expansion 114 s | expansion **191 s**; the *other* scheduler had no heartbeat gap at all | expansion is one run in one transaction — a second scheduler cannot share it and only competes for CPU/DB; but the blast radius is one scheduler, the other keeps scheduling everything else |
+| native partitions 10k, run creation after the events landed | 143 s | **67 s** (5,000 runs created by each scheduler job) | the 500/tick drain is `FOR UPDATE SKIP LOCKED`, so schedulers split the pending rows and creation scales ~linearly |
+| native partitions 10k, run completion after creation | 207 s | **93 s** | the per-run scheduling work also splits across schedulers |
+
+So for the partition path, MWAA's 2–5 schedulers are a real lever (≈2× per added scheduler here); for dynamic task mapping
+they are not. The expansion transaction has to be fixed in code (§4.8, §7).
+
 ### 4.3 Does partition storage grow as n²? (question raised by a colleague's analysis)
 
 **Storage: no.** For identity mapping (one account = one key) every table grows exactly linearly, measured at three scales:

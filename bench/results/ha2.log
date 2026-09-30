@@ -1,0 +1,81 @@
+===== HA: 2 schedulers — flat_empty 30k =====
+triggered bench_flat_empty ha2_flat_empty_30000_1790790758 {'n': 30000}
+[    0.0s] mapped=0 {'none': 2} {} sched_rss=143.3MB tasks=0 avail=1218MB
+[   15.8s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=260.9MB tasks=0 avail=1293MB
+[   31.6s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=152.2MB tasks=0 avail=1186MB
+[   47.4s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=154.0MB tasks=0 avail=1219MB
+[   63.1s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=151.7MB tasks=0 avail=1242MB
+[   78.8s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=667.9MB tasks=0 avail=1173MB
+[   94.9s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=179.6MB tasks=0 avail=1290MB
+[  111.0s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=315.7MB tasks=0 avail=1271MB
+[  127.0s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=416.8MB tasks=0 avail=1288MB
+[  142.0s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=170.7MB tasks=0 avail=1303MB
+[  158.0s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=162.8MB tasks=0 avail=1201MB
+[  173.1s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=170.7MB tasks=0 avail=1215MB
+[  189.1s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=214.2MB tasks=0 avail=1172MB
+{
+  "label": "ha2_flat_empty_30000",
+  "dag_id": "bench_flat_empty",
+  "run_id": "ha2_flat_empty_30000_1790790758",
+  "expected": 30000,
+  "t0": "2026-09-30T17:52:38.331116+00:00",
+  "t_expanded_s": 191.2,
+  "t_first_success_s": 4.2,
+  "t_done_s": 193.4,
+  "timed_out": false,
+  "peak_scheduler_rss_mb": 667.9,
+  "peak_task_rss_mb": 107.6,
+  "peak_task_n": 1,
+  "min_sys_avail_mb": 1163,
+  "exec_throughput_tis_per_s": 13346.68,
+  "dagrun_state": "success",
+  "dagrun_start": "2026-09-30T17:52:38.692834+00:00",
+  "dagrun_end": "2026-09-30T17:55:51.394656+00:00",
+  "dagrun_duration_s": 192.7
+}
+--- heartbeat gaps (both schedulers) ---
+Heartbeat recovered after 191.82 seconds
+===== HA: 2 schedulers — partition 10k, 1 emitter =====
+triggered producer ha2_part_10k_e1_1790790957 {'n': 10000, 'emitters': 1}
+[    0.0s] mapped=0 {} {'p_asset_event': 0, 'p_apdr': 0, 'p_apdr_pending': 0, 'p_pakl': 0, 'p_dagrun_asset_event': 0, 'p_consumer_dag_run': 0, 'p_consumer_ti': 0, 'p_log_rows': 0, 'p_producer_state': 'queued', 'p_emit_tis': '{"none": 1}'} sched_rss=170.2MB tasks=0 avail=1251MB
+[   15.3s] mapped=0 {} {'p_asset_event': 0, 'p_apdr': 0, 'p_apdr_pending': 0, 'p_pakl': 0, 'p_dagrun_asset_event': 0, 'p_consumer_dag_run': 0, 'p_consumer_ti': 0, 'p_log_rows': 3, 'p_producer_state': 'running', 'p_emit_tis': '{"running": 1}'} sched_rss=172.6MB tasks=1 avail=1218MB
+[   30.6s] mapped=0 {} {'p_asset_event': 0, 'p_apdr': 0, 'p_apdr_pending': 0, 'p_pakl': 0, 'p_dagrun_asset_event': 0, 'p_consumer_dag_run': 0, 'p_consumer_ti': 0, 'p_log_rows': 3, 'p_producer_state': 'running', 'p_emit_tis': '{"running": 1}'} sched_rss=175.0MB tasks=1 avail=1223MB
+[   45.9s] mapped=0 {} {'p_asset_event': 0, 'p_apdr': 0, 'p_apdr_pending': 0, 'p_pakl': 0, 'p_dagrun_asset_event': 0, 'p_consumer_dag_run': 0, 'p_consumer_ti': 0, 'p_log_rows': 3, 'p_producer_state': 'running', 'p_emit_tis': '{"running": 1}'} sched_rss=171.8MB tasks=0 avail=1233MB
+[   61.2s] mapped=0 {} {'p_asset_event': 0, 'p_apdr': 0, 'p_apdr_pending': 0, 'p_pakl': 0, 'p_dagrun_asset_event': 0, 'p_consumer_dag_run': 0, 'p_consumer_ti': 0, 'p_log_rows': 3, 'p_producer_state': 'running', 'p_emit_tis': '{"running": 1}'} sched_rss=171.2MB tasks=0 avail=1170MB
+[   76.5s] mapped=0 {} {'p_asset_event': 0, 'p_apdr': 0, 'p_apdr_pending': 0, 'p_pakl': 0, 'p_dagrun_asset_event': 0, 'p_consumer_dag_run': 0, 'p_consumer_ti': 0, 'p_log_rows': 3, 'p_producer_state': 'running', 'p_emit_tis': '{"running": 1}'} sched_rss=170.5MB tasks=0 avail=1182MB
+[   91.9s] mapped=0 {} {'p_asset_event': 0, 'p_apdr': 0, 'p_apdr_pending': 0, 'p_pakl': 0, 'p_dagrun_asset_event': 0, 'p_consumer_dag_run': 0, 'p_consumer_ti': 0, 'p_log_rows': 3, 'p_producer_state': 'running', 'p_emit_tis': '{"running": 1}'} sched_rss=174.7MB tasks=0 avail=1208MB
+[  107.2s] mapped=0 {} {'p_asset_event': 0, 'p_apdr': 0, 'p_apdr_pending': 0, 'p_pakl': 0, 'p_dagrun_asset_event': 0, 'p_consumer_dag_run': 0, 'p_consumer_ti': 0, 'p_log_rows': 3, 'p_producer_state': 'running', 'p_emit_tis': '{"running": 1}'} sched_rss=172.0MB tasks=0 avail=1252MB
+[  122.5s] mapped=0 {} {'p_asset_event': 0, 'p_apdr': 0, 'p_apdr_pending': 0, 'p_pakl': 0, 'p_dagrun_asset_event': 0, 'p_consumer_dag_run': 0, 'p_consumer_ti': 0, 'p_log_rows': 3, 'p_producer_state': 'running', 'p_emit_tis': '{"running": 1}'} sched_rss=173.7MB tasks=0 avail=1256MB
+[  137.8s] mapped=1000 {'success': 400, 'none': 600} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 9000, 'p_pakl': 10000, 'p_dagrun_asset_event': 1000, 'p_consumer_dag_run': 1000, 'p_consumer_ti': 1000, 'p_log_rows': 4, 'p_producer_state': 'running', 'p_emit_tis': '{"success": 1}'} sched_rss=212.9MB tasks=0 avail=1196MB
+[  153.1s] mapped=4000 {'success': 1400, 'none': 2600} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 6000, 'p_pakl': 10000, 'p_dagrun_asset_event': 4000, 'p_consumer_dag_run': 4000, 'p_consumer_ti': 4000, 'p_log_rows': 4, 'p_producer_state': 'running', 'p_emit_tis': '{"success": 1}'} sched_rss=208.3MB tasks=0 avail=1173MB
+[  168.4s] mapped=6000 {'success': 2200, 'none': 3800} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 4000, 'p_pakl': 10000, 'p_dagrun_asset_event': 6000, 'p_consumer_dag_run': 6000, 'p_consumer_ti': 6000, 'p_log_rows': 4, 'p_producer_state': 'running', 'p_emit_tis': '{"success": 1}'} sched_rss=192.7MB tasks=0 avail=1234MB
+[  183.7s] mapped=8000 {'success': 2800, 'none': 5200} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 2000, 'p_pakl': 10000, 'p_dagrun_asset_event': 8000, 'p_consumer_dag_run': 8000, 'p_consumer_ti': 8000, 'p_log_rows': 4, 'p_producer_state': 'running', 'p_emit_tis': '{"success": 1}'} sched_rss=185.0MB tasks=0 avail=1231MB
+[  199.0s] mapped=10000 {'success': 4000, 'none': 6000} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'running', 'p_emit_tis': '{"success": 1}'} sched_rss=194.9MB tasks=0 avail=1211MB
+[  214.3s] mapped=10000 {'success': 7200, 'none': 2800} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'running', 'p_emit_tis': '{"success": 1}'} sched_rss=183.3MB tasks=0 avail=1205MB
+[  229.6s] mapped=10000 {'success': 10000} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'running', 'p_emit_tis': '{"success": 1}'} sched_rss=186.1MB tasks=0 avail=1198MB
+[  245.2s] mapped=10000 {'success': 10000} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'success', 'p_emit_tis': '{"success": 1}'} sched_rss=167.5MB tasks=0 avail=1185MB
+[  260.7s] mapped=10000 {'success': 10000} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'success', 'p_emit_tis': '{"success": 1}'} sched_rss=158.1MB tasks=0 avail=1239MB
+[  276.2s] mapped=10000 {'success': 10000} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'success', 'p_emit_tis': '{"success": 1}'} sched_rss=238.1MB tasks=0 avail=1236MB
+[  291.8s] mapped=10000 {'success': 10000} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'success', 'p_emit_tis': '{"success": 1}'} sched_rss=158.7MB tasks=0 avail=1233MB
+{
+  "label": "ha2_part_10k_e1",
+  "dag_id": "bench_partition_consumer",
+  "run_id": null,
+  "expected": 10000,
+  "t0": "2026-09-30T17:55:57.198787+00:00",
+  "t_expanded_s": 199.0,
+  "t_first_success_s": 137.8,
+  "t_done_s": 291.9,
+  "timed_out": false,
+  "peak_scheduler_rss_mb": 393.0,
+  "peak_task_rss_mb": 118.3,
+  "peak_task_n": 1,
+  "min_sys_avail_mb": 1159,
+  "exec_throughput_tis_per_s": 107.67
+}
+row deltas: {'asset_event': 10000, 'apdr': 10000, 'apdr_pending': 0, 'pakl': 10000, 'dagrun_asset_event': 10000, 'consumer_dag_run': 10000, 'consumer_ti': 10000, 'log_rows': 4}
+marks: {'events_s': 131.8, 'apdr_created_s': 199.1, 'runs_created_s': 199.1, 'producer_done_s': 232.8, 'producer_state': 'success'}
+--- runs created by which scheduler job ---
+15|5000
+13|5000
+HA DONE

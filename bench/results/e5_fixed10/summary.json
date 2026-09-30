@@ -1,0 +1,35 @@
+{
+ "label": "e5_fixed10",
+ "policy": {
+  "mode": "fixed",
+  "K": 3,
+  "startup_s": 15.0,
+  "per_account_s": 0.5,
+  "b_min": 3,
+  "b_max": 60,
+  "t_max_s": 90,
+  "fixed_size": 10,
+  "target_s": 90
+ },
+ "latency": [
+  [
+   60.0,
+   92.0,
+   92.0,
+   92.0
+  ],
+  [
+   30.0,
+   68.0,
+   128.0,
+   137.0
+  ]
+ ],
+ "phases": [
+  "burst",
+  "trickle"
+ ],
+ "jobs": 11,
+ "avg_batch": 8.2,
+ "spark_tis": 13
+}

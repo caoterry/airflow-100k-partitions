@@ -84,4 +84,19 @@ inlets/outlets (declare `inlets=[input]` on every task that touches it), and "pr
 
 ## 5. Airflow prototype (E5) — burst of 60 accounts, then 1 account every 6 s; K = 3, S = 15 s, p = 0.5 s
 
-⏳ results of `bench/exp_e5.py --policy adaptive_sla` vs `--policy fixed` go here.
+Same load for both policies (60 accounts in three producer runs, then 30 accounts one every 6 s); `spark` sleeps
+`15 + 0.5·b` seconds inside the 3-slot pool; latency measured from the account's input event to its `rev5_pnl` event in
+`asset_event`.
+
+| policy | batches dispatched (burst → trickle) | jobs | burst p95 | trickle p95 (max) | downstream per-account runs |
+|---|---|---|---|---|---|
+| `adaptive_sla` (target 90 s) | 22 / 22 / 22 → 5 / 5 → 10 → 4 | 7 | **64 s** | **77 s** (79) | 90 |
+| `fixed` (10 per batch) | 10 ×6 + 5 (7 jobs for 3 slots → 4 wait in the pool) → 10 / 1 → 10 → 4 | 11 | 92 s | 128 s (137) | 90 |
+
+What the run shows mechanically: the claim task sized the burst to the free capacity (three batches for three slots, one
+job per slot, no pool queueing), then shrank batches to 4–10 in the trickle; the fixed policy over-split the burst (seven
+10-account jobs for three slots, so four waited in the pool and every account paid an extra start-up) and under-served the
+trickle (waiting up to `t_max` to fill ten). All 90 accounts produced one keyed `rev5_pnl` event each, from 7 (or 11)
+publishing task instances, and the partitioned consumer created exactly 90 per-account runs — per-account lineage from
+batch-grain scheduling, on stock Airflow 3.3.2. The fixed policy here is deliberately naive; the point of the prototype is
+the mechanism (event log + state store + pool + policy), not the margin.

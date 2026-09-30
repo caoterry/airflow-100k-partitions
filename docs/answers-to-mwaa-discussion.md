@@ -117,7 +117,11 @@ shape.** Build one **batcher DAG**, not account-level runs:
    (or the producer emits one extra un-keyed event as a poke).
 
 Dynamic task mapping and task groups are the wrong tool here (one task instance per account: §4.1/§4.4 of the report).
-This is also what AIP-104 (`.iterate()` / `.spread(across=N)`, PR #62922, 3.4) is formalizing.
+This is also what AIP-104 (`.iterate()` / `.spread(across=N)`, PR #62922, 3.4) is formalizing. Batch *sizes* should not be
+fixed: a capacity-aware, SLA-driven policy (size = largest batch that still meets the latency target, never below the batch
+size at which K slots sustain the arrival rate) serves both the start-of-day burst and the trickle with one rule — see
+[dynamic-batching.md](dynamic-batching.md) for the simulation across Glue / warm-Spark / Lambda-class engines and the E5
+prototype on 3.3.2 (pool = capacity, `expand()` over batches, `add_partitions` for lineage).
 
 ## Q4. End-user tracking through Airflow APIs (10s–100s of users)
 

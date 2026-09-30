@@ -31,6 +31,15 @@ Read this first if you are picking the work up (new session, different model, or
 - Extension points: `[core] asset_manager_class`, DagRun listeners (scheduler, carry partition_key), asset state store (task-scoped KV + REST).
 - MWAA: 3.3.1/3.2.1/3.0.6 only, no DB access, Celery only, Exec API in webserver, 10 TPS REST throttle.
 
+## Added 2026-09-30 afternoon
+- `docs/dynamic-batching.md` + `bench/sim_batching.py` (+`sim_charts.py`): capacity-aware / SLA-driven batching policies vs
+  fixed ones across engine profiles (Glue S=60 s, warm Spark S=10 s, Lambda S=1 s); key laws: burst latency = N·p/K + S,
+  trickle latency floor = S; per-account jobs are unstable on Glue-class engines at ≥1 acct/s with K ≤ 50.
+- E5 (`bench/dags/exp_e5_dynamic_batcher.py`, `bench/exp_e5.py`): the batcher with pool capacity and runtime batch sizing;
+  adaptive_sla 64/77 s p95 vs fixed-10 92/128 s at K=3; 90/90 per-account lineage. Pool `spark_jobs` (3 slots) exists in the DB.
+- Terry's two architecture points: subnet IPs bound K for Glue/EMR (pool_slots = workers+1); embarrassingly-parallel revenue
+  PnL points to Lambda-class engines with Airflow scheduling at batch grain.
+
 ## Suggested next steps (pick by available time)
 1. Review `docs/answers-to-mwaa-discussion.md` with Terry; tighten wording; decide what goes back onto Confluence.
 2. Learning notes: `docs/learning/` — three code walks (scheduler loop → expansion; task success → asset registration → APDR;

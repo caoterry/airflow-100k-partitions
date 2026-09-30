@@ -1,2 +1,58 @@
 policy set: 204 {'mode': 'adaptive_sla', 'K': 3, 'startup_s': 15.0, 'per_account_s': 0.5, 'b_min': 3, 'b_max': 60, 't_max_s': 90, 'fixed_size': 10, 'target_s': 90}
 [   0.4s] BURST: 60 accounts in 3 producer runs
+[   0.4s] TRICKLE: 1 account every 6.0s x 30
+[ 238.4s] published accounts: 90/90
+
+=== claim decisions (batch sizes per batcher run) ===
+   2026-09- adaptive lam=0.001/s ready=0 in_flight=0 running_batches=0 -> 0 batches sizes=[] oldest_wait=0s
+   2026-09- adaptive lam=0.001/s ready=0 in_flight=0 running_batches=0 -> 0 batches sizes=[] oldest_wait=0s
+   2026-09- adaptive lam=0.001/s ready=0 in_flight=0 running_batches=0 -> 0 batches sizes=[] oldest_wait=0s
+   2026-09- adaptive_sla lam=0.002/s ready=1 in_flight=0 running_batches=0 -> 0 batches sizes=[] oldest_wait=-0s
+   2026-09- adaptive_sla lam=0.103/s ready=62 in_flight=0 running_batches=0 -> 3 batches sizes=[21, 21, 20] oldest_wait=8s
+   2026-09- adaptive_sla lam=0.002/s ready=1 in_flight=0 running_batches=0 -> 0 batches sizes=[] oldest_wait=0s
+   2026-09- adaptive_sla lam=0.110/s ready=66 in_flight=0 running_batches=0 -> 3 batches sizes=[22, 22, 22] oldest_wait=32s
+   2026-09- adaptive_sla lam=0.127/s ready=10 in_flight=0 running_batches=0 -> 2 batches sizes=[5, 5] oldest_wait=57s
+   2026-09- adaptive_sla lam=0.143/s ready=10 in_flight=0 running_batches=0 -> 1 batches sizes=[10] oldest_wait=55s
+   2026-09- adaptive_sla lam=0.150/s ready=4 in_flight=0 running_batches=0 -> 1 batches sizes=[4] oldest_wait=55s
+
+=== spark task instances: pool queueing (queued -> running) ===
+   8 spark TIs; queue wait p50/max: 0 0
+
+=== per-account latency: input event -> pnl event ===
+   ('burst', 60, Decimal('64'), Decimal('64'), Decimal('64'))
+   ('trickle', 30, Decimal('55'), Decimal('77'), Decimal('79'))
+   jobs (pnl-emitting batches): 7, avg batch 12.9
+   rev5_pnl_consumer runs: 90
+======== FIXED ========
+policy set: 204 {'mode': 'fixed', 'K': 3, 'startup_s': 15.0, 'per_account_s': 0.5, 'b_min': 3, 'b_max': 60, 't_max_s': 90, 'fixed_size': 10, 'target_s': 90}
+[   0.4s] BURST: 60 accounts in 3 producer runs
+[   0.5s] TRICKLE: 1 account every 6.0s x 30
+[ 298.5s] published accounts: 90/90
+
+=== claim decisions (batch sizes per batcher run) ===
+   2026-09- adaptive lam=0.001/s ready=0 in_flight=0 running_batches=0 -> 0 batches sizes=[] oldest_wait=0s
+   2026-09- adaptive lam=0.001/s ready=0 in_flight=0 running_batches=0 -> 0 batches sizes=[] oldest_wait=0s
+   2026-09- adaptive lam=0.001/s ready=0 in_flight=0 running_batches=0 -> 0 batches sizes=[] oldest_wait=0s
+   2026-09- adaptive_sla lam=0.002/s ready=1 in_flight=0 running_batches=0 -> 0 batches sizes=[] oldest_wait=-0s
+   2026-09- adaptive_sla lam=0.103/s ready=62 in_flight=0 running_batches=0 -> 3 batches sizes=[21, 21, 20] oldest_wait=8s
+   2026-09- adaptive_sla lam=0.002/s ready=1 in_flight=0 running_batches=0 -> 0 batches sizes=[] oldest_wait=0s
+   2026-09- adaptive_sla lam=0.110/s ready=66 in_flight=0 running_batches=0 -> 3 batches sizes=[22, 22, 22] oldest_wait=32s
+   2026-09- adaptive_sla lam=0.127/s ready=10 in_flight=0 running_batches=0 -> 2 batches sizes=[5, 5] oldest_wait=57s
+   2026-09- adaptive_sla lam=0.143/s ready=10 in_flight=0 running_batches=0 -> 1 batches sizes=[10] oldest_wait=55s
+   2026-09- adaptive_sla lam=0.150/s ready=4 in_flight=0 running_batches=0 -> 1 batches sizes=[4] oldest_wait=55s
+   2026-09- fixed lam=0.108/s ready=65 in_flight=0 running_batches=0 -> 7 batches sizes=[10, 10, 10, 10, 10, 10, 5] oldest_wait=26s
+   2026-09- fixed lam=0.110/s ready=1 in_flight=65 running_batches=7 -> 0 batches sizes=[] oldest_wait=4s
+   2026-09- fixed lam=0.127/s ready=11 in_flight=0 running_batches=0 -> 2 batches sizes=[10, 1] oldest_wait=65s
+   2026-09- fixed lam=0.143/s ready=10 in_flight=0 running_batches=0 -> 1 batches sizes=[10] oldest_wait=56s
+   2026-09- fixed lam=0.150/s ready=4 in_flight=0 running_batches=0 -> 0 batches sizes=[] oldest_wait=57s
+   2026-09- fixed lam=0.040/s ready=4 in_flight=0 running_batches=0 -> 1 batches sizes=[4] oldest_wait=116s
+
+=== spark task instances: pool queueing (queued -> running) ===
+   13 spark TIs; queue wait p50/max: 0 0
+
+=== per-account latency: input event -> pnl event ===
+   ('burst', 60, Decimal('92'), Decimal('92'), Decimal('92'))
+   ('trickle', 30, Decimal('68'), Decimal('128'), Decimal('137'))
+   jobs (pnl-emitting batches): 11, avg batch 8.2
+   rev5_pnl_consumer runs: 90
+E5 DONE

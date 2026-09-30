@@ -1,13 +1,44 @@
 # Can Apache Airflow orchestrate 100k firm-account partitions?
 
-**Status: draft — phase-2 benchmarks and the literature/MWAA review are still running; sections marked ⏳ will be completed.**
-
 Date: 2026-09-29 · Airflow under test: 3.3.2 (company baseline 3.3.0) plus `apache/airflow` main (3.4.0-dev, commit 73b07c5) for
 source study · Repo: https://github.com/caoterry/airflow-100k-partitions
 
 ## 1. Executive summary
 
-⏳ (written last, from the measurements below)
+**Yes, Airflow can be made to carry 100k firm-account partitions, but not the way it ships today, and not on MWAA without
+upstream changes.** Every number below was measured on Airflow 3.3.2 with Postgres 16 (`bench/`), with the code paths traced in
+3.3.2 and on main.
+
+1. **The partition feature already exists.** AIP-76 shipped in 3.2.0/3.3.0: one asset, free-form keys, one DagRun per key,
+   `clearPartitions`, key filters. The company's 3.3.0 baseline has it. Nothing caps the number of keys.
+2. **Fan-out of 100k units inside one DagRun is disqualified**, not merely slow. Expanding 100k mapped task instances is one
+   scheduler transaction that blocks the scheduler loop for **317 s** (60 s at 10k) against a 30 s health threshold, and every
+   mapped instance downloads the whole 100k-element input (**O(N²) bytes**, ≈150 GB per run). Batching 100 × 1000 does the same
+   100k accounts in **38 s** (§4.5).
+3. **Native partitions scale linearly in storage — the "n² growth" claim is wrong for storage — but quadratically in write
+   time**, because `asset_partition_dag_run (target_dag_id, partition_key)` has no index and the table is never pruned. Measured:
+   500-key registration 3.6 s → 7.0 s as the table grew to 60k rows, back to 3.4 s the moment an index existed (§4.2, §4.3).
+   Within one request the cost is ~5 ms/key of round trips under an asset row lock, which, against the SDK's 5 s client timeout,
+   caps a single emitting task at ~900 keys as shipped.
+4. **At 100k keys the scheduler creates runs fast enough (~80/s) but finishes them at 3–10/s** on one scheduler; a plain
+   run-per-account shape without the asset machinery reaches ~26–42 runs/s (§4.7). Either way, 100k account-level runs per cycle
+   is an hour-scale scheduler cost before any business work.
+5. **Two of the fixes were tried here.** Backporting upstream's expansion change (Patch A) gives 1.6–1.8× at every N (100k:
+   315 s → 173 s) — real but not enough; a request-scoped cache in the partition write path (Patch C) gave **no** improvement,
+   which pins the cost on per-key round trips and locking rather than deserialization. The index is the one change that pays
+   immediately.
+6. **MWAA makes all of this worse**: 3.3.1 only, no database access (no index, no APDR cleanup), Celery only, Execution API
+   inside the webserver, 10 TPS REST throttle. Self-hosted Airflow removes the hard blockers.
+
+**Recommendation.** Model firm accounts as native partition keys, but schedule at shard granularity (~1k shards × 100 accounts)
+with per-account state in the 3.3 asset state store — this works on 3.3.1/MWAA today and is what AIP-104 (3.4) formalizes.
+Pursue account-level runs only after the upstream items in §7 (APDR index + retention, bulk expansion, batched or
+scheduler-side partition registration, configurable run creation) land in a release MWAA offers. The benchmark harness here is
+the evidence for those PRs; the 3.4.0 feature freeze is 2026-10-05.
+
+![expansion](docs/img/expansion_blocking.png)
+![write path](docs/img/partition_write_path.png)
+![shapes](docs/img/shapes_100k.png)
 
 ## 2. The question, and the assumptions we had to make
 
@@ -147,6 +178,8 @@ The 100k run (200 emitters × 500 keys, serialized with `max_active_tis_per_dagr
 | `dagrun_asset_event` | 1,000 | 10,000 | 100,000 | 1.00 |
 | `dag_run` / `task_instance` (consumer) | 1,000 | 10,000 | 100,000 | 1.00 |
 
+![rows](docs/img/partition_rows.png)
+
 **Time: yes, in the write path.** Registering key *i* scans the APDR table, which already holds *i−1* rows for this cycle plus
 every previous cycle's rows (never pruned). Total write time per cycle is therefore O(N²) and gets worse every day. The
 responsible table and columns are **`asset_partition_dag_run (target_dag_id, partition_key)`**, unindexed in 3.2.0 through
@@ -162,9 +195,9 @@ The retention problem compounds it: `asset_partition_dag_run` rows are **never d
 Measured row costs: `task_instance` ≈ 1 KB/row and `dag_run` ≈ 0.8 KB/row including indexes (243 MB and 81 MB after ~250k and
 ~100k rows), so one 100k-partition cycle per day is roughly 65 GB/year of metadata without retention.
 
-The genuinely quadratic behaviour in Airflow at this scale is elsewhere — in dynamic task mapping, not partitions: **each of the N
-mapped task instances downloads the entire N-element upstream XCom** at start (`xcom_arg.py:338`, "No mapped task group - pull from
-unmapped instance"), i.e. O(N²) bytes through the API server (≈200 GB at 100k). ⏳ measured in Scenario B.
+A second quadratic behaviour lives in dynamic task mapping, not partitions: **each of the N mapped task instances downloads the
+entire N-element upstream XCom** at start (`xcom_arg.py:338`, "No mapped task group - pull from unmapped instance"), i.e. O(N²)
+bytes through the API server — measured as exactly N GETs per run in §4.4.
 
 ### 4.4 Scenario B — flat mapping, real execution (`bench_flat_python`)
 
@@ -222,7 +255,42 @@ account-level runs need ~1 hour of scheduler time per cycle just to be started a
 native-partition path measured 3–10 runs/s (§4.2) because creation (500 per tick) and completion compete inside the same
 loop. Creating the runs is cheap by comparison: 163 runs/s through the API here, but MWAA throttles its REST endpoint at
 10 requests/s, i.e. ~2.8 hours to create 100k runs there.
-### 4.8 Before/after with two upstream-style patches (Patch A expansion, Patch C partition write path + index) ⏳
+### 4.8 Before/after with two upstream-style patches (`patches/`)
+
+**Patch A** backports apache/airflow#69565 ("Speed up dynamic task mapping expansion", merged for main 2026-07-14, milestone
+3.3.1, but not present in the 3.3.1/3.3.2 wheels): mapped instances are `session.add()`-ed and flushed once instead of
+`session.merge()`-ed one by one, which removes one SELECT per instance and lets the INSERTs batch.
+
+| N | as shipped: loop blocked | Patch A | speed-up | scheduler peak RSS |
+|---|---|---|---|---|
+| 10,000 | 59.9 s | 33.8 s | 1.77× | 313 → 316 MB |
+| 30,000 | 113.7 s | 71.2 s | 1.60× | 555 → 508 MB |
+| 100,000 | 315.0 s | 172.6 s | 1.83× | 959 → 1,082 MB |
+
+Real, linear, and not enough: the loop is still blocked for ~3 minutes at 100k. `pg_stat_activity` during the patched
+expansion shows the connection idle for long stretches right after `SELECT max(map_index)` (pure Python: constructing N
+`TaskInstance` objects, mutation hook, `refresh_from_task`) followed by one `SELECT task_instance…` per new instance (the
+`MappedTaskUpstreamDep` check). Getting to seconds needs bulk INSERT without ORM objects plus a hoisted upstream check, or
+chunked expansion across loops (§7, items 2 and 6).
+
+**Patch C** memoises the consumer DAG deserialization, rollup fingerprint, asset row and mapper per request in
+`_queue_partitioned_dags`, and was run together with the three indexes in `patches/apdr_index.sql`, on the 10k-keys /
+single-emitter scenario:
+
+| | as shipped | Patch C + indexes |
+|---|---|---|
+| task-success request registering 10k keys | 53 s (+5 retries) | 57.5 s (+5 retries) |
+| all 10k runs created | 219 s | 226 s |
+| all 10k runs finished | 426 s | 494 s |
+
+No improvement — a useful negative result. The API server's statement mix during the request (`pg_stat_activity`, 539
+samples) is ~8 statements per key: `SELECT asset`, `SELECT asset_alias … IN (NULL)`, `SELECT dag` (consumers),
+`SELECT asset FOR NO KEY UPDATE` (the lock), `SELECT asset_partition_dag_run`, `INSERT asset_partition_dag_run` + flush,
+`INSERT partitioned_asset_key_log`, `INSERT asset_event` + flush — almost all sampled as `idle in transaction`, i.e. the time is
+ORM round trips and flushes per key, not deserialization. The index does not help on an empty table (the seq scan is cheap
+until the table grows) — which is exactly why it helped so much at 65k rows in §4.2. The structural fix is to register keys
+in bulk per request (one INSERT for events, one for APDRs, one for PAKLs, one lock) or to move the fan-out out of the request
+entirely and let the scheduler materialize pending partitions from new events in batches.
 
 ## 5. Where the time goes (source ↔ measurement)
 
@@ -232,8 +300,8 @@ Details with file:line references: `docs/analysis/dynamic-task-mapping-expansion
 |---|---|---|---|
 | 1 | Mapped-TI creation: Python loop, `session.merge` per TI (SELECT + single-row INSERT), per-TI `MappedTaskUpstreamDep` query, all in one transaction — the code carries `# TODO: Make more efficient with bulk_insert_mappings` | 61 / 117 / 317 s blocked loop at 10k / 30k / 100k | O(N) per expansion, blocking |
 | 2 | Every scheduler loop re-hydrates all TIs of each running DagRun as ORM objects; critical-section query sorts all SCHEDULED TIs with a window function | scheduler RSS 959 MB at 100k | O(N) per loop for the life of the run |
-| 3 | Each mapped TI pulls the whole upstream XCom | ⏳ | O(N²) bytes |
-| 4 | Partition key registration runs inside the task-success API request under the asset row lock, ≥5 queries per key, APDR lookups unindexed | 5.3 ms/key; 53 s for 10k; client timeout 5 s | O(keys) per request |
+| 3 | Each mapped TI pulls the whole upstream XCom | 1,000 / 10,000 GETs of the full list per run, 35 KB (JSONB) at 10k, p50 78 ms | O(N²) bytes |
+| 4 | Partition key registration runs inside the task-success API request under the asset row lock, ~8 statements per key, APDR lookup unindexed | 5.3 ms/key; 53 s for 10k; client timeout 5 s; +50% per 60k rows in the table | O(keys) per request, O(table) per key |
 | 5 | Partition runs created ≤500 per tick, FIFO, single scheduler | ~80 runs/s | O(N/500) ticks |
 | 6 | `asset_partition_dag_run` never pruned, PK-only index | code | unbounded |
 
@@ -276,8 +344,8 @@ freeze is 2026-10-05, so realistically these land in 3.4.x/3.5 and reach MWAA a 
 | # | Change | Evidence | Size |
 |---|---|---|---|
 | 1 | **Index `asset_partition_dag_run (target_dag_id, partition_key, id)`** and a partial index for `created_dag_run_id IS NULL`; add APDR to `db clean` | §4.2/§4.3: 7.0 s → 3.4 s per 500 keys, retries gone, ~3× faster drain | migration, tiny |
-| 2 | **Bulk-create mapped task instances** (`TaskMap.expand_mapped_task`): `session.add` + one flush (already merged as #69565 for main but absent from 3.3.x wheels), then hoist the per-TI `MappedTaskUpstreamDep` query | §4.1: 317 s blocked loop at 100k; Patch A results in §4.8 | backport + small PR |
-| 3 | **Request-scoped memoisation in `_queue_partitioned_dags`** (serialized DAG, fingerprint, asset, mapper are recomputed per key) and batching APDR/PAKL inserts per request | 5–7 ms per key of which most is Python; Patch C results in §4.8 | small |
+| 2 | **Bulk-create mapped task instances** (`TaskMap.expand_mapped_task`): ship #69565 in a 3.3.x patch release (Patch A: 1.6–1.8×), then go further — bulk INSERT without per-instance ORM objects and a hoisted `MappedTaskUpstreamDep` check | §4.1/§4.8: 315 s → 173 s at 100k with #69565 alone | backport + medium PR |
+| 3 | **Batch the partition write path per request**: one lock, bulk INSERT of `asset_event`/APDR/PAKL, `INSERT … ON CONFLICT` on a partial unique index instead of get-or-create per key; or move fan-out to the scheduler (level-triggered) | §4.8: memoisation alone changes nothing; ~8 statements per key | medium |
 | 4 | **Make `MAX_PARTITION_DAG_RUNS_PER_LOOP` configurable** and bulk-insert the created `dag_run`/`task_instance` rows (the time-based path already uses `bulk_insert_mappings`) | §4.2: ~80 runs/s creation ceiling | small |
 | 5 | **Index-aware XCom fetch for mapped operands**: explode a mapped input into per-index rows at push time (the `LazyXComSequence` path that exists for mapped upstreams), so each mapped TI pulls one item | O(N²) bytes (§4.4) | medium |
 | 6 | **Incremental ("level-triggered") expansion**: expand K instances per scheduler loop with a cursor, commit between chunks, keep the `map_index=-1` sentinel until complete | bounds heartbeat gap independent of N | medium, needs dev-list discussion |

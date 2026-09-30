@@ -1,43 +1,197 @@
-===== apply Patch A and restart (parallelism back to 12) 02:05:38 =====
+===== apply Patch A and restart (parallelism back to 12) 02:07:36 =====
+already patched models/taskinstance.py
+already patched models/taskmap.py
+already patched models/dagrun.py
+import check ok
+started api-server pid 61908
+started dag-processor pid 61928
+started scheduler pid 61929
+api-server: up (61908)
+dag-processor: up (61928)
+scheduler: up (61929)
+===== PATCH A: flat_empty n=10000 02:07:59 =====
+triggered bench_flat_empty patchA_flat_empty_10000_1790734079 {'n': 10000}
+[    0.0s] mapped=0 {'none': 2} {} sched_rss=99.1MB tasks=1 avail=1230MB
+[   15.9s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=73.0MB tasks=0 avail=1329MB
+[   31.7s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=230.2MB tasks=0 avail=1297MB
+{
+  "label": "patchA_flat_empty_10000",
+  "dag_id": "bench_flat_empty",
+  "run_id": "patchA_flat_empty_10000_1790734079",
+  "expected": 10000,
+  "t0": "2026-09-30T02:07:59.966465+00:00",
+  "t_expanded_s": 33.8,
+  "t_first_success_s": 4.2,
+  "t_done_s": 35.0,
+  "timed_out": false,
+  "peak_scheduler_rss_mb": 316.0,
+  "peak_task_rss_mb": 112.9,
+  "peak_task_n": 1,
+  "min_sys_avail_mb": 1204,
+  "exec_throughput_tis_per_s": 8755.48,
+  "dagrun_state": "success",
+  "dagrun_start": "2026-09-30T02:08:00.124090+00:00",
+  "dagrun_end": "2026-09-30T02:08:34.557446+00:00",
+  "dagrun_duration_s": 34.4
+}
+--- heartbeat gaps ---
+Heartbeat recovered after 31.67 seconds
+===== PATCH A: flat_empty n=30000 02:08:34 =====
+triggered bench_flat_empty patchA_flat_empty_30000_1790734115 {'n': 30000}
+[    0.0s] mapped=0 {'none': 2} {} sched_rss=277.8MB tasks=0 avail=1302MB
+[   15.8s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=329.3MB tasks=0 avail=1415MB
+[   30.8s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=308.0MB tasks=0 avail=1383MB
+[   46.9s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=81.1MB tasks=0 avail=1285MB
+[   62.8s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=97.3MB tasks=0 avail=1244MB
+{
+  "label": "patchA_flat_empty_30000",
+  "dag_id": "bench_flat_empty",
+  "run_id": "patchA_flat_empty_30000_1790734115",
+  "expected": 30000,
+  "t0": "2026-09-30T02:08:35.250564+00:00",
+  "t_expanded_s": 71.2,
+  "t_first_success_s": 2.1,
+  "t_done_s": 73.5,
+  "timed_out": false,
+  "peak_scheduler_rss_mb": 508.4,
+  "peak_task_rss_mb": 84.2,
+  "peak_task_n": 1,
+  "min_sys_avail_mb": 1199,
+  "exec_throughput_tis_per_s": 13316.84,
+  "dagrun_state": "success",
+  "dagrun_start": "2026-09-30T02:08:35.711995+00:00",
+  "dagrun_end": "2026-09-30T02:09:48.524179+00:00",
+  "dagrun_duration_s": 72.8
+}
+--- heartbeat gaps ---
+Heartbeat recovered after 31.67 seconds
+Heartbeat recovered after 72.70 seconds
+===== PATCH A: flat_empty n=100000 02:09:48 =====
+triggered bench_flat_empty patchA_flat_empty_100000_1790734188 {'n': 100000}
+[    0.0s] mapped=0 {'none': 2} {} sched_rss=417.0MB tasks=0 avail=1233MB
+[   15.6s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=399.0MB tasks=0 avail=1252MB
+[   30.6s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=585.5MB tasks=0 avail=1670MB
+[   45.7s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=619.8MB tasks=0 avail=1660MB
+[   60.8s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=296.6MB tasks=0 avail=1747MB
+[   75.8s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=472.1MB tasks=0 avail=1535MB
+[   91.2s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=247.8MB tasks=0 avail=1204MB
+[  106.4s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=86.4MB tasks=0 avail=1240MB
+[  121.6s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=722.3MB tasks=0 avail=1247MB
+[  136.7s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=104.7MB tasks=0 avail=1241MB
+[  151.9s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=99.4MB tasks=0 avail=1233MB
+[  167.1s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=219.2MB tasks=0 avail=1232MB
+[  183.0s] mapped=100000 {'success': 100001} {} sched_rss=510.3MB tasks=0 avail=1299MB
+{
+  "label": "patchA_flat_empty_100000",
+  "dag_id": "bench_flat_empty",
+  "run_id": "patchA_flat_empty_100000_1790734188",
+  "expected": 100000,
+  "t0": "2026-09-30T02:09:49.017925+00:00",
+  "t_expanded_s": 172.6,
+  "t_first_success_s": 2.1,
+  "t_done_s": 183.2,
+  "timed_out": false,
+  "peak_scheduler_rss_mb": 1082.1,
+  "peak_task_rss_mb": 101.7,
+  "peak_task_n": 1,
+  "min_sys_avail_mb": 1201,
+  "exec_throughput_tis_per_s": 9383.04,
+  "dagrun_state": "success",
+  "dagrun_start": "2026-09-30T02:09:49.250208+00:00",
+  "dagrun_end": "2026-09-30T02:12:51.291912+00:00",
+  "dagrun_duration_s": 182.0
+}
+--- heartbeat gaps ---
+Heartbeat recovered after 72.70 seconds
+Heartbeat recovered after 175.63 seconds
+===== apply APDR/dag_run indexes + Patch C, restart api-server 02:12:52 =====
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+patched assets/manager.py
+import check ok
 stopped scheduler
 stopped dag-processor
 stopped api-server
-patched models/taskinstance.py
-patched models/taskmap.py
-patched models/dagrun.py
-2026-09-30T02:05:44.711684Z [warning  ] This declarative base already contains a class with the same class name and module name as airflow.models.taskinstance.TaskInstance, and will be replaced in the string-lookup table. [py.warnings] category=SAWarning filename=/Users/caotia/Code/airflow-100k-partitions/.venv/lib/python3.12/site-packages/airflow/models/taskinstance.py lineno=600
-Traceback (most recent call last):
-  File "/Users/caotia/Code/airflow-100k-partitions/patches/patch_a_expansion_no_merge.py", line 153, in <module>
-    main()
-  File "/Users/caotia/Code/airflow-100k-partitions/patches/patch_a_expansion_no_merge.py", line 149, in main
-    importlib.reload(airflow.models.taskinstance); print("import check ok")
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/caotia/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/importlib/__init__.py", line 131, in reload
-    _bootstrap._exec(spec, module)
-  File "<frozen importlib._bootstrap>", line 866, in _exec
-  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
-  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
-  File "/Users/caotia/Code/airflow-100k-partitions/.venv/lib/python3.12/site-packages/airflow/models/taskinstance.py", line 600, in <module>
-    class TaskInstance(Base, LoggingMixin, BaseWorkload):
-  File "/Users/caotia/Code/airflow-100k-partitions/.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_api.py", line 200, in __init__
-    _as_declarative(reg, cls, dict_)
-  File "/Users/caotia/Code/airflow-100k-partitions/.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py", line 245, in _as_declarative
-    return _MapperConfig.setup_mapping(registry, cls, dict_, None, {})
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/caotia/Code/airflow-100k-partitions/.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py", line 326, in setup_mapping
-    return _ClassScanMapperConfig(
-           ^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/caotia/Code/airflow-100k-partitions/.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py", line 577, in __init__
-    self._setup_table(table)
-  File "/Users/caotia/Code/airflow-100k-partitions/.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py", line 1776, in _setup_table
-    table_cls(
-  File "<string>", line 2, in __new__
-  File "/Users/caotia/Code/airflow-100k-partitions/.venv/lib/python3.12/site-packages/sqlalchemy/util/deprecations.py", line 281, in warned
-    return fn(*args, **kwargs)  # type: ignore[no-any-return]
-           ^^^^^^^^^^^^^^^^^^^
-  File "/Users/caotia/Code/airflow-100k-partitions/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py", line 430, in __new__
-    return cls._new(*args, **kw)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/caotia/Code/airflow-100k-partitions/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py", line 462, in _new
-    raise exc.InvalidRequestError(
-sqlalchemy.exc.InvalidRequestError: Table 'task_instance' is already defined for this MetaData instance.  Specify 'extend_existing=True' to redefine options and columns on an existing Table object.
+started api-server pid 63672
+started dag-processor pid 63708
+started scheduler pid 63709
+===== PATCH C + index: partition 10k, 1 emitter (as-shipped was 53 s write / 219 s created / 426 s done) 02:13:17 =====
+triggered producer patchC_part_10k_e1_1790734397 {'n': 10000, 'emitters': 1}
+[    0.0s] mapped=0 {} {'p_asset_event': 0, 'p_apdr': 0, 'p_apdr_pending': 0, 'p_pakl': 0, 'p_dagrun_asset_event': 0, 'p_consumer_dag_run': 0, 'p_consumer_ti': 0, 'p_log_rows': 0, 'p_producer_state': 'running', 'p_emit_tis': '{"none": 1}'} sched_rss=89.5MB tasks=0 avail=1236MB
+[   15.2s] mapped=0 {} {'p_asset_event': 0, 'p_apdr': 0, 'p_apdr_pending': 0, 'p_pakl': 0, 'p_dagrun_asset_event': 0, 'p_consumer_dag_run': 0, 'p_consumer_ti': 0, 'p_log_rows': 3, 'p_producer_state': 'running', 'p_emit_tis': '{"running": 1}'} sched_rss=79.1MB tasks=1 avail=1258MB
+[   30.4s] mapped=0 {} {'p_asset_event': 0, 'p_apdr': 0, 'p_apdr_pending': 0, 'p_pakl': 0, 'p_dagrun_asset_event': 0, 'p_consumer_dag_run': 0, 'p_consumer_ti': 0, 'p_log_rows': 3, 'p_producer_state': 'running', 'p_emit_tis': '{"running": 1}'} sched_rss=79.3MB tasks=1 avail=1261MB
+[   45.6s] mapped=0 {} {'p_asset_event': 0, 'p_apdr': 0, 'p_apdr_pending': 0, 'p_pakl': 0, 'p_dagrun_asset_event': 0, 'p_consumer_dag_run': 0, 'p_consumer_ti': 0, 'p_log_rows': 3, 'p_producer_state': 'running', 'p_emit_tis': '{"running": 1}'} sched_rss=79.9MB tasks=0 avail=1353MB
+[   60.8s] mapped=0 {} {'p_asset_event': 0, 'p_apdr': 0, 'p_apdr_pending': 0, 'p_pakl': 0, 'p_dagrun_asset_event': 0, 'p_consumer_dag_run': 0, 'p_consumer_ti': 0, 'p_log_rows': 3, 'p_producer_state': 'running', 'p_emit_tis': '{"running": 1}'} sched_rss=80.3MB tasks=0 avail=1256MB
+[   76.0s] mapped=500 {'none': 300, 'success': 200} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 9500, 'p_pakl': 10000, 'p_dagrun_asset_event': 500, 'p_consumer_dag_run': 500, 'p_consumer_ti': 500, 'p_log_rows': 4, 'p_producer_state': 'running', 'p_emit_tis': '{"success": 1}'} sched_rss=93.8MB tasks=0 avail=1301MB
+[   91.3s] mapped=1500 {'none': 900, 'success': 600} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 8500, 'p_pakl': 10000, 'p_dagrun_asset_event': 1500, 'p_consumer_dag_run': 1500, 'p_consumer_ti': 1500, 'p_log_rows': 4, 'p_producer_state': 'running', 'p_emit_tis': '{"success": 1}'} sched_rss=92.5MB tasks=0 avail=1258MB
+[  106.6s] mapped=2500 {'none': 1500, 'success': 1000} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 7500, 'p_pakl': 10000, 'p_dagrun_asset_event': 2500, 'p_consumer_dag_run': 2500, 'p_consumer_ti': 2500, 'p_log_rows': 4, 'p_producer_state': 'running', 'p_emit_tis': '{"success": 1}'} sched_rss=90.7MB tasks=0 avail=1265MB
+[  122.0s] mapped=3500 {'none': 2100, 'success': 1400} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 6500, 'p_pakl': 10000, 'p_dagrun_asset_event': 3500, 'p_consumer_dag_run': 3500, 'p_consumer_ti': 3500, 'p_log_rows': 4, 'p_producer_state': 'running', 'p_emit_tis': '{"success": 1}'} sched_rss=85.4MB tasks=0 avail=1204MB
+[  137.2s] mapped=4500 {'none': 2700, 'success': 1800} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 5500, 'p_pakl': 10000, 'p_dagrun_asset_event': 4500, 'p_consumer_dag_run': 4500, 'p_consumer_ti': 4500, 'p_log_rows': 4, 'p_producer_state': 'running', 'p_emit_tis': '{"success": 1}'} sched_rss=74.0MB tasks=0 avail=1215MB
+[  152.6s] mapped=5500 {'none': 3300, 'success': 2200} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 4500, 'p_pakl': 10000, 'p_dagrun_asset_event': 5500, 'p_consumer_dag_run': 5500, 'p_consumer_ti': 5500, 'p_log_rows': 4, 'p_producer_state': 'running', 'p_emit_tis': '{"success": 1}'} sched_rss=78.5MB tasks=0 avail=1271MB
+[  167.9s] mapped=6500 {'none': 3900, 'success': 2600} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 3500, 'p_pakl': 10000, 'p_dagrun_asset_event': 6500, 'p_consumer_dag_run': 6500, 'p_consumer_ti': 6500, 'p_log_rows': 4, 'p_producer_state': 'running', 'p_emit_tis': '{"success": 1}'} sched_rss=79.0MB tasks=0 avail=1233MB
+[  183.2s] mapped=7500 {'none': 4500, 'success': 3000} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 2500, 'p_pakl': 10000, 'p_dagrun_asset_event': 7500, 'p_consumer_dag_run': 7500, 'p_consumer_ti': 7500, 'p_log_rows': 4, 'p_producer_state': 'running', 'p_emit_tis': '{"success": 1}'} sched_rss=79.4MB tasks=0 avail=1276MB
+[  198.5s] mapped=8500 {'none': 5300, 'success': 3200} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 1500, 'p_pakl': 10000, 'p_dagrun_asset_event': 8500, 'p_consumer_dag_run': 8500, 'p_consumer_ti': 8500, 'p_log_rows': 4, 'p_producer_state': 'running', 'p_emit_tis': '{"success": 1}'} sched_rss=74.0MB tasks=0 avail=1269MB
+[  213.9s] mapped=9000 {'none': 5400, 'success': 3600} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 1000, 'p_pakl': 10000, 'p_dagrun_asset_event': 9000, 'p_consumer_dag_run': 9000, 'p_consumer_ti': 9000, 'p_log_rows': 4, 'p_producer_state': 'running', 'p_emit_tis': '{"success": 1}'} sched_rss=78.7MB tasks=0 avail=1245MB
+[  229.2s] mapped=10000 {'none': 6000, 'success': 4000} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'running', 'p_emit_tis': '{"success": 1}'} sched_rss=140.4MB tasks=0 avail=1315MB
+[  244.5s] mapped=10000 {'none': 5000, 'success': 5000} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'running', 'p_emit_tis': '{"success": 1}'} sched_rss=147.0MB tasks=0 avail=1269MB
+[  259.9s] mapped=10000 {'none': 4000, 'success': 6000} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'running', 'p_emit_tis': '{"success": 1}'} sched_rss=68.5MB tasks=0 avail=1295MB
+[  275.2s] mapped=10000 {'none': 3000, 'success': 7000} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'running', 'p_emit_tis': '{"success": 1}'} sched_rss=69.4MB tasks=0 avail=1250MB
+[  290.5s] mapped=10000 {'none': 2000, 'success': 8000} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'running', 'p_emit_tis': '{"success": 1}'} sched_rss=146.9MB tasks=0 avail=1274MB
+[  305.9s] mapped=10000 {'none': 1200, 'success': 8800} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'running', 'p_emit_tis': '{"success": 1}'} sched_rss=69.9MB tasks=0 avail=1242MB
+[  321.2s] mapped=10000 {'none': 200, 'success': 9800} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'running', 'p_emit_tis': '{"success": 1}'} sched_rss=69.6MB tasks=0 avail=1267MB
+[  336.6s] mapped=10000 {'success': 10000} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'success', 'p_emit_tis': '{"success": 1}'} sched_rss=69.1MB tasks=0 avail=1273MB
+[  351.9s] mapped=10000 {'success': 10000} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'success', 'p_emit_tis': '{"success": 1}'} sched_rss=67.6MB tasks=0 avail=1275MB
+[  367.3s] mapped=10000 {'success': 10000} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'success', 'p_emit_tis': '{"success": 1}'} sched_rss=70.1MB tasks=0 avail=1319MB
+[  382.6s] mapped=10000 {'success': 10000} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'success', 'p_emit_tis': '{"success": 1}'} sched_rss=68.5MB tasks=0 avail=1292MB
+[  398.1s] mapped=10000 {'success': 10000} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'success', 'p_emit_tis': '{"success": 1}'} sched_rss=146.4MB tasks=0 avail=1261MB
+[  413.5s] mapped=10000 {'success': 10000} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'success', 'p_emit_tis': '{"success": 1}'} sched_rss=68.2MB tasks=0 avail=1228MB
+[  428.9s] mapped=10000 {'success': 10000} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'success', 'p_emit_tis': '{"success": 1}'} sched_rss=69.3MB tasks=0 avail=1241MB
+[  444.3s] mapped=10000 {'success': 10000} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'success', 'p_emit_tis': '{"success": 1}'} sched_rss=68.7MB tasks=0 avail=1279MB
+[  459.7s] mapped=10000 {'success': 10000} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'success', 'p_emit_tis': '{"success": 1}'} sched_rss=68.4MB tasks=0 avail=1264MB
+[  475.1s] mapped=10000 {'success': 10000} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'success', 'p_emit_tis': '{"success": 1}'} sched_rss=64.2MB tasks=0 avail=1313MB
+[  490.4s] mapped=10000 {'success': 10000} {'p_asset_event': 10000, 'p_apdr': 10000, 'p_apdr_pending': 0, 'p_pakl': 10000, 'p_dagrun_asset_event': 10000, 'p_consumer_dag_run': 10000, 'p_consumer_ti': 10000, 'p_log_rows': 4, 'p_producer_state': 'success', 'p_emit_tis': '{"success": 1}'} sched_rss=68.3MB tasks=0 avail=1319MB
+{
+  "label": "patchC_part_10k_e1",
+  "dag_id": "bench_partition_consumer",
+  "run_id": null,
+  "expected": 10000,
+  "t0": "2026-09-30T02:13:17.913904+00:00",
+  "t_expanded_s": 226.2,
+  "t_first_success_s": 76.0,
+  "t_done_s": 493.6,
+  "timed_out": false,
+  "peak_scheduler_rss_mb": 163.6,
+  "peak_task_rss_mb": 117.7,
+  "peak_task_n": 1,
+  "min_sys_avail_mb": 1199,
+  "exec_throughput_tis_per_s": 37.39
+}
+row deltas: {'asset_event': 10000, 'apdr': 10000, 'apdr_pending': 0, 'pakl': 10000, 'dagrun_asset_event': 10000, 'consumer_dag_run': 10000, 'consumer_ti': 10000, 'log_rows': 4}
+marks: {'events_s': 70.0, 'apdr_created_s': 226.2, 'runs_created_s': 226.2, 'producer_done_s': 327.4, 'producer_state': 'success'}
+--- PATCH request durations for this run ---
+2026-09-30T02:14:25.698028Z 57.5s
+2026-09-30T02:14:25.699856Z 63.5s
+2026-09-30T02:14:25.703312Z 51.3s
+2026-09-30T02:14:25.706011Z 43.3s
+2026-09-30T02:14:25.707828Z 30.5s
+--- heartbeat gaps ---
+===== PHASE3 DONE 02:21:31 =====
+| label | dag | N | expand_s | done_s | run_dur_s | state | success | failed | tis/s | sched_peak_MB | task_peak_MB | task_n_peak | min_avail_MB | ti_tbl_MB | xcom_MB | rtif_MB | db_MB | trig_rate/s | trig_p99_ms | api_list100_ms | grid_summ_ms | grid_runs_ms |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| batched_100k_100x1000 | bench_batched | 100 | 4.1 | 37.7 | 37.2 | success | 101 | 0 | 3.01 | 266.2 | 871.4 | 8 | 1196 | 220.9 | 1.2 | 3.8 | 308.0 |  |  | 70.4 | 3.0 | 16.2 |
+| flat_empty_10000 | bench_flat_empty | 10000 | 59.9 | 61.0 | 60.4 | success | 10001 | 0 | 9273.42 | 312.9 | 120.7 | 1 | 1200 | 11.2 | 0.1 | 0.0 | 21.4 |  |  | 136.7 | 2.2 | 16.1 |
+| flat_empty_100000 | bench_flat_empty | 100000 | 315.0 | 329.0 | 327.5 | success | 100001 | 0 | 7136.41 | 958.9 | 113.3 | 2 | 1179 | 130.6 | 0.6 | 0.0 | 141.3 |  |  | 313.1 | 6.3 | 63.4 |
+| flat_empty_30000 | bench_flat_empty | 30000 | 113.7 | 117.1 | 115.7 | success | 30001 | 0 | 8853.39 | 554.7 | 94.2 | 1 | 1161 | 38.6 | 0.2 | 0.0 | 49.0 |  |  | 121.2 | 3.5 | 38.2 |
+| flat_python_10k | bench_flat_python | 10000 | 103.9 | 3254.2 | 3253.2 | success | 10001 | 0 | 3.17 | 297.9 | 962.2 | 9 | 1197 | 220.9 | 0.6 | 3.6 | 307.3 |  |  | 112.0 | 2.3 | 16.7 |
+| flat_python_1k | bench_flat_python | 1000 | 10.3 | 297.2 | 295.5 | success | 1001 | 0 | 3.49 | 184.7 | 954.8 | 9 | 1200 | 219.9 | 0.6 | 0.6 | 297.0 |  |  | 66.8 | 4.3 | 20.4 |
+| part_100k_e200 | bench_partition_consumer | 100000 | 1524.3 |  |  | - | 80900 | 0 |  | 155.4 | 132.8 |  | 1156.0 | 242.9 | 1.0 | 0.4 | 415.7 |  |  |  |  |  |
+| part_10k_e1 | bench_partition_consumer | 10000 | 219.4 | 425.9 |  | - | 10000 | 0 | 48.43 | 157.8 | 125.2 | 1 | 1200 | 140.6 | 0.6 | 0.0 | 171.4 |  |  |  |  |  |
+| part_1k_e1 | bench_partition_consumer | 1000 | 22.4 | 41.0 |  | - | 1000 | 0 | 53.91 | 116.2 | 117.3 | 2 | 1207 | 131.1 | 0.6 | 0.0 | 145.0 |  |  |  |  |  |
+| patchA_flat_empty_10000 | bench_flat_empty | 10000 | 33.8 | 35.0 | 34.4 | success | 10001 | 0 | 8755.48 | 316.0 | 112.9 | 1 | 1204 | 257.0 | 2.2 | 3.9 | 356.0 |  |  |  |  |  |
+| patchA_flat_empty_100000 | bench_flat_empty | 100000 | 172.6 | 183.2 | 182.0 | success | 100001 | 0 | 9383.04 | 1082.1 | 101.7 | 1 | 1201 | 380.7 | 2.6 | 3.9 | 480.1 |  |  |  |  |  |
+| patchA_flat_empty_30000 | bench_flat_empty | 30000 | 71.2 | 73.5 | 72.8 | success | 30001 | 0 | 13316.84 | 508.4 | 84.2 | 1 | 1199 | 277.5 | 2.3 | 3.9 | 376.6 |  |  |  |  |  |
+| patchC_part_10k_e1 | bench_partition_consumer | 10000 | 226.2 | 493.6 |  | - | 10000 | 0 | 37.39 | 163.6 | 117.7 | 1 | 1199 | 383.8 | 2.7 | 3.9 | 498.2 |  |  |  |  |  |
+| rpa_10k | bench_run_per_account | 10000 | 0.0 | 377.5 |  | - | 10000 | 0 | 26.49 | 180.7 | 0.0 | 0 | 1205 | 255.7 | 2.1 | 3.9 | 354.7 | 162.6 | 560.7 |  |  |  |
+| smoke_flat_empty_1k | bench_flat_empty | 1000 | 12.3 | 12.4 | 12.0 | success | 1001 | 0 | 24571.73 | 190.7 | 94.5 | 1 | 1206 | 1.3 | 0.1 | 0.0 | 11.4 |  |  | 47.6 | 3.8 | 16.7 |
+| two_level_100k_empty | bench_two_level_parent | 100 | 3.1 | 792.7 | 790.3 | success | 101 | 0 | 0.13 | 183.7 | 961.3 | 8 | 1196 | 246.2 | 2.1 | 3.9 | 335.0 |  |  |  |  |  |

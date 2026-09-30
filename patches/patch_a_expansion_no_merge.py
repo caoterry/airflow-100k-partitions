@@ -144,9 +144,12 @@ def main():
                 sys.exit(f"anchor not found in {rel}:\n{old[:120]}")
             src = src.replace(old, new, 1)
         p.write_text(src); print("patched", rel)
-    # _revise_map_indexes_if_mapped callers expect an iterable; a list is fine. Verify import works.
-    import importlib, airflow.models.taskmap, airflow.models.dagrun  # noqa
-    importlib.reload(airflow.models.taskinstance); print("import check ok")
+    if a.revert:
+        return
+    # Verify the patched modules import in a fresh interpreter (reloading ORM modules in-process is not possible).
+    import subprocess
+    subprocess.run([sys.executable, "-c", "import airflow.models.taskinstance, airflow.models.taskmap, airflow.models.dagrun; "
+                    "from airflow.models.taskinstance import _add_and_prime_mapped_ti; print('import check ok')"], check=True)
 
 
 if __name__ == "__main__":

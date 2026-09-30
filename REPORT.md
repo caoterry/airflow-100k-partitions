@@ -463,7 +463,9 @@ Everything above gets harder on MWAA, and every fix arrives later (sources: MWAA
 
 Self-hosted Airflow on Kubernetes removes the first two bullets entirely and gives control over the third. If MWAA is mandatory,
 the design has to stay inside what 3.3.1 does well out of the box: ≤ ~900 keys per emitting task, a few thousand partition
-runs per cycle, batching inside runs.
+runs per cycle, batching inside runs. The recommended Shape 2 (§6) already does: it needs none of the fixes in §7, so the
+platform choice only decides how soon Shape 1 becomes available (see the platform-options table under Q5 in
+`docs/answers-to-mwaa-discussion.md`).
 
 ## 9. Reproduce
 

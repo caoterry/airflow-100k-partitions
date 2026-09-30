@@ -184,6 +184,27 @@ retention in place, the partition path works. **With the index in place and two 
 were created and finished in 31 minutes on a laptop** (report §4.2a) — so 100k/day is within reach once the index/cleanup PR
 ships in a release the platform offers; until then it is a self-hosted-only option.
 
+### Platform options (input to the MWAA-vs-self-hosted decision)
+
+The recommended shape (report §6, "Shape 2": shard- or pack-grain runs, per-account state in the asset state store, per-account
+lineage via `add_partitions`) runs on MWAA 3.3.1 as shipped. It does not touch `asset_partition_dag_run` at all: a keyed event
+only creates an APDR row when an account-grain *partitioned consumer* exists, and Shape 2 has none. So the index in
+apache/airflow#73983 matters only for Shape 1 (one run per account). Two things to get right on MWAA: the batcher's ledger
+(pending / in-flight / processed) lives in its own store (an RDS table with `SELECT … FOR UPDATE`, or DynamoDB conditional
+writes), because the metadata DB is not reachable; and per-account status is read from the state store (primary key asset +
+key), not from `asset_event` filtered by `partition_key`, which has no index until 3.4 (#64610).
+
+| option | runs today | index + upstream fixes | cost |
+|---|---|---|---|
+| MWAA as shipped (3.3.1) | Shape 2 | not needed | none |
+| MWAA, wait for images | Shape 2 now, Shape 1 later | 3–4 weeks after an Apache release that contains them (3.4.0 is planned for 2026-10-26; otherwise the following minor) | waiting |
+| self-hosted on Kubernetes (e.g. EKS) | Shape 1 now (100k account runs in 31 min, §4.2a) | index today (`patches/apdr_index.sql`); code patches possible, advisable only as backports of merged fixes | the team operates Airflow, the database and upgrades |
+
+The self-hosted row is the escape hatch, not the recommendation: it is the only option with a plan B for anything below the
+configuration layer, and it has not been evaluated operationally here — the comparison is capability-based. It becomes worth
+costing if the firm already operates Kubernetes for other workloads, or if the roadmap needs account-grain runs at 100k before
+the upstream fixes reach an MWAA image.
+
 ## Q6. Are we modelling this wrong?
 
 1. **Coarser scheduling grain + per-account status off the run graph: yes** — but "off-graph" should mean the asset state

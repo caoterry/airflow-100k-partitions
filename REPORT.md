@@ -170,6 +170,7 @@ unmapped instance"), i.e. O(N²) bytes through the API server (≈200 GB at 100k
 ### 4.5 Scenario C — batched mapping, 100 × 1000 (`bench_batched`) ⏳
 ### 4.6 Scenario D — two-level DAG-of-DAGs, 100 child runs × 1000 (`bench_two_level_*`) ⏳
 ### 4.7 Scenario E — one DagRun per account, 10k (`bench_run_per_account`) ⏳
+### 4.8 Before/after with two upstream-style patches (Patch A expansion, Patch C partition write path + index) ⏳
 
 ## 5. Where the time goes (source ↔ measurement)
 
@@ -184,9 +185,57 @@ Details with file:line references: `docs/analysis/dynamic-task-mapping-expansion
 | 5 | Partition runs created ≤500 per tick, FIFO, single scheduler | ~80 runs/s | O(N/500) ticks |
 | 6 | `asset_partition_dag_run` never pruned, PK-only index | code | unbounded |
 
-## 6. How to model 100k firm accounts on Airflow 3.3 today ⏳
+## 6. How to model 100k firm accounts on Airflow 3.3 today
 
-## 7. What to contribute upstream ⏳
+Separate the two requirements from §2 and give each the mechanism that scales:
+
+**Partition state (per account): native partition keys, one asset, identity mapping — but at the granularity the scheduler
+can carry.** Two workable shapes, depending on what the platform allows:
+
+- *Shape 1 — account-level runs (100k partition runs per cycle).* Correct semantics out of the box (`dag_run.partition_key` =
+  account, `clearPartitions`, `GET /dagRuns?partition_key_pattern=`). Requires all of: the APDR index (needs DB access →
+  self-hosted only), emitters serialized and ≤ ~900 keys each (or `[workers] execution_api_timeout` raised), `max_active_runs`
+  raised far above 16, several schedulers, and acceptance that completion throughput is ~10 runs/s/scheduler today (§4.2).
+  Not viable on MWAA as shipped.
+- *Shape 2 — shard-level runs (e.g. 1,000 shards × 100 accounts), account-level state.* Partition key = shard id (hash bucket,
+  book, region); inside the shard run, fan out over its accounts with a bounded `expand()` (≤ 1024, the default
+  `max_map_length`, and small enough that the whole-list XCom pull is harmless) or an in-task loop / AIP-104 `.iterate()`
+  when 3.4 lands. Per-account outcome and watermark go to the 3.3 **asset state store** (`asset_state_store`, PK asset+key),
+  which is the sanctioned per-key store and holds 100k keys under one asset. Re-running one account = re-running its shard
+  with a `conf` filter, or a small "repair" DAG that takes an explicit account list. Everything in this shape works on
+  3.3.1/MWAA today with no code changes.
+
+**Fan-out (per-cycle compute): never 100k task instances in one DagRun.** Scenario A shows the expansion transaction alone
+blocks the scheduler for 5 minutes; the whole-list XCom pull makes real execution O(N²) in bytes. Keep any single `expand()`
+in the low thousands, prefer batches (§4.5) or child runs (§4.6), and push per-account parallelism into the compute engine.
+
+**Shared-platform hygiene.** Give revenue its own pool and `priority_weight`, cap `max_active_runs` per DAG, and budget
+metadata retention per cycle (`airflow db clean` on `dag_run`/`task_instance`; APDR needs an upstream fix to be cleanable at
+all). On MWAA, consider a separate environment for the partitioned workload rather than pools — `multi_team` is blocked there.
+
+Recommendation: **Shape 2 now** (it is also what AIP-104 is formalizing), with the state-store convention designed so that a
+later move to Shape 1 is a key-format change, not a re-architecture — once the upstream fixes in §7 ship in a release MWAA offers.
+
+## 7. What to contribute upstream
+
+Ordered by impact ÷ effort. Items 1–3 are small, self-contained, and backed by measurements in this repo; the 3.4.0 feature
+freeze is 2026-10-05, so realistically these land in 3.4.x/3.5 and reach MWAA a month after that.
+
+| # | Change | Evidence | Size |
+|---|---|---|---|
+| 1 | **Index `asset_partition_dag_run (target_dag_id, partition_key, id)`** and a partial index for `created_dag_run_id IS NULL`; add APDR to `db clean` | §4.2/§4.3: 7.0 s → 3.4 s per 500 keys, retries gone, ~3× faster drain | migration, tiny |
+| 2 | **Bulk-create mapped task instances** (`TaskMap.expand_mapped_task`): `session.add` + one flush (already merged as #69565 for main but absent from 3.3.x wheels), then hoist the per-TI `MappedTaskUpstreamDep` query | §4.1: 317 s blocked loop at 100k; Patch A results in §4.8 | backport + small PR |
+| 3 | **Request-scoped memoisation in `_queue_partitioned_dags`** (serialized DAG, fingerprint, asset, mapper are recomputed per key) and batching APDR/PAKL inserts per request | 5–7 ms per key of which most is Python; Patch C results in §4.8 | small |
+| 4 | **Make `MAX_PARTITION_DAG_RUNS_PER_LOOP` configurable** and bulk-insert the created `dag_run`/`task_instance` rows (the time-based path already uses `bulk_insert_mappings`) | §4.2: ~80 runs/s creation ceiling | small |
+| 5 | **Index-aware XCom fetch for mapped operands**: explode a mapped input into per-index rows at push time (the `LazyXComSequence` path that exists for mapped upstreams), so each mapped TI pulls one item | O(N²) bytes (§4.4) | medium |
+| 6 | **Incremental ("level-triggered") expansion**: expand K instances per scheduler loop with a cursor, commit between chunks, keep the `map_index=-1` sentinel until complete | bounds heartbeat gap independent of N | medium, needs dev-list discussion |
+| 7 | **Key-list backfill / clear** (`partition_keys: list[str]` selector on backfill and `clearPartitions`) and `iter_partition_dagrun_infos` for `PartitionedAssetTimetable` | today: date ranges only, cron timetable only | medium |
+| 8 | **Per-partition status endpoint/view** ("materialized / pending / missing / stale" per key, derived from `dag_run.partition_key` + `asset_state_store`) | the Dagster gap that matters most to users | medium–large, UI |
+| 9 | Readiness-aware APDR selection (avoid FIFO head-of-line blocking); fast path for single-asset identity consumers (skip fingerprint/APDR/PAKL) | code comments in `scheduler_job_runner.py` | medium |
+| 10 | Doc fixes: `assets.rst` "back-fill partition_key" claim vs code; `manager.py` reference to a non-existent mutex table; document `execution_api_timeout` vs `add_partitions` size | trivial |
+
+The benchmark harness in this repo (`bench/`) reproduces every number above on a laptop and is the natural attachment for
+the dev-list thread and the PRs.
 
 ## 8. Platform constraints: MWAA vs self-hosted
 

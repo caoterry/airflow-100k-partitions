@@ -1,0 +1,59 @@
+-- APDR per-key lookup (AssetManager._get_or_create_apdr), 2026-09-30T20:23:11Z, rows=100015
+-- WITHOUT index (SET enable_indexscan=off; enable_bitmapscan=off):
+SET
+SET
+Limit  (cost=4912.82..4912.83 rows=1 width=182) (actual rows=1 loops=1)
+  Buffers: shared hit=3309
+  ->  Sort  (cost=4912.82..4912.83 rows=1 width=182) (actual rows=1 loops=1)
+        Sort Key: id DESC
+        Sort Method: quicksort  Memory: 25kB
+        Buffers: shared hit=3309
+        ->  Seq Scan on asset_partition_dag_run  (cost=0.00..4912.81 rows=1 width=182) (actual rows=1 loops=1)
+              Filter: (((partition_key)::text = 'ACCT00049999'::text) AND ((target_dag_id)::text = 'bench_partition_consumer'::text))
+              Rows Removed by Filter: 100014
+              Buffers: shared hit=3306
+Planning:
+  Buffers: shared hit=161
+Planning Time: 0.408 ms
+Execution Time: 131.045 ms
+-- WITH index (target_dag_id, partition_key, id):
+Limit  (cost=0.42..8.44 rows=1 width=182) (actual rows=1 loops=1)
+  Buffers: shared hit=4
+  ->  Index Scan using idx_apdr_target_dag_partition_key on asset_partition_dag_run  (cost=0.42..8.44 rows=1 width=182) (actual rows=1 loops=1)
+        Index Cond: (((target_dag_id)::text = 'bench_partition_consumer'::text) AND ((partition_key)::text = 'ACCT00049999'::text))
+        Buffers: shared hit=4
+Planning:
+  Buffers: shared hit=161
+Planning Time: 0.336 ms
+Execution Time: 1.916 ms
+-- pending scan (scheduler), WITHOUT index:
+SET
+SET
+Limit  (cost=4377.22..4377.23 rows=1 width=12) (actual rows=0 loops=1)
+  Buffers: shared hit=3312
+  ->  Sort  (cost=4377.22..4377.23 rows=1 width=12) (actual rows=0 loops=1)
+        Sort Key: created_at, id
+        Sort Method: quicksort  Memory: 25kB
+        Buffers: shared hit=3312
+        ->  Seq Scan on asset_partition_dag_run  (cost=0.00..4377.21 rows=1 width=12) (actual rows=0 loops=1)
+              Filter: (created_dag_run_id IS NULL)
+              Rows Removed by Filter: 100015
+              Buffers: shared hit=3306
+Planning:
+  Buffers: shared hit=154
+Planning Time: 0.254 ms
+Execution Time: 14.069 ms
+-- pending scan, WITH the PR's composite (created_dag_run_id, created_at, id) [created ad hoc for the capture]:
+CREATE INDEX
+SET
+Limit  (cost=0.12..4.14 rows=1 width=12) (actual rows=0 loops=1)
+  Buffers: shared hit=1
+  ->  Index Only Scan using idx_apdr_pending on asset_partition_dag_run  (cost=0.12..4.14 rows=1 width=12) (actual rows=0 loops=1)
+        Heap Fetches: 0
+        Buffers: shared hit=1
+Planning:
+  Buffers: shared hit=122 read=1
+  I/O Timings: shared read=2.053
+Planning Time: 7.354 ms
+Execution Time: 0.008 ms
+DROP INDEX

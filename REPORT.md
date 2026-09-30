@@ -206,8 +206,14 @@ The 100k run (200 emitters × 500 keys, serialized with `max_active_tis_per_dagr
 
 ### 4.2a The limit with the fixes in place — 100k partition runs in 31 minutes
 
-Same 100k scenario (200 serialized emitters × 500 keys), as-shipped 3.3.2 code, but with the indexes from
-`patches/apdr_index.sql` (the content of the upstream PR branch) present from the start and **two schedulers**:
+Same 100k scenario (200 serialized emitters × 500 keys), as-shipped 3.3.2 code, but with hand-created indexes present
+from the start (`patches/apdr_index.sql`: `(target_dag_id, partition_key, id DESC)` for the lookup, a Postgres partial index
+`(created_at, id) WHERE created_dag_run_id IS NULL` for the pending scan, plus `dag_run (dag_id, partition_key)`) and
+**two schedulers** (verified from `dag_run.creating_job_id`: scheduler jobs 13 and 16 created 48,000 and 52,000 runs). The
+upstream PR (apache/airflow#73983) ships portable plain-composite equivalents — `(target_dag_id, partition_key, id)` and
+`(created_dag_run_id, created_at, id)` — chosen for MySQL/SQLite; on Postgres the lookup plan is the same (index scan
+backward, 4 buffers; see `bench/results/part_100k_e200/explain_apdr_queries.txt`), while the pending scan still sorts the
+pending set (bounded by the number of pending rows rather than the table).
 
 | milestone | as shipped, 1 scheduler, no index | indexes + 2 schedulers |
 |---|---|---|
@@ -257,8 +263,8 @@ they are not. The expansion transaction has to be fixed in code (§4.8, §7).
 **Time: yes, in the write path.** Registering key *i* scans the APDR table, which already holds *i−1* rows for this cycle plus
 every previous cycle's rows (never pruned). Total write time per cycle is therefore O(N²) and gets worse every day. The
 responsible table and columns are **`asset_partition_dag_run (target_dag_id, partition_key)`**, unindexed in 3.2.0 through
-3.3.2 and on main as of 2026-09-30 (`models/asset.py`; only the primary key exists). Measured: 3.6 s → 7.0 s per 500 keys as
-the table grew 0 → 60k rows; back to 3.4 s the moment an index existed (§4.2).
+3.3.2 and on main as of 2026-09-30 (`models/asset.py`; only the primary key exists). Measured: 3.6 s → 6.7 s at 60k rows → 7.0 s at 64k rows per 500 keys;
+3.4–3.9 s (median 3.5 s) the moment an index existed (§4.2; series in `bench/results/part_100k_e200/request_durations.csv`).
 
 Why storage stays linear: when a partition run is created, only the events joined through *its own* PAKL rows are attached
 (`scheduler_job_runner.py`, `PartitionedAssetKeyLog.asset_partition_dag_run_id == apdr.id`), not all events of the asset.

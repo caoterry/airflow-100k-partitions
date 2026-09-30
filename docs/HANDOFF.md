@@ -1,0 +1,45 @@
+# Handoff — state of the work as of 2026-09-30 ~16:10 UTC
+
+Read this first if you are picking the work up (new session, different model, or Terry himself).
+
+## What exists
+- `REPORT.md` — the 100k-partition feasibility study (measurements, charts, recommendation, upstream list). Complete.
+- `docs/answers-to-mwaa-discussion.md` — answers to a colleague's six questions + his evaluation matrix + mapping to his
+  "Proposal" page. Complete draft; evidence = E1–E4 + REPORT numbers + `docs/analysis/source-checks-mwaa-answers.md`.
+- `docs/analysis/` — source traces (native partitions 3.3.2 vs main; mapped-task expansion path; source checks with skeptic verdicts).
+- `docs/research/` — fact-checked literature/MWAA/Dagster sweep (36 claims checked).
+- `bench/` — harness, six benchmark scenarios, experiment DAGs `exp_semantics.py` (E1–E3), `exp_e4_batcher.py` (E4), drivers
+  `exp_e1.py`/`exp_e2.py`/`exp_e4.py`, result folders under `bench/results/`.
+- `patches/` — Patch A (backport #69565, 1.6–1.8×), Patch C (no effect), `apdr_index.sql`.
+
+## Environment
+- Airflow 3.3.2 venv at `.venv` (site-packages **reverted to as-shipped**; re-apply with `python patches/<x>.py`).
+- Postgres 16 in Docker `airflow-bench-pg` on :5433, holds all benchmark rows plus the extra indexes from `patches/apdr_index.sql`.
+- Components: `source bench/env.sh && bench/ctl.sh start|stop|status`. `rev_batcher` (cron every minute) is **paused**; unpause only for E4.
+- Airflow main shallow clone in `airflow-src/` (gitignored) for source reading.
+
+## Key facts (don't re-derive)
+- Expansion of N mapped TIs = one scheduler transaction: 60 s / 117 s / 317 s at 10k/30k/100k (health threshold 30 s). Patch A → 34/71/173 s.
+- Each mapped TI pulls the whole upstream XCom (O(N²) bytes). Nested expand is not supported.
+- Native partitions: storage linear (1k/10k/100k); write path ~5 ms/key of ~8 statements under the asset row lock, grows with the
+  unindexed `asset_partition_dag_run` table (7.0→3.4 s per 500 keys after indexing); `execution_api_timeout` 5 s ⇒ ≤ ~900 keys per task;
+  500 runs/tick creation; completion 3–10 runs/s (26–42 runs/s for plain run-per-account); no per-key mutex or conflation (E1).
+- Non-partitioned asset scheduling: queue row per (asset, dag) ⇒ conflation per loop; `max_active_runs` gates creation; AND needs a new
+  event per asset (E2). `inlet_events[a]` = full history ordered by timestamp, unbounded unless `.after()/.limit()`; `[-1]` is last
+  *registered*, not highest version (E2 burst). Keyed events never queue non-partitioned DAGs.
+- Mapper definitions are copied into every APDR row (`rollup_fingerprint`: 33.6 KB for a 10k-key AllowedKeyMapper) (E3).
+- Extension points: `[core] asset_manager_class`, DagRun listeners (scheduler, carry partition_key), asset state store (task-scoped KV + REST).
+- MWAA: 3.3.1/3.2.1/3.0.6 only, no DB access, Celery only, Exec API in webserver, 10 TPS REST throttle.
+
+## Suggested next steps (pick by available time)
+1. Review `docs/answers-to-mwaa-discussion.md` with Terry; tighten wording; decide what goes back onto Confluence.
+2. Learning notes: `docs/learning/` — three code walks (scheduler loop → expansion; task success → asset registration → APDR;
+   partition run creation), each with the experiment that demonstrates it. Chat explanations in Chinese, notes in English.
+3. Optional engineering: batched partition write path prototype (per-request bulk insert) — the one fix not yet tried; a
+   `max_active_runs_per_partition_key` sketch via a custom `AssetManager` (`asset_manager_class`).
+4. Optional measurements: E4 with a 90 s Spark step to show in-flight skipping live; E1 with `max_active_runs=1`.
+5. Before the 3.4.0 freeze (2026-10-05): dev-list post with the harness + APDR index PR.
+
+## Conventions
+Chat with Terry in Chinese; everything committed is English. Commit messages carry the Claude co-author line. Never commit
+`bench/results/profiles/logs-*` (100 MB) — already gitignored.

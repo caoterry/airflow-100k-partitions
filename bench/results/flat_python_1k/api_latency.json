@@ -1,0 +1,52 @@
+{
+  "GET dagRun": {
+    "ms": 80.2,
+    "status": 200,
+    "bytes": 884
+  },
+  "GET taskInstances?limit=100": {
+    "ms": 66.8,
+    "status": 200,
+    "bytes": 119660
+  },
+  "GET taskInstances?limit=100&offset=90000": {
+    "ms": 36.4,
+    "status": 200,
+    "bytes": 111
+  },
+  "GET mapped TI point lookup (idx 999)": {
+    "ms": 15.5,
+    "status": 200,
+    "bytes": 1197
+  },
+  "GET listMapped?limit=50": {
+    "ms": 42.6,
+    "status": 200,
+    "bytes": 59887
+  },
+  "GET listMapped?state=failed": {
+    "ms": 23.7,
+    "status": 200,
+    "bytes": 108
+  },
+  "GET ui/grid/structure": {
+    "ms": 16.9,
+    "status": 200,
+    "bytes": 90
+  },
+  "GET ui/grid/runs": {
+    "ms": 20.4,
+    "status": 200,
+    "bytes": 563
+  },
+  "GET ui/grid/ti_summaries": {
+    "ms": 4.3,
+    "status": 200,
+    "bytes": 588
+  },
+  "GET dags list": {
+    "ms": 20.8,
+    "status": 200,
+    "bytes": 10087
+  }
+}

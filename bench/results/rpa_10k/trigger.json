@@ -1,0 +1,9 @@
+{
+  "n": 10000,
+  "concurrency": 32,
+  "trigger_wall_s": 61.5,
+  "trigger_rate_per_s": 162.6,
+  "errors": 0,
+  "p50_ms": 187.0,
+  "p99_ms": 560.7
+}

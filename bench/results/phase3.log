@@ -1,0 +1,43 @@
+===== apply Patch A and restart (parallelism back to 12) 02:05:38 =====
+stopped scheduler
+stopped dag-processor
+stopped api-server
+patched models/taskinstance.py
+patched models/taskmap.py
+patched models/dagrun.py
+2026-09-30T02:05:44.711684Z [warning  ] This declarative base already contains a class with the same class name and module name as airflow.models.taskinstance.TaskInstance, and will be replaced in the string-lookup table. [py.warnings] category=SAWarning filename=/Users/caotia/Code/airflow-100k-partitions/.venv/lib/python3.12/site-packages/airflow/models/taskinstance.py lineno=600
+Traceback (most recent call last):
+  File "/Users/caotia/Code/airflow-100k-partitions/patches/patch_a_expansion_no_merge.py", line 153, in <module>
+    main()
+  File "/Users/caotia/Code/airflow-100k-partitions/patches/patch_a_expansion_no_merge.py", line 149, in main
+    importlib.reload(airflow.models.taskinstance); print("import check ok")
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/caotia/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/importlib/__init__.py", line 131, in reload
+    _bootstrap._exec(spec, module)
+  File "<frozen importlib._bootstrap>", line 866, in _exec
+  File "<frozen importlib._bootstrap_external>", line 999, in exec_module
+  File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
+  File "/Users/caotia/Code/airflow-100k-partitions/.venv/lib/python3.12/site-packages/airflow/models/taskinstance.py", line 600, in <module>
+    class TaskInstance(Base, LoggingMixin, BaseWorkload):
+  File "/Users/caotia/Code/airflow-100k-partitions/.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_api.py", line 200, in __init__
+    _as_declarative(reg, cls, dict_)
+  File "/Users/caotia/Code/airflow-100k-partitions/.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py", line 245, in _as_declarative
+    return _MapperConfig.setup_mapping(registry, cls, dict_, None, {})
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/caotia/Code/airflow-100k-partitions/.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py", line 326, in setup_mapping
+    return _ClassScanMapperConfig(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/caotia/Code/airflow-100k-partitions/.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py", line 577, in __init__
+    self._setup_table(table)
+  File "/Users/caotia/Code/airflow-100k-partitions/.venv/lib/python3.12/site-packages/sqlalchemy/orm/decl_base.py", line 1776, in _setup_table
+    table_cls(
+  File "<string>", line 2, in __new__
+  File "/Users/caotia/Code/airflow-100k-partitions/.venv/lib/python3.12/site-packages/sqlalchemy/util/deprecations.py", line 281, in warned
+    return fn(*args, **kwargs)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/caotia/Code/airflow-100k-partitions/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py", line 430, in __new__
+    return cls._new(*args, **kw)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/caotia/Code/airflow-100k-partitions/.venv/lib/python3.12/site-packages/sqlalchemy/sql/schema.py", line 462, in _new
+    raise exc.InvalidRequestError(
+sqlalchemy.exc.InvalidRequestError: Table 'task_instance' is already defined for this MetaData instance.  Specify 'extend_existing=True' to redefine options and columns on an existing Table object.

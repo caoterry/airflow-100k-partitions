@@ -166,10 +166,62 @@ The genuinely quadratic behaviour in Airflow at this scale is elsewhere — in d
 mapped task instances downloads the entire N-element upstream XCom** at start (`xcom_arg.py:338`, "No mapped task group - pull from
 unmapped instance"), i.e. O(N²) bytes through the API server (≈200 GB at 100k). ⏳ measured in Scenario B.
 
-### 4.4 Scenario B — flat mapping, real execution (`bench_flat_python`) ⏳
-### 4.5 Scenario C — batched mapping, 100 × 1000 (`bench_batched`) ⏳
-### 4.6 Scenario D — two-level DAG-of-DAGs, 100 child runs × 1000 (`bench_two_level_*`) ⏳
-### 4.7 Scenario E — one DagRun per account, 10k (`bench_run_per_account`) ⏳
+### 4.4 Scenario B — flat mapping, real execution (`bench_flat_python`)
+
+Same shape as A but the mapped task is a real TaskFlow no-op, so every instance goes through the executor and the Task SDK
+(LocalExecutor, `parallelism=8`, macOS fork+exec of a fresh interpreter per task instance).
+
+| N | expansion (loop blocked) | run duration | throughput | task-process RSS (8 concurrent) | XCom GETs of the whole list | list size (JSONB) | GET p50 / p99 |
+|---|---|---|---|---|---|---|---|
+| 1,000 | 10 s | 297 s | 3.4 TI/s | 955 MB | 1,000 | 3.4 KB | 47 / 140 ms |
+| 10,000 | 104 s | 3,254 s (54 min) | 3.2 TI/s | 962 MB | 10,000 | 35 KB | 78 / 172 ms |
+
+Two things to read from this. First, the per-instance floor is the executor, not the scheduler: ~2.5 s of process start-up per
+instance at 8-wide on this laptop, so 100k real instances would take ~9 hours here and scale only with worker count. Second, the
+**whole-list pull is real**: the API-server access log shows exactly N `GET /execution/xcoms/…/make_ids/return_value` requests,
+one per mapped instance, each returning the entire list. At 10k that is 10k × ~150 KB of JSON ≈ 1.5 GB through the API server —
+tolerable. At 100k it is 100k × ~1.5 MB ≈ 150 GB per run, which is not. The expansion pause (104 s at 10k) is also longer than in
+scenario A (60 s) because non-empty instances additionally go through `schedule_tis` state updates in the same transaction.
+REST/UI probes against the finished 10k run all stayed under 700 ms.
+### 4.5 Scenario C — batched mapping, 100 × 1000 (`bench_batched`)
+
+`make_batches()` returns 100 lists of 1,000 account ids; `process_batch.expand(accounts=…)` runs 100 real instances.
+
+| N accounts | Airflow units | expansion | run duration | metadata rows |
+|---|---|---|---|---|
+| 100,000 | 100 mapped TIs | 4 s | **38 s** | 101 TIs, 1 XCom of 100 lists |
+
+Same 100k accounts as scenario A/B, ~1000× fewer scheduler and database operations, no heartbeat gap, and the mapped input
+is pulled 100 times instead of 100,000. The price is that Airflow's UI shows batches, not accounts: per-account status has to
+live somewhere else (the asset state store, or the compute engine's own bookkeeping).
+### 4.6 Scenario D — two-level DAG-of-DAGs, 100 child runs × 1000 (`bench_two_level_*`)
+
+A parent expands `TriggerDagRunOperator` 100 times; each child run expands 1,000 `EmptyOperator` instances (scheduler-only).
+
+| accounts | child runs | child TIs | parent duration | all children finished | scheduler heartbeat gaps |
+|---|---|---|---|---|---|
+| 100,000 | 100 | 100,000 | 790 s | 20.4 min after first child started | **up to 304 s** |
+
+This shape does not automatically bound the scheduler pause. All 100 child runs were created within seconds, the scheduler
+examines up to `max_dagruns_per_loop_to_schedule` runs per loop (200 here, default 20), and it expanded dozens of children
+inside one loop iteration and one transaction: the heartbeat log shows gaps of 46, 49, 78, 198 and 304 s during this scenario.
+Per-batch run state comes for free, but with the default of 20 runs per loop a burst of 100 children still means ~20 × 1000
+expansions per loop ≈ 2 minutes of blocked scheduler. It is strictly worse than scenario C for fan-out and only marginally
+better than A for observability.
+### 4.7 Scenario E — one DagRun per account, 10k (`bench_run_per_account`)
+
+10,000 runs created through the REST API (`run_id = acct_<id>__<as_of>`, `conf.account`), each with one `EmptyOperator`, so
+this isolates the scheduler's per-run cost — the same shape native partitions produce, without the asset machinery.
+
+| runs | API trigger | queued → running | all finished | completion rate | scheduler RSS |
+|---|---|---|---|---|---|
+| 10,000 | 61.5 s (163 runs/s, p99 561 ms, 32 concurrent clients) | ~57 runs/s | 377 s | ~26 runs/s average, ~42 runs/s once finishing started | 160–180 MB |
+
+Per-run scheduler cost is therefore ~25–40 ms on one scheduler when the runs already exist. Scaled linearly, 100k
+account-level runs need ~1 hour of scheduler time per cycle just to be started and finished, before any real work; the
+native-partition path measured 3–10 runs/s (§4.2) because creation (500 per tick) and completion compete inside the same
+loop. Creating the runs is cheap by comparison: 163 runs/s through the API here, but MWAA throttles its REST endpoint at
+10 requests/s, i.e. ~2.8 hours to create 100k runs there.
 ### 4.8 Before/after with two upstream-style patches (Patch A expansion, Patch C partition write path + index) ⏳
 
 ## 5. Where the time goes (source ↔ measurement)

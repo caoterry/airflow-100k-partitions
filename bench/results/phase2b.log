@@ -18,3 +18,478 @@ api-server: up (24453)
 dag-processor: up (24477)
 scheduler: up (24478)
 ===== flat_python 1k 00:44:24 =====
+triggered bench_flat_python flat_python_1k_1790729065 {'n': 1000}
+[    0.0s] mapped=0 {'none': 2} {} sched_rss=77.9MB tasks=0 avail=1418MB
+[   16.5s] mapped=1000 {'queued': 48, 'running': 7, 'scheduled': 928, 'success': 18} {} sched_rss=98.5MB tasks=7 avail=1405MB
+[   33.2s] mapped=1000 {'queued': 45, 'running': 8, 'scheduled': 864, 'success': 84} {} sched_rss=87.1MB tasks=8 avail=1388MB
+[   50.1s] mapped=1000 {'queued': 53, 'running': 8, 'scheduled': 792, 'success': 148} {} sched_rss=165.8MB tasks=8 avail=1388MB
+[   66.8s] mapped=1000 {'queued': 53, 'running': 8, 'scheduled': 728, 'success': 212} {} sched_rss=26.5MB tasks=8 avail=1217MB
+[   83.5s] mapped=1000 {'queued': 49, 'running': 4, 'scheduled': 664, 'success': 284} {} sched_rss=60.3MB tasks=6 avail=1584MB
+[  100.2s] mapped=1000 {'queued': 50, 'running': 8, 'scheduled': 600, 'success': 343} {} sched_rss=29.1MB tasks=8 avail=1323MB
+[  116.9s] mapped=1000 {'queued': 53, 'running': 8, 'scheduled': 544, 'success': 396} {} sched_rss=23.2MB tasks=8 avail=1228MB
+[  133.7s] mapped=1000 {'queued': 53, 'running': 8, 'scheduled': 480, 'success': 460} {} sched_rss=23.3MB tasks=8 avail=1205MB
+[  150.5s] mapped=1000 {'queued': 53, 'running': 8, 'scheduled': 424, 'success': 516} {} sched_rss=163.2MB tasks=8 avail=1373MB
+[  167.3s] mapped=1000 {'queued': 53, 'running': 8, 'scheduled': 368, 'success': 572} {} sched_rss=90.8MB tasks=8 avail=1406MB
+[  184.0s] mapped=1000 {'queued': 45, 'running': 8, 'scheduled': 320, 'success': 628} {} sched_rss=86.4MB tasks=8 avail=1593MB
+[  200.7s] mapped=1000 {'queued': 53, 'running': 8, 'scheduled': 264, 'success': 676} {} sched_rss=55.4MB tasks=8 avail=1259MB
+[  217.4s] mapped=1000 {'queued': 53, 'running': 8, 'scheduled': 208, 'success': 732} {} sched_rss=163.1MB tasks=8 avail=1321MB
+[  234.3s] mapped=1000 {'queued': 53, 'running': 8, 'scheduled': 152, 'success': 788} {} sched_rss=91.2MB tasks=8 avail=1372MB
+[  251.2s] mapped=1000 {'queued': 53, 'running': 8, 'scheduled': 96, 'success': 844} {} sched_rss=99.5MB tasks=8 avail=1278MB
+[  267.9s] mapped=1000 {'queued': 53, 'running': 8, 'scheduled': 40, 'success': 900} {} sched_rss=23.5MB tasks=8 avail=1313MB
+[  284.6s] mapped=1000 {'queued': 29, 'running': 8, 'success': 964} {} sched_rss=156.2MB tasks=8 avail=1506MB
+{
+  "label": "flat_python_1k",
+  "dag_id": "bench_flat_python",
+  "run_id": "flat_python_1k_1790729065",
+  "expected": 1000,
+  "t0": "2026-09-30T00:44:25.394525+00:00",
+  "t_expanded_s": 10.3,
+  "t_first_success_s": 4.1,
+  "t_done_s": 297.2,
+  "timed_out": false,
+  "peak_scheduler_rss_mb": 184.7,
+  "peak_task_rss_mb": 954.8,
+  "peak_task_n": 9,
+  "min_sys_avail_mb": 1200,
+  "exec_throughput_tis_per_s": 3.49,
+  "dagrun_state": "success",
+  "dagrun_start": "2026-09-30T00:44:25.429206+00:00",
+  "dagrun_end": "2026-09-30T00:49:20.941105+00:00",
+  "dagrun_duration_s": 295.5
+}
+GET dagRun                                    200      80.2 ms        884 B
+GET taskInstances?limit=100                   200      66.8 ms     119660 B
+GET taskInstances?limit=100&offset=90000      200      36.4 ms        111 B
+GET mapped TI point lookup (idx 999)          200      15.5 ms       1197 B
+GET listMapped?limit=50                       200      42.6 ms      59887 B
+GET listMapped?state=failed                   200      23.7 ms        108 B
+GET ui/grid/structure                         200      16.9 ms         90 B
+GET ui/grid/runs                              200      20.4 ms        563 B
+GET ui/grid/ti_summaries                      200       4.3 ms        588 B
+GET dags list                                 200      20.8 ms      10087 B
+--- heartbeat gaps ---
+===== flat_python 10k 00:49:23 =====
+triggered bench_flat_python flat_python_10k_1790729363 {'n': 10000}
+[    0.0s] mapped=0 {'none': 2} {} sched_rss=163.3MB tasks=0 avail=1567MB
+[   15.3s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=168.6MB tasks=0 avail=1622MB
+[   30.6s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=187.6MB tasks=0 avail=1524MB
+[   45.9s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=231.1MB tasks=0 avail=1511MB
+[   61.1s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=210.6MB tasks=0 avail=1524MB
+[   76.4s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=220.2MB tasks=0 avail=1502MB
+[   91.6s] mapped=0 {'none': 1, 'success': 1} {} sched_rss=62.2MB tasks=0 avail=1335MB
+[  107.0s] mapped=10000 {'queued': 8, 'running': 8, 'scheduled': 9976, 'success': 9} {} sched_rss=130.7MB tasks=8 avail=1296MB
+[  122.6s] mapped=10000 {'success': 65, 'scheduled': 9920, 'queued': 8, 'running': 8} {} sched_rss=223.0MB tasks=8 avail=1509MB
+[  138.3s] mapped=10000 {'success': 121, 'scheduled': 9856, 'queued': 16, 'running': 8} {} sched_rss=229.9MB tasks=7 avail=1455MB
+[  153.9s] mapped=10000 {'success': 184, 'scheduled': 9792, 'queued': 19, 'running': 6} {} sched_rss=234.0MB tasks=7 avail=1575MB
+[  169.4s] mapped=10000 {'success': 241, 'scheduled': 9720, 'queued': 32, 'running': 8} {} sched_rss=232.4MB tasks=8 avail=1472MB
+[  185.1s] mapped=10000 {'success': 297, 'scheduled': 9656, 'queued': 40, 'running': 8} {} sched_rss=247.7MB tasks=8 avail=1334MB
+[  200.5s] mapped=10000 {'success': 353, 'scheduled': 9600, 'queued': 40, 'running': 8} {} sched_rss=228.1MB tasks=8 avail=1362MB
+[  215.9s] mapped=10000 {'success': 404, 'scheduled': 9544, 'queued': 45, 'running': 8} {} sched_rss=207.0MB tasks=8 avail=1308MB
+[  231.4s] mapped=10000 {'success': 460, 'scheduled': 9488, 'queued': 45, 'running': 8} {} sched_rss=259.5MB tasks=8 avail=1258MB
+[  246.9s] mapped=10000 {'success': 516, 'scheduled': 9432, 'queued': 45, 'running': 8} {} sched_rss=160.9MB tasks=8 avail=1208MB
+[  262.4s] mapped=10000 {'success': 572, 'scheduled': 9376, 'queued': 45, 'running': 8} {} sched_rss=186.7MB tasks=8 avail=1219MB
+[  277.8s] mapped=10000 {'success': 628, 'scheduled': 9320, 'queued': 45, 'running': 8} {} sched_rss=150.2MB tasks=8 avail=1248MB
+[  293.4s] mapped=10000 {'success': 690, 'scheduled': 9256, 'queued': 49, 'running': 6} {} sched_rss=135.2MB tasks=7 avail=1475MB
+[  309.1s] mapped=10000 {'success': 747, 'scheduled': 9208, 'queued': 39, 'running': 7} {} sched_rss=222.7MB tasks=8 avail=1569MB
+[  324.6s] mapped=10000 {'success': 803, 'scheduled': 9152, 'queued': 38, 'running': 8} {} sched_rss=258.3MB tasks=8 avail=1435MB
+[  340.1s] mapped=10000 {'success': 859, 'scheduled': 9096, 'queued': 38, 'running': 8} {} sched_rss=238.7MB tasks=8 avail=1360MB
+[  355.7s] mapped=10000 {'success': 915, 'scheduled': 9040, 'queued': 38, 'running': 8} {} sched_rss=250.5MB tasks=8 avail=1289MB
+[  371.3s] mapped=10000 {'success': 971, 'scheduled': 8984, 'queued': 38, 'running': 8} {} sched_rss=247.3MB tasks=8 avail=1375MB
+[  386.7s] mapped=10000 {'success': 1027, 'scheduled': 8928, 'queued': 38, 'running': 8} {} sched_rss=243.7MB tasks=8 avail=1486MB
+[  402.1s] mapped=10000 {'success': 1083, 'scheduled': 8872, 'queued': 38, 'running': 8} {} sched_rss=229.8MB tasks=8 avail=1491MB
+[  417.7s] mapped=10000 {'success': 1139, 'scheduled': 8816, 'queued': 38, 'running': 8} {} sched_rss=228.3MB tasks=8 avail=1447MB
+[  433.2s] mapped=10000 {'success': 1195, 'scheduled': 8760, 'queued': 38, 'running': 8} {} sched_rss=224.1MB tasks=8 avail=1450MB
+[  448.8s] mapped=10000 {'success': 1235, 'scheduled': 8720, 'queued': 38, 'running': 8} {} sched_rss=157.2MB tasks=8 avail=1207MB
+[  464.6s] mapped=10000 {'success': 1283, 'scheduled': 8672, 'queued': 38, 'running': 8} {} sched_rss=214.2MB tasks=8 avail=1548MB
+[  480.0s] mapped=10000 {'success': 1323, 'scheduled': 8632, 'queued': 38, 'running': 8} {} sched_rss=141.2MB tasks=8 avail=1567MB
+[  495.5s] mapped=10000 {'success': 1363, 'scheduled': 8592, 'queued': 38, 'running': 8} {} sched_rss=250.6MB tasks=8 avail=1437MB
+[  511.2s] mapped=10000 {'success': 1403, 'scheduled': 8544, 'queued': 46, 'running': 8} {} sched_rss=127.9MB tasks=8 avail=1262MB
+[  526.7s] mapped=10000 {'success': 1451, 'scheduled': 8504, 'queued': 38, 'running': 8} {} sched_rss=231.9MB tasks=8 avail=1463MB
+[  542.3s] mapped=10000 {'success': 1499, 'scheduled': 8456, 'queued': 38, 'running': 8} {} sched_rss=195.3MB tasks=8 avail=1553MB
+[  557.8s] mapped=10000 {'success': 1541, 'scheduled': 8408, 'queued': 44, 'running': 8} {} sched_rss=117.1MB tasks=7 avail=1407MB
+[  573.3s] mapped=10000 {'success': 1591, 'scheduled': 8360, 'queued': 44, 'running': 6} {} sched_rss=217.1MB tasks=8 avail=1367MB
+[  588.8s] mapped=10000 {'success': 1643, 'scheduled': 8312, 'queued': 38, 'running': 8} {} sched_rss=228.9MB tasks=8 avail=1490MB
+[  604.3s] mapped=10000 {'success': 1691, 'scheduled': 8256, 'queued': 46, 'running': 8} {} sched_rss=100.2MB tasks=8 avail=1269MB
+[  619.9s] mapped=10000 {'success': 1745, 'scheduled': 8208, 'queued': 41, 'running': 7} {} sched_rss=144.2MB tasks=6 avail=1515MB
+[  635.4s] mapped=10000 {'success': 1795, 'scheduled': 8160, 'queued': 38, 'running': 8} {} sched_rss=244.3MB tasks=8 avail=1431MB
+[  651.1s] mapped=10000 {'success': 1843, 'scheduled': 8112, 'queued': 38, 'running': 8} {} sched_rss=198.1MB tasks=8 avail=1329MB
+[  666.6s] mapped=10000 {'success': 1899, 'scheduled': 8056, 'queued': 39, 'running': 7} {} sched_rss=226.3MB tasks=8 avail=1525MB
+[  682.2s] mapped=10000 {'success': 1947, 'scheduled': 8008, 'queued': 38, 'running': 8} {} sched_rss=240.2MB tasks=8 avail=1397MB
+[  697.8s] mapped=10000 {'success': 1995, 'scheduled': 7952, 'queued': 46, 'running': 8} {} sched_rss=189.8MB tasks=8 avail=1244MB
+[  713.3s] mapped=10000 {'success': 2043, 'scheduled': 7904, 'queued': 46, 'running': 8} {} sched_rss=60.4MB tasks=8 avail=1213MB
+[  728.8s] mapped=10000 {'success': 2096, 'scheduled': 7856, 'queued': 44, 'running': 5} {} sched_rss=138.7MB tasks=7 avail=1607MB
+[  744.4s] mapped=10000 {'success': 2147, 'scheduled': 7808, 'queued': 38, 'running': 8} {} sched_rss=241.4MB tasks=8 avail=1435MB
+[  760.0s] mapped=10000 {'success': 2200, 'scheduled': 7752, 'queued': 41, 'running': 8} {} sched_rss=145.5MB tasks=8 avail=1435MB
+[  775.5s] mapped=10000 {'success': 2251, 'scheduled': 7704, 'queued': 38, 'running': 8} {} sched_rss=243.0MB tasks=8 avail=1374MB
+[  791.1s] mapped=10000 {'success': 2299, 'scheduled': 7648, 'queued': 46, 'running': 8} {} sched_rss=53.7MB tasks=3 avail=1454MB
+[  806.6s] mapped=10000 {'success': 2355, 'scheduled': 7600, 'queued': 42, 'running': 4} {} sched_rss=96.9MB tasks=4 avail=1625MB
+[  822.1s] mapped=10000 {'success': 2403, 'scheduled': 7552, 'queued': 38, 'running': 8} {} sched_rss=229.9MB tasks=8 avail=1416MB
+[  837.7s] mapped=10000 {'success': 2451, 'scheduled': 7504, 'queued': 38, 'running': 8} {} sched_rss=243.6MB tasks=8 avail=1305MB
+[  853.1s] mapped=10000 {'success': 2499, 'scheduled': 7448, 'queued': 46, 'running': 8} {} sched_rss=53.1MB tasks=7 avail=1321MB
+[  868.6s] mapped=10000 {'success': 2555, 'scheduled': 7400, 'queued': 38, 'running': 8} {} sched_rss=130.7MB tasks=8 avail=1518MB
+[  884.3s] mapped=10000 {'success': 2603, 'scheduled': 7352, 'queued': 38, 'running': 8} {} sched_rss=240.7MB tasks=8 avail=1387MB
+[  899.9s] mapped=10000 {'success': 2651, 'scheduled': 7304, 'queued': 38, 'running': 8} {} sched_rss=253.0MB tasks=8 avail=1331MB
+[  915.4s] mapped=10000 {'success': 2700, 'scheduled': 7248, 'queued': 45, 'running': 8} {} sched_rss=75.8MB tasks=7 avail=1316MB
+[  931.0s] mapped=10000 {'success': 2755, 'scheduled': 7200, 'queued': 39, 'running': 7} {} sched_rss=135.2MB tasks=7 avail=1484MB
+[  946.6s] mapped=10000 {'success': 2803, 'scheduled': 7152, 'queued': 38, 'running': 8} {} sched_rss=211.3MB tasks=8 avail=1223MB
+[  962.2s] mapped=10000 {'success': 2851, 'scheduled': 7104, 'queued': 38, 'running': 8} {} sched_rss=234.3MB tasks=8 avail=1209MB
+[  977.9s] mapped=10000 {'success': 2899, 'scheduled': 7048, 'queued': 46, 'running': 8} {} sched_rss=100.2MB tasks=8 avail=1250MB
+[  993.4s] mapped=10000 {'success': 2955, 'scheduled': 7000, 'queued': 38, 'running': 8} {} sched_rss=100.8MB tasks=8 avail=1593MB
+[ 1009.2s] mapped=10000 {'success': 3003, 'scheduled': 6952, 'queued': 38, 'running': 8} {} sched_rss=176.0MB tasks=8 avail=1224MB
+[ 1024.7s] mapped=10000 {'success': 3051, 'scheduled': 6904, 'queued': 38, 'running': 8} {} sched_rss=196.1MB tasks=8 avail=1242MB
+[ 1040.3s] mapped=10000 {'success': 3107, 'scheduled': 6848, 'queued': 38, 'running': 8} {} sched_rss=194.7MB tasks=8 avail=1526MB
+[ 1055.7s] mapped=10000 {'success': 3155, 'scheduled': 6800, 'queued': 38, 'running': 8} {} sched_rss=261.3MB tasks=8 avail=1431MB
+[ 1071.2s] mapped=10000 {'success': 3203, 'scheduled': 6744, 'queued': 46, 'running': 8} {} sched_rss=143.1MB tasks=8 avail=1263MB
+[ 1086.8s] mapped=10000 {'success': 3259, 'scheduled': 6696, 'queued': 40, 'running': 6} {} sched_rss=222.7MB tasks=8 avail=1606MB
+[ 1102.3s] mapped=10000 {'success': 3307, 'scheduled': 6648, 'queued': 38, 'running': 8} {} sched_rss=168.7MB tasks=8 avail=1318MB
+[ 1117.9s] mapped=10000 {'success': 3358, 'scheduled': 6592, 'queued': 43, 'running': 8} {} sched_rss=125.6MB tasks=8 avail=1393MB
+[ 1133.5s] mapped=10000 {'success': 3411, 'scheduled': 6544, 'queued': 38, 'running': 8} {} sched_rss=227.4MB tasks=8 avail=1486MB
+[ 1149.0s] mapped=10000 {'success': 3459, 'scheduled': 6496, 'queued': 38, 'running': 8} {} sched_rss=256.0MB tasks=8 avail=1436MB
+[ 1164.6s] mapped=10000 {'success': 3507, 'scheduled': 6440, 'queued': 46, 'running': 8} {} sched_rss=163.3MB tasks=8 avail=1324MB
+[ 1180.2s] mapped=10000 {'success': 3563, 'scheduled': 6392, 'queued': 38, 'running': 8} {} sched_rss=119.5MB tasks=8 avail=1497MB
+[ 1195.8s] mapped=10000 {'success': 3611, 'scheduled': 6344, 'queued': 38, 'running': 8} {} sched_rss=231.1MB tasks=8 avail=1369MB
+[ 1211.4s] mapped=10000 {'success': 3659, 'scheduled': 6288, 'queued': 46, 'running': 8} {} sched_rss=238.4MB tasks=8 avail=1317MB
+[ 1226.9s] mapped=10000 {'success': 3711, 'scheduled': 6240, 'queued': 46, 'running': 4} {} sched_rss=93.6MB tasks=7 avail=1428MB
+[ 1242.4s] mapped=10000 {'success': 3763, 'scheduled': 6192, 'queued': 38, 'running': 8} {} sched_rss=211.9MB tasks=8 avail=1604MB
+[ 1258.0s] mapped=10000 {'success': 3811, 'scheduled': 6144, 'queued': 38, 'running': 8} {} sched_rss=234.5MB tasks=8 avail=1452MB
+[ 1273.5s] mapped=10000 {'success': 3859, 'scheduled': 6096, 'queued': 38, 'running': 8} {} sched_rss=256.6MB tasks=8 avail=1369MB
+[ 1289.2s] mapped=10000 {'success': 3907, 'scheduled': 6040, 'queued': 46, 'running': 8} {} sched_rss=138.8MB tasks=8 avail=1332MB
+[ 1304.6s] mapped=10000 {'success': 3958, 'scheduled': 5992, 'queued': 43, 'running': 8} {} sched_rss=203.0MB tasks=7 avail=1456MB
+[ 1320.2s] mapped=10000 {'success': 4003, 'scheduled': 5952, 'queued': 38, 'running': 8} {} sched_rss=233.4MB tasks=8 avail=1495MB
+[ 1335.6s] mapped=10000 {'success': 4051, 'scheduled': 5904, 'queued': 38, 'running': 8} {} sched_rss=214.1MB tasks=8 avail=1555MB
+[ 1351.2s] mapped=10000 {'success': 4099, 'scheduled': 5856, 'queued': 38, 'running': 8} {} sched_rss=211.3MB tasks=8 avail=1481MB
+[ 1366.8s] mapped=10000 {'success': 4147, 'scheduled': 5808, 'queued': 38, 'running': 8} {} sched_rss=227.1MB tasks=8 avail=1482MB
+[ 1382.2s] mapped=10000 {'success': 4195, 'scheduled': 5760, 'queued': 38, 'running': 8} {} sched_rss=230.0MB tasks=8 avail=1530MB
+[ 1397.7s] mapped=10000 {'success': 4243, 'scheduled': 5712, 'queued': 38, 'running': 8} {} sched_rss=238.8MB tasks=8 avail=1462MB
+[ 1413.3s] mapped=10000 {'success': 4286, 'scheduled': 5664, 'queued': 46, 'running': 5} {} sched_rss=66.5MB tasks=6 avail=1417MB
+[ 1428.7s] mapped=10000 {'success': 4336, 'scheduled': 5616, 'queued': 41, 'running': 8} {} sched_rss=190.3MB tasks=9 avail=1374MB
+[ 1444.2s] mapped=10000 {'success': 4384, 'scheduled': 5568, 'queued': 45, 'running': 4} {} sched_rss=70.6MB tasks=5 avail=1473MB
+[ 1459.7s] mapped=10000 {'success': 4429, 'scheduled': 5520, 'queued': 44, 'running': 8} {} sched_rss=103.4MB tasks=5 avail=1440MB
+[ 1475.1s] mapped=10000 {'success': 4475, 'scheduled': 5472, 'queued': 46, 'running': 8} {} sched_rss=132.9MB tasks=8 avail=1262MB
+[ 1490.7s] mapped=10000 {'success': 4523, 'scheduled': 5424, 'queued': 46, 'running': 8} {} sched_rss=69.1MB tasks=7 avail=1248MB
+[ 1506.5s] mapped=10000 {'success': 4576, 'scheduled': 5376, 'queued': 44, 'running': 5} {} sched_rss=131.1MB tasks=7 avail=1460MB
+[ 1522.0s] mapped=10000 {'success': 4620, 'scheduled': 5328, 'queued': 46, 'running': 7} {} sched_rss=179.7MB tasks=8 avail=1257MB
+[ 1537.5s] mapped=10000 {'success': 4667, 'scheduled': 5280, 'queued': 46, 'running': 8} {} sched_rss=208.3MB tasks=8 avail=1238MB
+[ 1553.2s] mapped=10000 {'success': 4715, 'scheduled': 5240, 'queued': 38, 'running': 8} {} sched_rss=245.5MB tasks=8 avail=1434MB
+[ 1568.7s] mapped=10000 {'success': 4763, 'scheduled': 5192, 'queued': 38, 'running': 8} {} sched_rss=227.0MB tasks=8 avail=1488MB
+[ 1584.2s] mapped=10000 {'success': 4811, 'scheduled': 5144, 'queued': 38, 'running': 8} {} sched_rss=149.0MB tasks=8 avail=1552MB
+[ 1599.7s] mapped=10000 {'success': 4859, 'scheduled': 5096, 'queued': 38, 'running': 8} {} sched_rss=217.0MB tasks=8 avail=1535MB
+[ 1615.2s] mapped=10000 {'success': 4906, 'scheduled': 5048, 'queued': 43, 'running': 4} {} sched_rss=163.1MB tasks=4 avail=1597MB
+[ 1630.7s] mapped=10000 {'success': 4953, 'scheduled': 5000, 'queued': 41, 'running': 7} {} sched_rss=190.5MB tasks=5 avail=1549MB
+[ 1646.2s] mapped=10000 {'success': 5003, 'scheduled': 4952, 'queued': 38, 'running': 8} {} sched_rss=207.1MB tasks=8 avail=1566MB
+[ 1661.7s] mapped=10000 {'success': 5051, 'scheduled': 4904, 'queued': 38, 'running': 8} {} sched_rss=222.5MB tasks=8 avail=1529MB
+[ 1677.1s] mapped=10000 {'success': 5099, 'scheduled': 4856, 'queued': 38, 'running': 8} {} sched_rss=249.8MB tasks=8 avail=1580MB
+[ 1692.6s] mapped=10000 {'success': 5147, 'scheduled': 4808, 'queued': 38, 'running': 8} {} sched_rss=223.9MB tasks=8 avail=1496MB
+[ 1708.1s] mapped=10000 {'success': 5191, 'scheduled': 4760, 'queued': 44, 'running': 6} {} sched_rss=122.9MB tasks=6 avail=1448MB
+[ 1723.6s] mapped=10000 {'success': 5243, 'scheduled': 4712, 'queued': 39, 'running': 7} {} sched_rss=148.7MB tasks=7 avail=1563MB
+[ 1739.0s] mapped=10000 {'success': 5291, 'scheduled': 4664, 'queued': 38, 'running': 8} {} sched_rss=216.7MB tasks=8 avail=1533MB
+[ 1754.5s] mapped=10000 {'success': 5335, 'scheduled': 4616, 'queued': 44, 'running': 6} {} sched_rss=117.3MB tasks=8 avail=1426MB
+[ 1770.1s] mapped=10000 {'success': 5382, 'scheduled': 4568, 'queued': 45, 'running': 6} {} sched_rss=144.2MB tasks=8 avail=1401MB
+[ 1785.6s] mapped=10000 {'success': 5433, 'scheduled': 4520, 'queued': 42, 'running': 6} {} sched_rss=132.0MB tasks=7 avail=1582MB
+[ 1801.0s] mapped=10000 {'success': 5483, 'scheduled': 4472, 'queued': 38, 'running': 8} {} sched_rss=215.6MB tasks=8 avail=1546MB
+[ 1816.6s] mapped=10000 {'success': 5531, 'scheduled': 4424, 'queued': 38, 'running': 8} {} sched_rss=223.3MB tasks=8 avail=1491MB
+[ 1832.0s] mapped=10000 {'success': 5579, 'scheduled': 4376, 'queued': 38, 'running': 8} {} sched_rss=147.2MB tasks=8 avail=1500MB
+[ 1847.6s] mapped=10000 {'success': 5627, 'scheduled': 4328, 'queued': 38, 'running': 8} {} sched_rss=232.3MB tasks=8 avail=1509MB
+[ 1863.1s] mapped=10000 {'success': 5675, 'scheduled': 4280, 'queued': 38, 'running': 8} {} sched_rss=240.7MB tasks=8 avail=1556MB
+[ 1878.5s] mapped=10000 {'success': 5723, 'scheduled': 4232, 'queued': 38, 'running': 8} {} sched_rss=228.5MB tasks=8 avail=1555MB
+[ 1894.0s] mapped=10000 {'success': 5771, 'scheduled': 4184, 'queued': 38, 'running': 8} {} sched_rss=231.5MB tasks=8 avail=1490MB
+[ 1909.5s] mapped=10000 {'success': 5819, 'scheduled': 4136, 'queued': 38, 'running': 8} {} sched_rss=215.3MB tasks=8 avail=1573MB
+[ 1925.0s] mapped=10000 {'success': 5862, 'scheduled': 4088, 'queued': 43, 'running': 8} {} sched_rss=115.7MB tasks=8 avail=1387MB
+[ 1940.6s] mapped=10000 {'success': 5907, 'scheduled': 4048, 'queued': 38, 'running': 8} {} sched_rss=240.7MB tasks=8 avail=1345MB
+[ 1956.0s] mapped=10000 {'success': 5955, 'scheduled': 4000, 'queued': 38, 'running': 8} {} sched_rss=243.9MB tasks=8 avail=1390MB
+[ 1971.5s] mapped=10000 {'success': 6003, 'scheduled': 3952, 'queued': 38, 'running': 8} {} sched_rss=235.2MB tasks=8 avail=1507MB
+[ 1987.0s] mapped=10000 {'success': 6051, 'scheduled': 3904, 'queued': 38, 'running': 8} {} sched_rss=172.9MB tasks=8 avail=1559MB
+[ 2002.5s] mapped=10000 {'success': 6091, 'scheduled': 3856, 'queued': 46, 'running': 8} {} sched_rss=22.6MB tasks=8 avail=1197MB
+[ 2018.1s] mapped=10000 {'success': 6139, 'scheduled': 3808, 'queued': 46, 'running': 8} {} sched_rss=108.2MB tasks=8 avail=1308MB
+[ 2033.5s] mapped=10000 {'success': 6188, 'scheduled': 3760, 'queued': 45, 'running': 8} {} sched_rss=107.4MB tasks=8 avail=1341MB
+[ 2049.0s] mapped=10000 {'success': 6236, 'scheduled': 3712, 'queued': 45, 'running': 8} {} sched_rss=216.7MB tasks=8 avail=1358MB
+[ 2064.6s] mapped=10000 {'success': 6284, 'scheduled': 3664, 'queued': 46, 'running': 7} {} sched_rss=201.7MB tasks=9 avail=1278MB
+[ 2080.1s] mapped=10000 {'success': 6333, 'scheduled': 3616, 'queued': 44, 'running': 8} {} sched_rss=88.1MB tasks=8 avail=1348MB
+[ 2095.7s] mapped=10000 {'success': 6382, 'scheduled': 3568, 'queued': 44, 'running': 7} {} sched_rss=94.6MB tasks=7 avail=1370MB
+[ 2111.2s] mapped=10000 {'success': 6435, 'scheduled': 3520, 'queued': 38, 'running': 8} {} sched_rss=153.0MB tasks=8 avail=1594MB
+[ 2126.7s] mapped=10000 {'success': 6482, 'scheduled': 3472, 'queued': 41, 'running': 6} {} sched_rss=75.4MB tasks=5 avail=1606MB
+[ 2142.4s] mapped=10000 {'success': 6530, 'scheduled': 3424, 'queued': 45, 'running': 2} {} sched_rss=105.8MB tasks=6 avail=1654MB
+[ 2158.0s] mapped=10000 {'success': 6571, 'scheduled': 3376, 'queued': 46, 'running': 8} {} sched_rss=105.2MB tasks=8 avail=1244MB
+[ 2173.5s] mapped=10000 {'success': 6619, 'scheduled': 3328, 'queued': 46, 'running': 8} {} sched_rss=110.7MB tasks=8 avail=1235MB
+[ 2189.0s] mapped=10000 {'success': 6667, 'scheduled': 3280, 'queued': 46, 'running': 8} {} sched_rss=137.0MB tasks=8 avail=1303MB
+[ 2204.4s] mapped=10000 {'success': 6715, 'scheduled': 3240, 'queued': 38, 'running': 8} {} sched_rss=251.7MB tasks=8 avail=1314MB
+[ 2219.9s] mapped=10000 {'success': 6763, 'scheduled': 3192, 'queued': 38, 'running': 8} {} sched_rss=252.2MB tasks=8 avail=1410MB
+[ 2235.4s] mapped=10000 {'success': 6811, 'scheduled': 3144, 'queued': 38, 'running': 8} {} sched_rss=259.5MB tasks=8 avail=1391MB
+[ 2251.1s] mapped=10000 {'success': 6859, 'scheduled': 3096, 'queued': 38, 'running': 8} {} sched_rss=259.3MB tasks=8 avail=1325MB
+[ 2266.6s] mapped=10000 {'success': 6907, 'scheduled': 3048, 'queued': 38, 'running': 8} {} sched_rss=242.5MB tasks=8 avail=1388MB
+[ 2282.1s] mapped=10000 {'success': 6955, 'scheduled': 3000, 'queued': 38, 'running': 8} {} sched_rss=239.8MB tasks=8 avail=1477MB
+[ 2297.5s] mapped=10000 {'success': 7003, 'scheduled': 2952, 'queued': 38, 'running': 8} {} sched_rss=255.1MB tasks=8 avail=1427MB
+[ 2313.0s] mapped=10000 {'success': 7051, 'scheduled': 2904, 'queued': 38, 'running': 8} {} sched_rss=239.6MB tasks=8 avail=1477MB
+[ 2328.5s] mapped=10000 {'success': 7099, 'scheduled': 2856, 'queued': 38, 'running': 8} {} sched_rss=244.9MB tasks=8 avail=1394MB
+[ 2344.0s] mapped=10000 {'success': 7147, 'scheduled': 2808, 'queued': 38, 'running': 8} {} sched_rss=240.6MB tasks=8 avail=1409MB
+[ 2359.6s] mapped=10000 {'success': 7195, 'scheduled': 2760, 'queued': 38, 'running': 8} {} sched_rss=237.6MB tasks=8 avail=1427MB
+[ 2375.2s] mapped=10000 {'success': 7243, 'scheduled': 2712, 'queued': 38, 'running': 8} {} sched_rss=239.7MB tasks=8 avail=1481MB
+[ 2390.7s] mapped=10000 {'success': 7291, 'scheduled': 2664, 'queued': 38, 'running': 8} {} sched_rss=241.8MB tasks=8 avail=1425MB
+[ 2406.2s] mapped=10000 {'success': 7339, 'scheduled': 2616, 'queued': 38, 'running': 8} {} sched_rss=239.0MB tasks=8 avail=1450MB
+[ 2421.8s] mapped=10000 {'success': 7387, 'scheduled': 2568, 'queued': 38, 'running': 8} {} sched_rss=245.5MB tasks=8 avail=1346MB
+[ 2437.3s] mapped=10000 {'success': 7435, 'scheduled': 2520, 'queued': 38, 'running': 8} {} sched_rss=244.2MB tasks=8 avail=1463MB
+[ 2452.9s] mapped=10000 {'success': 7483, 'scheduled': 2472, 'queued': 38, 'running': 8} {} sched_rss=231.3MB tasks=8 avail=1492MB
+[ 2468.4s] mapped=10000 {'success': 7531, 'scheduled': 2424, 'queued': 38, 'running': 8} {} sched_rss=201.2MB tasks=8 avail=1489MB
+[ 2484.0s] mapped=10000 {'success': 7579, 'scheduled': 2376, 'queued': 38, 'running': 8} {} sched_rss=193.0MB tasks=8 avail=1468MB
+[ 2499.4s] mapped=10000 {'success': 7626, 'scheduled': 2328, 'queued': 40, 'running': 7} {} sched_rss=132.7MB tasks=8 avail=1577MB
+[ 2515.0s] mapped=10000 {'success': 7667, 'scheduled': 2280, 'queued': 46, 'running': 8} {} sched_rss=82.6MB tasks=7 avail=1245MB
+[ 2530.5s] mapped=10000 {'success': 7715, 'scheduled': 2240, 'queued': 38, 'running': 8} {} sched_rss=265.9MB tasks=8 avail=1350MB
+[ 2545.9s] mapped=10000 {'success': 7763, 'scheduled': 2184, 'queued': 46, 'running': 8} {} sched_rss=233.1MB tasks=8 avail=1321MB
+[ 2561.4s] mapped=10000 {'success': 7811, 'scheduled': 2136, 'queued': 46, 'running': 8} {} sched_rss=77.5MB tasks=8 avail=1357MB
+[ 2576.8s] mapped=10000 {'success': 7859, 'scheduled': 2088, 'queued': 46, 'running': 8} {} sched_rss=189.4MB tasks=8 avail=1323MB
+[ 2592.3s] mapped=10000 {'success': 7907, 'scheduled': 2040, 'queued': 46, 'running': 8} {} sched_rss=159.6MB tasks=8 avail=1405MB
+[ 2607.8s] mapped=10000 {'success': 7955, 'scheduled': 2000, 'queued': 38, 'running': 8} {} sched_rss=240.4MB tasks=8 avail=1256MB
+[ 2623.4s] mapped=10000 {'success': 8003, 'scheduled': 1952, 'queued': 38, 'running': 8} {} sched_rss=239.0MB tasks=8 avail=1234MB
+[ 2639.0s] mapped=10000 {'success': 8051, 'scheduled': 1896, 'queued': 46, 'running': 8} {} sched_rss=196.8MB tasks=8 avail=1293MB
+[ 2654.5s] mapped=10000 {'success': 8099, 'scheduled': 1848, 'queued': 46, 'running': 8} {} sched_rss=71.6MB tasks=8 avail=1267MB
+[ 2670.1s] mapped=10000 {'success': 8147, 'scheduled': 1800, 'queued': 46, 'running': 8} {} sched_rss=70.0MB tasks=7 avail=1314MB
+[ 2685.6s] mapped=10000 {'success': 8197, 'scheduled': 1752, 'queued': 44, 'running': 8} {} sched_rss=118.7MB tasks=7 avail=1380MB
+[ 2701.1s] mapped=10000 {'success': 8251, 'scheduled': 1704, 'queued': 38, 'running': 8} {} sched_rss=152.5MB tasks=8 avail=1574MB
+[ 2716.6s] mapped=10000 {'success': 8299, 'scheduled': 1656, 'queued': 38, 'running': 8} {} sched_rss=196.5MB tasks=8 avail=1520MB
+[ 2732.1s] mapped=10000 {'success': 8347, 'scheduled': 1608, 'queued': 39, 'running': 7} {} sched_rss=103.6MB tasks=8 avail=1535MB
+[ 2747.7s] mapped=10000 {'success': 8395, 'scheduled': 1560, 'queued': 38, 'running': 8} {} sched_rss=230.2MB tasks=8 avail=1474MB
+[ 2763.2s] mapped=10000 {'success': 8443, 'scheduled': 1512, 'queued': 38, 'running': 8} {} sched_rss=244.0MB tasks=8 avail=1493MB
+[ 2778.8s] mapped=10000 {'success': 8491, 'scheduled': 1464, 'queued': 38, 'running': 8} {} sched_rss=258.9MB tasks=8 avail=1394MB
+[ 2794.2s] mapped=10000 {'success': 8539, 'scheduled': 1416, 'queued': 38, 'running': 8} {} sched_rss=257.0MB tasks=8 avail=1307MB
+[ 2809.7s] mapped=10000 {'success': 8587, 'scheduled': 1360, 'queued': 46, 'running': 8} {} sched_rss=113.8MB tasks=8 avail=1235MB
+[ 2825.3s] mapped=10000 {'success': 8643, 'scheduled': 1312, 'queued': 39, 'running': 7} {} sched_rss=192.5MB tasks=8 avail=1618MB
+[ 2840.8s] mapped=10000 {'success': 8691, 'scheduled': 1264, 'queued': 38, 'running': 8} {} sched_rss=241.6MB tasks=8 avail=1479MB
+[ 2856.3s] mapped=10000 {'success': 8739, 'scheduled': 1216, 'queued': 38, 'running': 8} {} sched_rss=238.5MB tasks=8 avail=1469MB
+[ 2871.7s] mapped=10000 {'success': 8787, 'scheduled': 1168, 'queued': 38, 'running': 8} {} sched_rss=245.1MB tasks=8 avail=1379MB
+[ 2887.3s] mapped=10000 {'success': 8835, 'scheduled': 1120, 'queued': 38, 'running': 8} {} sched_rss=261.2MB tasks=8 avail=1326MB
+[ 2902.8s] mapped=10000 {'success': 8883, 'scheduled': 1072, 'queued': 38, 'running': 8} {} sched_rss=237.5MB tasks=8 avail=1247MB
+[ 2918.3s] mapped=10000 {'success': 8931, 'scheduled': 1016, 'queued': 46, 'running': 8} {} sched_rss=134.6MB tasks=8 avail=1315MB
+[ 2933.8s] mapped=10000 {'success': 8979, 'scheduled': 968, 'queued': 46, 'running': 8} {} sched_rss=94.0MB tasks=6 avail=1356MB
+[ 2949.3s] mapped=10000 {'success': 9035, 'scheduled': 920, 'queued': 38, 'running': 8} {} sched_rss=250.7MB tasks=8 avail=1561MB
+[ 2964.9s] mapped=10000 {'success': 9083, 'scheduled': 872, 'queued': 38, 'running': 8} {} sched_rss=237.7MB tasks=8 avail=1458MB
+[ 2980.4s] mapped=10000 {'success': 9131, 'scheduled': 824, 'queued': 38, 'running': 8} {} sched_rss=257.9MB tasks=8 avail=1338MB
+[ 2995.9s] mapped=10000 {'success': 9179, 'scheduled': 768, 'queued': 46, 'running': 8} {} sched_rss=55.1MB tasks=8 avail=1260MB
+[ 3011.5s] mapped=10000 {'success': 9235, 'scheduled': 720, 'queued': 38, 'running': 8} {} sched_rss=198.1MB tasks=8 avail=1523MB
+[ 3027.3s] mapped=10000 {'success': 9283, 'scheduled': 672, 'queued': 38, 'running': 8} {} sched_rss=240.0MB tasks=8 avail=1447MB
+[ 3042.7s] mapped=10000 {'success': 9331, 'scheduled': 624, 'queued': 38, 'running': 8} {} sched_rss=266.5MB tasks=8 avail=1374MB
+[ 3058.3s] mapped=10000 {'success': 9379, 'scheduled': 576, 'queued': 38, 'running': 8} {} sched_rss=244.7MB tasks=8 avail=1260MB
+[ 3073.8s] mapped=10000 {'success': 9427, 'scheduled': 520, 'queued': 46, 'running': 8} {} sched_rss=64.0MB tasks=8 avail=1234MB
+[ 3089.3s] mapped=10000 {'success': 9483, 'scheduled': 472, 'queued': 39, 'running': 7} {} sched_rss=125.8MB tasks=7 avail=1604MB
+[ 3104.8s] mapped=10000 {'success': 9531, 'scheduled': 424, 'queued': 38, 'running': 8} {} sched_rss=240.9MB tasks=8 avail=1459MB
+[ 3120.3s] mapped=10000 {'success': 9579, 'scheduled': 376, 'queued': 38, 'running': 8} {} sched_rss=238.2MB tasks=8 avail=1440MB
+[ 3135.9s] mapped=10000 {'success': 9627, 'scheduled': 328, 'queued': 38, 'running': 8} {} sched_rss=238.0MB tasks=8 avail=1448MB
+[ 3151.4s] mapped=10000 {'success': 9675, 'scheduled': 280, 'queued': 38, 'running': 8} {} sched_rss=267.7MB tasks=8 avail=1314MB
+[ 3167.0s] mapped=10000 {'success': 9724, 'scheduled': 224, 'queued': 46, 'running': 7} {} sched_rss=84.2MB tasks=7 avail=1293MB
+[ 3182.6s] mapped=10000 {'success': 9779, 'scheduled': 176, 'queued': 38, 'running': 8} {} sched_rss=247.3MB tasks=8 avail=1475MB
+[ 3198.1s] mapped=10000 {'success': 9827, 'scheduled': 128, 'queued': 38, 'running': 8} {} sched_rss=263.4MB tasks=8 avail=1384MB
+[ 3213.6s] mapped=10000 {'success': 9875, 'scheduled': 72, 'queued': 46, 'running': 8} {} sched_rss=255.5MB tasks=8 avail=1311MB
+[ 3229.2s] mapped=10000 {'success': 9925, 'scheduled': 24, 'queued': 46, 'running': 6} {} sched_rss=67.1MB tasks=8 avail=1307MB
+[ 3244.8s] mapped=10000 {'success': 9979, 'queued': 14, 'running': 8} {} sched_rss=223.2MB tasks=8 avail=1563MB
+{
+  "label": "flat_python_10k",
+  "dag_id": "bench_flat_python",
+  "run_id": "flat_python_10k_1790729363",
+  "expected": 10000,
+  "t0": "2026-09-30T00:49:23.265048+00:00",
+  "t_expanded_s": 103.9,
+  "t_first_success_s": 3.0,
+  "t_done_s": 3254.2,
+  "timed_out": false,
+  "peak_scheduler_rss_mb": 297.9,
+  "peak_task_rss_mb": 962.2,
+  "peak_task_n": 9,
+  "min_sys_avail_mb": 1197,
+  "exec_throughput_tis_per_s": 3.17,
+  "dagrun_state": "success",
+  "dagrun_start": "2026-09-30T00:49:23.263267+00:00",
+  "dagrun_end": "2026-09-30T01:43:36.478418+00:00",
+  "dagrun_duration_s": 3253.2
+}
+GET dagRun                                    200     674.9 ms        887 B
+GET taskInstances?limit=100                   200     112.0 ms     119759 B
+GET taskInstances?limit=100&offset=90000      200     133.9 ms        112 B
+GET mapped TI point lookup (idx 999)          200       9.8 ms       1197 B
+GET listMapped?limit=50                       200      86.1 ms      59935 B
+GET listMapped?state=failed                   200      19.3 ms        108 B
+GET ui/grid/structure                         200      15.4 ms         90 B
+GET ui/grid/runs                              200      16.7 ms       1127 B
+GET ui/grid/ti_summaries                      200       2.3 ms        588 B
+GET dags list                                 200      15.5 ms      10087 B
+--- heartbeat gaps ---
+Heartbeat recovered after 103.98 seconds
+--- xcom GET traffic during flat_python_10k (bytes) ---
+   11000
+===== batched 100k = 100 x 1000 01:43:38 =====
+triggered bench_batched batched_100k_100x1000_1790732619 {'n': 100000, 'batch_size': 1000}
+[    0.0s] mapped=0 {'none': 2} {} sched_rss=266.2MB tasks=0 avail=1557MB
+[   16.7s] mapped=100 {'queued': 48, 'running': 8, 'scheduled': 4, 'success': 41} {} sched_rss=83.4MB tasks=8 avail=1394MB
+[   33.4s] mapped=100 {'queued': 7, 'running': 7, 'success': 87} {} sched_rss=74.6MB tasks=8 avail=1237MB
+{
+  "label": "batched_100k_100x1000",
+  "dag_id": "bench_batched",
+  "run_id": "batched_100k_100x1000_1790732619",
+  "expected": 100,
+  "t0": "2026-09-30T01:43:39.152426+00:00",
+  "t_expanded_s": 4.1,
+  "t_first_success_s": 2.1,
+  "t_done_s": 37.7,
+  "timed_out": false,
+  "peak_scheduler_rss_mb": 266.2,
+  "peak_task_rss_mb": 871.4,
+  "peak_task_n": 8,
+  "min_sys_avail_mb": 1196,
+  "exec_throughput_tis_per_s": 3.01,
+  "dagrun_state": "success",
+  "dagrun_start": "2026-09-30T01:43:39.204363+00:00",
+  "dagrun_end": "2026-09-30T01:44:16.409868+00:00",
+  "dagrun_duration_s": 37.2
+}
+GET dagRun                                    200      30.4 ms        894 B
+GET taskInstances?limit=100                   200      70.4 ms     523082 B
+GET taskInstances?limit=100&offset=90000      200      36.3 ms        110 B
+GET mapped TI point lookup (idx 999)          404       8.4 ms        172 B
+GET listMapped?limit=50                       200      31.8 ms     263637 B
+GET listMapped?state=failed                   200      22.2 ms        108 B
+GET ui/grid/structure                         200      15.1 ms        110 B
+GET ui/grid/runs                              200      16.2 ms        557 B
+GET ui/grid/ti_summaries                      200       3.0 ms        588 B
+GET dags list                                 200      21.7 ms      10084 B
+--- heartbeat gaps ---
+Heartbeat recovered after 103.98 seconds
+===== two_level 100k = 100 child runs x 1000 (empty) 01:44:17 =====
+triggered bench_two_level_parent two_level_100k_empty_1790732657 {'n': 100000, 'batch_size': 1000, 'child_mode': 'empty'}
+[    0.0s] mapped=0 {'none': 2} {} sched_rss=83.9MB tasks=0 avail=1490MB
+[   15.4s] mapped=100 {'queued': 8, 'running': 8, 'scheduled': 44, 'success': 41} {} sched_rss=84.6MB tasks=8 avail=1383MB
+[   30.9s] mapped=100 {'queued': 2, 'scheduled': 42, 'success': 57} {} sched_rss=150.0MB tasks=8 avail=1513MB
+[   46.4s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=150.3MB tasks=8 avail=1430MB
+[   61.7s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=177.0MB tasks=0 avail=1404MB
+[   77.1s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=173.9MB tasks=0 avail=1236MB
+[   92.4s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=173.5MB tasks=0 avail=1271MB
+[  107.6s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=69.2MB tasks=0 avail=1244MB
+[  122.9s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=175.4MB tasks=0 avail=1606MB
+[  138.2s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=178.2MB tasks=0 avail=1553MB
+[  153.5s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=178.2MB tasks=0 avail=1371MB
+[  168.7s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=179.5MB tasks=0 avail=1377MB
+[  184.0s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=174.1MB tasks=0 avail=1383MB
+[  199.3s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=78.8MB tasks=0 avail=1309MB
+[  214.6s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=176.7MB tasks=0 avail=1299MB
+[  229.9s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=157.9MB tasks=0 avail=1269MB
+[  245.2s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=173.1MB tasks=0 avail=1344MB
+[  260.5s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=176.8MB tasks=0 avail=1338MB
+[  275.7s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=177.4MB tasks=0 avail=1294MB
+[  291.0s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=176.5MB tasks=0 avail=1322MB
+[  306.3s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=179.0MB tasks=0 avail=1318MB
+[  321.6s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=176.0MB tasks=0 avail=1291MB
+[  336.9s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=177.9MB tasks=0 avail=1219MB
+[  352.2s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=176.7MB tasks=0 avail=1241MB
+[  367.5s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=178.5MB tasks=0 avail=1263MB
+[  382.7s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=92.5MB tasks=0 avail=1221MB
+[  398.0s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=172.6MB tasks=0 avail=1268MB
+[  413.2s] mapped=100 {'scheduled': 42, 'success': 59} {} sched_rss=177.6MB tasks=0 avail=1269MB
+[  428.5s] mapped=100 {'none': 2, 'scheduled': 40, 'success': 59} {} sched_rss=172.5MB tasks=0 avail=1560MB
+[  443.8s] mapped=100 {'none': 2, 'scheduled': 40, 'success': 59} {} sched_rss=179.5MB tasks=0 avail=1604MB
+[  459.1s] mapped=100 {'none': 2, 'scheduled': 40, 'success': 59} {} sched_rss=166.8MB tasks=0 avail=1363MB
+[  474.4s] mapped=100 {'queued': 2, 'running': 6, 'scheduled': 16, 'success': 77} {} sched_rss=84.5MB tasks=7 avail=1523MB
+[  489.7s] mapped=100 {'scheduled': 16, 'success': 85} {} sched_rss=179.2MB tasks=0 avail=1646MB
+[  505.0s] mapped=100 {'scheduled': 16, 'success': 85} {} sched_rss=179.3MB tasks=0 avail=1499MB
+[  520.4s] mapped=100 {'scheduled': 8, 'success': 93} {} sched_rss=77.0MB tasks=8 avail=1242MB
+[  535.9s] mapped=100 {'scheduled': 8, 'success': 93} {} sched_rss=175.3MB tasks=0 avail=1561MB
+[  551.1s] mapped=100 {'scheduled': 8, 'success': 93} {} sched_rss=179.5MB tasks=0 avail=1654MB
+[  566.4s] mapped=100 {'scheduled': 8, 'success': 93} {} sched_rss=180.6MB tasks=0 avail=1656MB
+[  581.7s] mapped=100 {'scheduled': 8, 'success': 93} {} sched_rss=180.0MB tasks=0 avail=1538MB
+[  597.0s] mapped=100 {'scheduled': 8, 'success': 93} {} sched_rss=180.3MB tasks=0 avail=1539MB
+[  612.3s] mapped=100 {'scheduled': 8, 'success': 93} {} sched_rss=180.1MB tasks=0 avail=1530MB
+[  627.6s] mapped=100 {'scheduled': 8, 'success': 93} {} sched_rss=181.7MB tasks=0 avail=1441MB
+[  642.9s] mapped=100 {'scheduled': 8, 'success': 93} {} sched_rss=102.4MB tasks=0 avail=1368MB
+[  658.2s] mapped=100 {'scheduled': 8, 'success': 93} {} sched_rss=173.2MB tasks=0 avail=1418MB
+[  673.4s] mapped=100 {'scheduled': 8, 'success': 93} {} sched_rss=178.6MB tasks=0 avail=1358MB
+[  688.7s] mapped=100 {'scheduled': 8, 'success': 93} {} sched_rss=179.5MB tasks=0 avail=1398MB
+[  704.0s] mapped=100 {'scheduled': 8, 'success': 93} {} sched_rss=174.1MB tasks=0 avail=1396MB
+[  719.3s] mapped=100 {'scheduled': 8, 'success': 93} {} sched_rss=176.4MB tasks=0 avail=1395MB
+[  734.6s] mapped=100 {'none': 4, 'scheduled': 4, 'success': 93} {} sched_rss=158.6MB tasks=0 avail=1284MB
+[  749.9s] mapped=100 {'none': 4, 'scheduled': 4, 'success': 93} {} sched_rss=179.2MB tasks=0 avail=1307MB
+[  765.2s] mapped=100 {'success': 101} {} sched_rss=178.3MB tasks=0 avail=1605MB
+[  780.5s] mapped=100 {'success': 101} {} sched_rss=179.5MB tasks=0 avail=1640MB
+{
+  "label": "two_level_100k_empty",
+  "dag_id": "bench_two_level_parent",
+  "run_id": "two_level_100k_empty_1790732657",
+  "expected": 100,
+  "t0": "2026-09-30T01:44:17.404275+00:00",
+  "t_expanded_s": 3.1,
+  "t_first_success_s": 3.1,
+  "t_done_s": 792.7,
+  "timed_out": false,
+  "peak_scheduler_rss_mb": 183.7,
+  "peak_task_rss_mb": 961.3,
+  "peak_task_n": 8,
+  "min_sys_avail_mb": 1196,
+  "exec_throughput_tis_per_s": 0.13,
+  "dagrun_state": "success",
+  "dagrun_start": "2026-09-30T01:44:17.579403+00:00",
+  "dagrun_end": "2026-09-30T01:57:27.889472+00:00",
+  "dagrun_duration_s": 790.3
+}
+--- child run states ---
+running|8
+success|92
+2026-09-30 01:44:22.599576+00|2026-09-30 01:57:28.552786+00|00:13:05.95321|100
+--- heartbeat gaps ---
+Heartbeat recovered after 31.46 seconds
+Heartbeat recovered after 32.07 seconds
+===== run_per_account 10k 01:57:30 =====
+bulk trigger: {'n': 10000, 'concurrency': 32, 'trigger_wall_s': 61.5, 'trigger_rate_per_s': 162.6, 'errors': 0, 'p50_ms': 187.0, 'p99_ms': 560.7}
+[    0.0s] mapped=10000 {'none': 7502, 'success': 2498} {} sched_rss=72.8MB tasks=0 avail=1336MB
+[   15.3s] mapped=10000 {'success': 3298, 'none': 6702} {} sched_rss=70.5MB tasks=0 avail=1372MB
+[   30.6s] mapped=10000 {'success': 4098, 'none': 5902} {} sched_rss=71.2MB tasks=0 avail=1368MB
+[   45.9s] mapped=10000 {'success': 5098, 'none': 4902} {} sched_rss=77.8MB tasks=0 avail=1337MB
+[   61.2s] mapped=10000 {'success': 5898, 'none': 4102} {} sched_rss=156.6MB tasks=0 avail=1333MB
+[   76.5s] mapped=10000 {'success': 6698, 'none': 3302} {} sched_rss=69.8MB tasks=0 avail=1274MB
+[   91.9s] mapped=10000 {'success': 7698, 'none': 2302} {} sched_rss=70.5MB tasks=0 avail=1250MB
+[  107.3s] mapped=10000 {'success': 8298, 'none': 1702} {} sched_rss=156.5MB tasks=0 avail=1294MB
+[  122.7s] mapped=10000 {'success': 9298, 'none': 702} {} sched_rss=73.5MB tasks=0 avail=1329MB
+[  138.0s] mapped=10000 {'success': 10000} {} sched_rss=155.6MB tasks=0 avail=1301MB
+[  153.4s] mapped=10000 {'success': 10000} {} sched_rss=180.4MB tasks=0 avail=1249MB
+[  168.7s] mapped=10000 {'success': 10000} {} sched_rss=68.6MB tasks=0 avail=1278MB
+[  184.1s] mapped=10000 {'success': 10000} {} sched_rss=71.9MB tasks=0 avail=1292MB
+[  199.4s] mapped=10000 {'success': 10000} {} sched_rss=68.4MB tasks=0 avail=1271MB
+[  214.7s] mapped=10000 {'success': 10000} {} sched_rss=68.2MB tasks=0 avail=1261MB
+[  230.0s] mapped=10000 {'success': 10000} {} sched_rss=69.5MB tasks=0 avail=1273MB
+[  245.4s] mapped=10000 {'success': 10000} {} sched_rss=154.3MB tasks=0 avail=1299MB
+[  260.7s] mapped=10000 {'success': 10000} {} sched_rss=68.9MB tasks=0 avail=1239MB
+[  276.1s] mapped=10000 {'success': 10000} {} sched_rss=67.4MB tasks=0 avail=1251MB
+[  291.5s] mapped=10000 {'success': 10000} {} sched_rss=68.6MB tasks=0 avail=1222MB
+[  306.9s] mapped=10000 {'success': 10000} {} sched_rss=71.1MB tasks=0 avail=1263MB
+[  322.3s] mapped=10000 {'success': 10000} {} sched_rss=145.7MB tasks=0 avail=1227MB
+[  337.6s] mapped=10000 {'success': 10000} {} sched_rss=68.2MB tasks=0 avail=1258MB
+[  352.9s] mapped=10000 {'success': 10000} {} sched_rss=67.6MB tasks=0 avail=1305MB
+[  368.2s] mapped=10000 {'success': 10000} {} sched_rss=66.6MB tasks=0 avail=1308MB
+{
+  "label": "rpa_10k",
+  "dag_id": "bench_run_per_account",
+  "run_id": null,
+  "expected": 10000,
+  "t0": "2026-09-30T01:58:32.732305+00:00",
+  "t_expanded_s": 0.0,
+  "t_first_success_s": 0.0,
+  "t_done_s": 377.5,
+  "timed_out": false,
+  "peak_scheduler_rss_mb": 180.7,
+  "peak_task_rss_mb": 0.0,
+  "peak_task_n": 0,
+  "min_sys_avail_mb": 1205,
+  "exec_throughput_tis_per_s": 26.49
+}
+--- heartbeat gaps ---
+Heartbeat recovered after 32.07 seconds
+Heartbeat recovered after 32.44 seconds
+===== PHASE2B DONE 02:04:50 =====
+| label | dag | N | expand_s | done_s | run_dur_s | state | success | failed | tis/s | sched_peak_MB | task_peak_MB | task_n_peak | min_avail_MB | ti_tbl_MB | xcom_MB | rtif_MB | db_MB | trig_rate/s | trig_p99_ms | api_list100_ms | grid_summ_ms | grid_runs_ms |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| batched_100k_100x1000 | bench_batched | 100 | 4.1 | 37.7 | 37.2 | success | 101 | 0 | 3.01 | 266.2 | 871.4 | 8 | 1196 | 220.9 | 1.2 | 3.8 | 308.0 |  |  | 70.4 | 3.0 | 16.2 |
+| flat_empty_10000 | bench_flat_empty | 10000 | 59.9 | 61.0 | 60.4 | success | 10001 | 0 | 9273.42 | 312.9 | 120.7 | 1 | 1200 | 11.2 | 0.1 | 0.0 | 21.4 |  |  | 136.7 | 2.2 | 16.1 |
+| flat_empty_100000 | bench_flat_empty | 100000 | 315.0 | 329.0 | 327.5 | success | 100001 | 0 | 7136.41 | 958.9 | 113.3 | 2 | 1179 | 130.6 | 0.6 | 0.0 | 141.3 |  |  | 313.1 | 6.3 | 63.4 |
+| flat_empty_30000 | bench_flat_empty | 30000 | 113.7 | 117.1 | 115.7 | success | 30001 | 0 | 8853.39 | 554.7 | 94.2 | 1 | 1161 | 38.6 | 0.2 | 0.0 | 49.0 |  |  | 121.2 | 3.5 | 38.2 |
+| flat_python_10k | bench_flat_python | 10000 | 103.9 | 3254.2 | 3253.2 | success | 10001 | 0 | 3.17 | 297.9 | 962.2 | 9 | 1197 | 220.9 | 0.6 | 3.6 | 307.3 |  |  | 112.0 | 2.3 | 16.7 |
+| flat_python_1k | bench_flat_python | 1000 | 10.3 | 297.2 | 295.5 | success | 1001 | 0 | 3.49 | 184.7 | 954.8 | 9 | 1200 | 219.9 | 0.6 | 0.6 | 297.0 |  |  | 66.8 | 4.3 | 20.4 |
+| part_100k_e200 | bench_partition_consumer | 100000 | 1524.3 |  |  | - | 80900 | 0 |  | 155.4 | 132.8 |  | 1156.0 | 242.9 | 1.0 | 0.4 | 415.7 |  |  |  |  |  |
+| part_10k_e1 | bench_partition_consumer | 10000 | 219.4 | 425.9 |  | - | 10000 | 0 | 48.43 | 157.8 | 125.2 | 1 | 1200 | 140.6 | 0.6 | 0.0 | 171.4 |  |  |  |  |  |
+| part_1k_e1 | bench_partition_consumer | 1000 | 22.4 | 41.0 |  | - | 1000 | 0 | 53.91 | 116.2 | 117.3 | 2 | 1207 | 131.1 | 0.6 | 0.0 | 145.0 |  |  |  |  |  |
+| rpa_10k | bench_run_per_account | 10000 | 0.0 | 377.5 |  | - | 10000 | 0 | 26.49 | 180.7 | 0.0 | 0 | 1205 | 255.7 | 2.1 | 3.9 | 354.7 | 162.6 | 560.7 |  |  |  |
+| smoke_flat_empty_1k | bench_flat_empty | 1000 | 12.3 | 12.4 | 12.0 | success | 1001 | 0 | 24571.73 | 190.7 | 94.5 | 1 | 1206 | 1.3 | 0.1 | 0.0 | 11.4 |  |  | 47.6 | 3.8 | 16.7 |
+| two_level_100k_empty | bench_two_level_parent | 100 | 3.1 | 792.7 | 790.3 | success | 101 | 0 | 0.13 | 183.7 | 961.3 | 8 | 1196 | 246.2 | 2.1 | 3.9 | 335.0 |  |  |  |  |  |

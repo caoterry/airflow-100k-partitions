@@ -171,7 +171,18 @@ window, 40,040 still pending, 6,000 in flight — but throughput was only ~1,350
 ~13,000/min. Two experiment-design reasons, not batcher reasons: the one-minute cron with `max_active_runs=2` serialises
 "dispatch → wait for publish to clear the ledger → dispatch" into a ~4-minute cycle, and the downstream per-account
 `rev5_pnl_consumer` was simultaneously creating 54,000 partition runs on the same scheduler (the same load as the 100k
-limit run in the report). A rerun with the downstream consumer paused and `max_active_runs=4` is recorded below.
+limit run in the report). **Rerun in isolation** (downstream consumer paused, `max_active_runs=4`, K = 10): emission of the 100k input events took 6 min
+(20:02–20:08); the batcher then published 84,000 accounts in the next 30 minutes (140 batches of 600, pool queue wait p50 0 s /
+max 7 s), leaving 10,040 pending and 6,000 in flight when the driver's 40-minute window closed — about 2,800 accounts/min
+against a slot capacity of ~13,000/min. This time the limiter was neither the scheduler nor the ledger but the **Execution API
+server**: every `publish` registers 600 partition keys in one task-success request (~5 ms per key, serialized on the asset row
+lock), so 100k keys cost roughly 8–9 minutes of API-server time, and the `claim` task's paged event pulls queued behind those
+requests (claim 1.3 s when the API was idle, 34 s on average and up to 388 s at peak). Per-account lineage through asset
+events therefore has a floor of ~5 ms per key regardless of orchestration shape — the same write path the index PR does not
+change (the lookup was already indexed here) and that the untried "batched key registration" fix (report §7, item 3) targets.
+On MWAA this cost lands on the webserver containers. Practical reading: 100k keys/day ≈ 10 minutes of API time is an acceptable
+daily budget, but not something to spend inside a latency-critical window; emit lineage keys per batch rather than per account
+if the per-account status lives in the ledger anyway.
 
 ## 5b. Airflow prototype (E5) — burst of 60 accounts, then 1 account every 6 s; K = 3, S = 15 s, p = 0.5 s
 

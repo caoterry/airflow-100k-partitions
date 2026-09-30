@@ -47,6 +47,7 @@ bars = [
     ("C  batched 100 × 1000\n(real tasks)", S("batched_100k_100x1000")["t_done_s"], C4),
     ("D  100 child runs × 1000\n(scheduler-only)", 20.4 * 60, C2),
     ("F  native partitions, 100k runs\ncreate only (finish ≈ 3 h)", S("part_100k_e200")["runs_created_s"], C2),
+    ("F' native partitions, 100k runs\nindexes + 2 schedulers, all finished", S("limit_100k_idx_2sched")["t_done_s"], C1),
     ("E  run per account\n(10k measured × 10)", S("rpa_10k")["t_done_s"] * 10, C3),
 ]
 fig, ax = plt.subplots(figsize=(6.6, 3.8))

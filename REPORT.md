@@ -204,6 +204,26 @@ The 100k run (200 emitters × 500 keys, serialized with `max_active_tis_per_dagr
 5. **Scheduler memory stayed flat** (155 MB peak) — unlike dynamic task mapping, the partition path never holds 100k ORM
    objects at once.
 
+### 4.2a The limit with the fixes in place — 100k partition runs in 31 minutes
+
+Same 100k scenario (200 serialized emitters × 500 keys), as-shipped 3.3.2 code, but with the indexes from
+`patches/apdr_index.sql` (the content of the upstream PR branch) present from the start and **two schedulers**:
+
+| milestone | as shipped, 1 scheduler, no index | indexes + 2 schedulers |
+|---|---|---|
+| all 100k keys registered | 1,505 s (emitter requests 3.6 → 7.0 s, retries) | **1,184 s** (5.9 s per 500 keys, no retries) |
+| all 100k runs created | 1,524 s | 1,184 s (creation keeps pace with emission) |
+| all 100k runs **finished** | stopped after 26 min with 3,698 done (≈3 h projected) | **1,860 s = 31 min**, 100,000/100,000 |
+| completion rate once creation stopped | 3–10 runs/s | ~110 runs/s |
+| scheduler peak RSS | 155 MB | 310 MB (per scheduler) |
+
+Milestones (created → finished): 25k at 283 s → 784 s; 50k at 620 s → 1,419 s; 75k at 886 s → 1,664 s; 100k at 1,184 s →
+1,860 s. All seven partition tables again grew by exactly 100,000 rows. The unindexed `asset_partition_dag_run` scans were
+the dominant per-loop cost of the *scheduler* as well as of the write path; with them gone, an account-grain cycle of 100k
+partition runs is a half-hour job on a laptop rather than a multi-hour one, and it splits across schedulers. This is the
+"limit with the upstream index PR merged" number; the remaining ceiling is the emission rate (≤ ~900 keys per task, serialized)
+and per-run scheduler work (~110 runs/s on two schedulers here).
+
 ### 4.2b Two schedulers (HA) — does adding schedulers help?
 
 Same laptop, a second `airflow scheduler` process against the same Postgres (both share 8 cores, so absolute numbers are

@@ -51,6 +51,7 @@ A  flat expand, 100k TIs (scheduler-only)     ███   5.5 min
 C  batched 100 x 1000 (real tasks)            ▏   0.6 min 
 D  100 child runs x 1000 (scheduler-only)     ██████████  20.4 min 
 F  native partitions, create 100k runs        █████████████  25.4 min (finishing them ~3 h more)
+F' native partitions, indexes + 2 schedulers, all done ███████████████  31.0 min 
 E  run per account (10k measured x 10)        ███████████████████████████████  62.9 min (linear extrapolation)
 ```
 

@@ -36,6 +36,7 @@ shapes = [("A  flat expand, 100k TIs (scheduler-only)", S("flat_empty_100000")["
           ("C  batched 100 x 1000 (real tasks)", S("batched_100k_100x1000")["t_done_s"], ""),
           ("D  100 child runs x 1000 (scheduler-only)", 20.4 * 60, ""),
           ("F  native partitions, create 100k runs", S("part_100k_e200")["runs_created_s"], "(finishing them ~3 h more)"),
+          ("F' native partitions, indexes + 2 schedulers, all done", S("limit_100k_idx_2sched")["t_done_s"], ""),
           ("E  run per account (10k measured x 10)", S("rpa_10k")["t_done_s"] * 10, "(linear extrapolation)")]
 out.append("```\n")
 for name, sec, note in shapes: out.append(f"{name:<45} {bar(sec/60, 65, 32)} {sec/60:5.1f} min {note}")

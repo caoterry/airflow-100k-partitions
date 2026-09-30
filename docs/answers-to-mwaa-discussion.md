@@ -180,7 +180,9 @@ Not within intentions at 100k; feasible with care at 10k. Measured on 3.3.2 (det
 | what a 2nd scheduler buys | measured with two schedulers on one box | partition-run creation and completion ≈ 2× faster (`SKIP LOCKED` splits the work); a large `expand()` gets *slower* (contention) but only blocks the scheduler that owns the run |
 
 At 10k/day with emitters serialized and ≤ 900 keys each, an APDR index (self-hosted only), `max_active_runs` raised and
-retention in place, the partition path works; 100k/day needs the upstream fixes in the report's §7.
+retention in place, the partition path works. **With the index in place and two schedulers, 100k account-level partition runs
+were created and finished in 31 minutes on a laptop** (report §4.2a) — so 100k/day is within reach once the index/cleanup PR
+ships in a release the platform offers; until then it is a self-hosted-only option.
 
 ## Q6. Are we modelling this wrong?
 

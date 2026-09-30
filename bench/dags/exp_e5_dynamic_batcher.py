@@ -77,8 +77,8 @@ def rev5_batcher():
         store = asset_state_store[POS]
         pol = {**DEFAULT_POLICY, **(store.get("policy") or {})}
         now = time.time()
-        ledger = store.get("ledger") or {"processed": {}, "inflight": {}, "watermark": None}
-        processed, inflight = ledger["processed"], ledger["inflight"]
+        ledger = store.get("ledger") or {"processed": {}, "inflight": {}, "pending": {}, "watermark": None}
+        processed, inflight, pending = ledger["processed"], ledger["inflight"], ledger.setdefault("pending", {})
         # --- page through new events (each page must fit the 5 s execution-API timeout) ---
         wm = ledger.get("watermark")
         since = (datetime.fromisoformat(wm) - timedelta(seconds=5)) if wm else datetime(2000, 1, 1, tzinfo=timezone.utc)
@@ -100,12 +100,16 @@ def rev5_batcher():
                 break
             since = last_ts if hasattr(last_ts, "isoformat") else since
         lam = max(recent / 600.0, 1e-3)
-        ready = []
+        # merge newly seen events into the persistent pending set (the watermark moves on; unclaimed accounts must not be lost)
         for acct, (ver, first_seen) in newest.items():
+            old = pending.get(acct)
+            pending[acct] = [max(ver, old[0]) if old else ver, min(first_seen, old[1]) if old else first_seen]
+        ready = []
+        for acct, (ver, first_seen) in list(pending.items()):
             if acct in inflight:
                 continue
             if int(processed.get(acct, -1)) >= ver:
-                continue
+                pending.pop(acct, None); continue
             ready.append((acct, first_seen))
         ready.sort(key=lambda x: x[1])
         running_batches = len(set(inflight.values()))
@@ -113,6 +117,7 @@ def rev5_batcher():
         for bi, batch in enumerate(batches):
             for acct in batch:
                 inflight[acct] = f"{run_id}#{bi}"
+                pending.pop(acct, None)
         if last_ts is not None:
             ledger["watermark"] = last_ts.isoformat() if hasattr(last_ts, "isoformat") else ledger.get("watermark")
         ledger["inflight"] = inflight

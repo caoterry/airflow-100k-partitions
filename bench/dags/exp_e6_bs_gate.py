@@ -39,33 +39,37 @@ def bs_producer():
 @dag(dag_id="bs_pnl", schedule=(REFS["rates"] | REFS["fx"] | ROOTS["positions"] | ROOTS["cashflows"]), catchup=False, max_active_runs=1, tags=["exp", "e6"])
 def bs_pnl():
     @task.short_circuit(inlets=list(ALL.values()))
-    def gate(inlet_events=None, triggering_asset_events=None) -> dict:
-        # which business date(s) woke us up
-        dates = {e.extra.get("as_of") for evs in (triggering_asset_events or {}).values() for e in evs if e.extra}
+    def gate(inlet_events=None, triggering_asset_events=None) -> list[dict]:
+        """One wake-up may carry events for several business dates (the scheduler conflates events per loop),
+        so evaluate the readiness predicate once PER DATE and return every date that is ready."""
+        dates = sorted({(e.extra or {}).get("as_of") for evs in (triggering_asset_events or {}).values() for e in evs} - {None})
         if not dates:
-            print("no as_of on the triggering events; skipping"); return {}
-        as_of = sorted(dates)[-1]
-        latest = {}
-        for name, asset in ALL.items():
-            best = None
-            for e in inlet_events[asset]:
-                x = e.extra or {}
-                if x.get("as_of") == as_of and (best is None or int(x.get("version", 0)) > int(best.get("version", 0))):
-                    best = x
-            latest[name] = best
-        refs_ok = all(latest[n] is not None for n in REFS)
-        roots_in = [n for n in ROOTS if latest[n] is not None]
-        ready = refs_ok and bool(roots_in)
-        versions = {k: (v or {}).get("version") for k, v in latest.items()}
-        print(f"as_of={as_of} refs_ok={refs_ok} roots_in={roots_in} versions={versions} -> {'RUN' if ready else 'SKIP'}")
-        return {"as_of": as_of, "inputs": {k: v for k, v in latest.items() if v}, "roots": roots_in} if ready else {}
+            print("no as_of on the triggering events; skipping"); return []
+        plans = []
+        for as_of in dates:
+            latest = {}
+            for name, asset in ALL.items():
+                best = None
+                for e in inlet_events[asset]:
+                    x = e.extra or {}
+                    if x.get("as_of") == as_of and (best is None or int(x.get("version", 0)) > int(best.get("version", 0))):
+                        best = x
+                latest[name] = best
+            refs_ok = all(latest[n] is not None for n in REFS)
+            roots_in = [n for n in ROOTS if latest[n] is not None]
+            ready = refs_ok and bool(roots_in)
+            versions = {k: (v or {}).get("version") for k, v in latest.items()}
+            print(f"as_of={as_of} refs_ok={refs_ok} roots_in={roots_in} versions={versions} -> {'RUN' if ready else 'SKIP'}")
+            if ready:
+                plans.append({"as_of": as_of, "inputs": {k: v for k, v in latest.items() if v}, "roots": roots_in})
+        return plans   # empty list -> short-circuit
 
     @task(outlets=[OUT])
     def calc(plan: dict, *, outlet_events=None) -> None:
         print("calc", plan["as_of"], "roots", plan["roots"], "versions", {k: v["version"] for k, v in plan["inputs"].items()})
         outlet_events[OUT].extra = {"as_of": plan["as_of"], "roots": plan["roots"], "versions": {k: v["version"] for k, v in plan["inputs"].items()}}
 
-    calc(gate())
+    calc.expand(plan=gate())   # one calc TI per ready business date
 
 
 bs_producer(); bs_pnl()

@@ -1,0 +1,35 @@
+{
+ "label": "e5_10k_adaptive",
+ "policy": {
+  "mode": "adaptive_sla",
+  "K": 3,
+  "startup_s": 15.0,
+  "per_account_s": 0.02,
+  "b_min": 3,
+  "b_max": 600,
+  "t_max_s": 90,
+  "fixed_size": 10,
+  "target_s": 120.0
+ },
+ "latency": [
+  [
+   10000.0,
+   532.0,
+   1007.0,
+   1048.0
+  ],
+  [
+   40.0,
+   975.0,
+   1038.0,
+   1045.0
+  ]
+ ],
+ "phases": [
+  "burst",
+  "trickle"
+ ],
+ "jobs": 17,
+ "avg_batch": 590.6,
+ "spark_tis": 20
+}

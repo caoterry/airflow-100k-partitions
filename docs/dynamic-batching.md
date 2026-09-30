@@ -141,7 +141,25 @@ Two implementation details learned the hard way: the state-store accessor is sco
 inlets/outlets (declare `inlets=[input]` on every task that touches it), and "processed" must mean `status == done`, not
 "a version was recorded", or released accounts are never re-claimed.
 
-## 5. Airflow prototype (E5) — burst of 60 accounts, then 1 account every 6 s; K = 3, S = 15 s, p = 0.5 s
+## 5a. Airflow prototype at 10k accounts — what breaks in the batcher itself
+
+`bench/exp_e5.py --burst 10000 --burst-runs 20 --K 3 --startup 15 --per-account 0.02 --b-max 600 --target 120`
+(20 producer runs × 500 keys, then 40 trickle accounts). Three versions of the `claim` task were needed:
+
+| version | failure | fix |
+|---|---|---|
+| v1: `inlet_events[input]` for the whole window, one state-store `get` per account | the event pull for 10k events took **7.6–9.1 s** and hit the SDK's 5 s `execution_api_timeout` → claim task failed every minute | page the event log: `.after(watermark).ascending(True).limit(2000)` in a loop (6 pages, ≤ 2 s each); one `ledger` key instead of 10k `get`s |
+| v2: paged pull, watermark advanced to the last event | dispatched 3 × 600, then the other 8,200 ready accounts **vanished** — the watermark had moved past their events and nothing remembered them | persist the `pending` set in the ledger (`pending / inflight / processed`); the watermark only bounds what to *read* |
+| v3: persistent ledger | works end to end: 10,040 accounts in 17 batches of ~590, 9,600+ per-account downstream runs; but `claim` and `publish` both `get → modify → set` the same ledger key and overwrite each other, so `inflight` stuck at 1,800 and only one new batch was released per minute instead of three | production: keep the ledger in a table with row locks or conditional writes (Postgres `SELECT … FOR UPDATE`, DynamoDB conditional update), or make the batcher single-writer |
+
+Measured on v3: claim 1.1–12.1 s (avg 2.1 s; the 12 s one is the six-page burst pull); burst p95 **17 min**, entirely
+throughput-bound by the ledger race (600 accounts/min instead of 1,800/min). The lesson generalises: a batcher is a small
+stateful service — the event log is its input stream, but "seen and not yet dispatched", "dispatched and not yet done" and
+"done at version v" are its own state, and none of them can be re-derived per tick at 10k accounts within a 5-second API
+budget. The balance-sheet gate (E6) gets away with no state because it recomputes the whole result each time and lets
+`max_active_runs=1` act as its in-flight flag; anything that processes *subsets* concurrently needs the ledger.
+
+## 5b. Airflow prototype (E5) — burst of 60 accounts, then 1 account every 6 s; K = 3, S = 15 s, p = 0.5 s
 
 Same load for both policies (60 accounts in three producer runs, then 30 accounts one every 6 s); `spark` sleeps
 `15 + 0.5·b` seconds inside the 3-slot pool; latency measured from the account's input event to its `rev5_pnl` event in

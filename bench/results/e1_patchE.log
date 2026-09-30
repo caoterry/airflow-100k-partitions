@@ -1,0 +1,5 @@
+clean slate
+[   0.3s] EMIT ['ACC1']
+[   4.3s] --- step 1: after first ACC1 event, run #1 running
+        APDR rows (1): ACC1*@17:48:50
+        consumer runs (1): ACC1:running(q17:48:50 s17:48:50 eNone)

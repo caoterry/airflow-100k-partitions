@@ -1,7 +1,9 @@
 # Summary: can Airflow 3.x carry 100k firm-account partitions?
 
-Two days of measured evaluation (2026-09-29 and 2026-09-30) on Airflow 3.3.2, the release behind MWAA 3.3.1, with
-`apache/airflow` main used for source study. Every number below was produced by code in this repository and can be re-run.
+Two days of evaluation (2026-09-29 and 2026-09-30), measured locally on Airflow 3.3.2 with `apache/airflow` main used for
+source study. MWAA ships 3.3.1, one patch release earlier; the partition code paths traced here are the same in both. Every
+number below was produced by code in this repository and can be re-run. Nothing here has been run on MWAA itself; the MWAA
+constraints quoted are from the AWS documentation.
 
 ## The question
 
@@ -33,7 +35,7 @@ per-partition concurrency and batching, per-account status for end users, and it
 | Batching the same 100k accounts | 100 batches × 1,000 finish in 38 s | REPORT §4.5 |
 | Native partitions, write path | registering 500 keys took 3.6 s on an empty table and 7.0 s at 64k rows (sequential scan on `asset_partition_dag_run`); ~5 ms per key under a row lock, so at most ~900 keys per task against the 5 s SDK timeout | REPORT §4.2, §4.3 |
 | Native partitions, one run per account, 100k, as shipped | 3.7k runs finished after 26 min, about 3 h projected | REPORT §4.2 |
-| Same, with the index from #73983 and two schedulers | all 100k runs created and finished in 31 min | REPORT §4.2a |
+| Same, with the index from #73983 and two schedulers | all 100k runs created and finished in 31 min (laptop, trivial tasks; self-hosted only until the index ships in an MWAA image) | REPORT §4.2a |
 | Capacity-aware batcher at 100k accounts (K = 10 engine slots) | 84k accounts published in 36 min; limited by the one-minute cadence, not capacity; the floor is ~8 min of key registration | dynamic-batching §5a |
 | Batching policy (simulator, warm Spark, 2-min SLA) | SLA-driven batching meets the SLA at 4.9 job-hours; latency-optimal batching also meets it but at 11.6 job-hours | dynamic-batching §2 |
 | Reruns on a late v2 input | an OR trigger plus a version-aware gate does it with no core change; the balance-sheet gate (all reference inputs and any root input, per business date) runs stateless | answers Q1; E2, E6 |
@@ -52,14 +54,19 @@ Schedule at region / pack / shard grain; partition and observe at account grain.
 - End-user status is projected out (DagRun listeners or the batcher's own state writes) into a status table; the Airflow UI
   stays for operators.
 
-This shape runs on MWAA 3.3.1 as shipped and does not depend on any upstream change. One run per account at 100k per day is a
-later step, once the upstream fixes (index, retention, bulk expansion, batched key registration) reach a release the platform offers.
+This shape needs nothing beyond what MWAA 3.3.1 ships and does not depend on any upstream change; it has been exercised locally,
+not yet on MWAA. Its one stateful piece is the batcher's ledger (pending / in-flight / processed), which has to live in a locked
+table outside the metadata database (RDS or DynamoDB on MWAA). One run per account at 100k per day is a later step, once the
+upstream fixes (index, retention, bulk expansion, batched key registration, per-key concurrency) reach a release the platform offers.
 
 The proposal's MVP (Jobs and Datasets as first-class objects, wired by trigger conditions, declared next to the business code,
-with lineage and standardised state tracking) maps one-to-one onto the Airflow 3 asset model: DAG = Job, Asset = Dataset,
-schedule expression = Trigger Condition, outlet events = data events, asset state store = standardised state tracking. The one
-thing Airflow demonstrably cannot do today is schedule at account grain at 100k per day, and the proposal's own narrative already
-separates scheduling grain from partition and observability grain.
+with lineage and standardised state tracking) maps closely onto the Airflow 3 asset model: DAG = Job, Asset = Dataset,
+schedule expression = Trigger Condition (conditions beyond AND/OR live in a small gate task), outlet events = data events, asset
+state store = standardised state tracking. The main thing Airflow cannot do today is schedule at account grain at 100k per day;
+per-key concurrency control and conflation are also not native (the batcher's ledger provides them in the proposed shape). The
+proposal's own narrative already separates scheduling grain from partition and observability grain, and ties coarse grain to
+fast calculations; the batcher makes the grain a runtime variable, so that condition becomes a question about engine start-up
+time rather than about the scheduler.
 
 ## Platform
 

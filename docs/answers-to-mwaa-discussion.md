@@ -24,10 +24,18 @@ asset arrived and **did not** fire when `a3` re-arrived (the "red X").
 **The pattern that works (your "custom-gate", with two corrections).**
 
 1. Schedule the consumer on **OR** (`a1 | a2 | a3`): a run per update. Measured: a run for every event, and a burst of five
-   events on one asset in the same scheduler loop produced **one** run (the queue row is upserted per asset, so events are
-   conflated per loop).
+   events on one asset in the same scheduler loop produced **one** run. Mechanism (`models/asset.py:751-759`,
+   `assets/manager.py:828-835`): the queue row `asset_dag_run_queue` is keyed `(asset_id, target_dag_id)` and upserted, so
+   events conflate per loop; and for asset-triggered runs `max_active_runs` gates *creation* (queued + running count,
+   `models/dag.py:767-788`), so at the cap further events keep conflating into the pending flag and are released as one run.
+   Two caveats from the source check: repeat events that arrive after the flag was set may not be attached to that run's
+   `triggering_asset_events` (they appear in the next run's window), and on main the queue becomes per-event
+   (`(target_dag_id, asset_event_id)`), so every event is consumed.
 2. First task = gate: `@task.short_circuit(inlets=[a1, a2, a3])` that reads every input's events via `inlet_events[asset]`
-   (the asset's *full* history, not only the events that triggered this run) and skips downstream until every input has one.
+   (the asset's *full* history, not only the events that triggered this run; `GET /execution/asset-events/by-asset`, ordered
+   by timestamp, **no default limit or pagination**, so always bound it with `.after(watermark)` / `.ascending(False).limit(n)`)
+   and skips downstream until every input has one. Keep outlets off the gate: a short-circuit gate still *succeeds*, so
+   outlets declared on it would emit events even when it skips.
 3. **Pick the version explicitly, not positionally.** `inlet_events[asset][-1]` is the most recently *registered* event
    (ordered by `asset_event.timestamp`), which is not the newest business version when producers run concurrently. In E2 a
    burst v3…v7 registered as v5, v7, v6, v4, v3 and `[-1]` returned **v3**. Carry `{"version": n, "path": …}` in the event
@@ -79,12 +87,20 @@ the same idea with one more hop.
 So: T=4 ACC5 *should* start (fine-grained) but with only `max_active_runs` as the knob it does not; T=4 ACC1 *should not* queue
 a second time (conflated) but it does. #71070/#71074 (3.4) de-duplicate *pending* APDRs, not queued or running runs.
 
-**3.2 Concurrency.** (a) There is no native "one run at a time per partition key" and no per-key ordering. (b) A gate task
-that polls the REST API is a legitimate stop-gap; call the public `/api/v2` (`GET /dags/{id}/dagRuns?partition_key_pattern=…&state=running`),
-never `/ui/*` (private, unversioned). At 10k keys it does not scale: every run spends a task slot polling, and admission
-decisions belong where the run is created, not after. (c) The right place is scheduler-side: a `max_active_runs_per_partition_key`
-(or a per-key "coalesce while queued" rule) is a small, well-scoped upstream change; until then, do admission in the batcher
-below. Airflow pools cannot help (static, global, one per key would be 10k pools).
+**3.2 Concurrency.** (a) There is no native "one run at a time per partition key" and no per-key ordering: partition runs are
+created QUEUED without any `max_active_runs` check and released FIFO by a per-DAG running count with no partition term
+(`models/dagrun.py:707-716,752-753`; `_lock_asset_model` serializes writers per *producer asset*, not per key). The pending-key
+de-duplication PR (#71074 for #71070) is unmerged as of 2026-09-30 and only covers *pending* APDRs. (b) A gate task that polls
+the REST API is a legitimate stop-gap; call the public `/api/v2`, never `/ui/*` (private, unversioned). Mind the filter
+semantics: `partition_key_pattern` is a case-insensitive `ILIKE '%value%'` substring match with unescaped wildcards, so use
+`partition_key_prefix_pattern` (a range scan) for exact keys, and there is no index containing `dag_run.partition_key`. A
+deferrable version is not possible with stock triggers (they have no DB access and the count endpoint they can call filters
+only by state/run ids, not partition key). At 10k keys polling does not scale anyway: every run spends a task slot polling, and
+admission decisions belong where the run is created, not after. (c) **Where the extension belongs:** `[core] asset_manager_class`
+is a documented extension point. A subclass of `AssetManager` that overrides `_queue_partitioned_dags` / `_get_or_create_apdr`
+can reuse the pending-or-queued run for a key (conflation) or hold a key while one is running (mutex) **without patching core**
+— that is the "extension" the evaluation matrix asks about, and the natural shape for an upstream `max_active_runs_per_partition_key`.
+Pools cannot help (static, global; one per key would be 10k pools).
 
 **3.3 Batching many ready accounts into one Spark job while keeping per-account lineage — supported, and it is the recommended
 shape.** Build one **batcher DAG**, not account-level runs:
@@ -94,9 +110,11 @@ shape.** Build one **batcher DAG**, not account-level runs:
    store** (Airflow 3.3, per-asset key/value: `account → {status, batch_id, version}`); claim the accounts that are ready
    and not in flight; skip if none.
 3. One task launches one Spark/Glue job for the claimed batch; on success it emits
-   `outlet_events[output_asset].add_partitions(claimed_accounts)` — one event per account, so downstream consumers, the asset
-   graph and `GET /assets/events?partition_key=` all see **per-account lineage from a single task**; then it writes per-account
-   status back to the state store.
+   `outlet_events[output_asset].add_partitions(claimed_accounts)` — one event per account, so downstream partitioned consumers,
+   `GET /dags/{id}/dagRuns/{run_id}/upstreamAssetEvents` (3.3.2) and the asset-event key filters (main/3.4) all see
+   **per-account lineage from a single task**; then it writes per-account status back to the state store. Note that keyed
+   events never queue non-partition-aware DAGs (`assets/manager.py:534-535`), so the batcher itself is cron/level-triggered
+   (or the producer emits one extra un-keyed event as a poke).
 
 Dynamic task mapping and task groups are the wrong tool here (one task instance per account: §4.1/§4.4 of the report).
 This is also what AIP-104 (`.iterate()` / `.spread(across=N)`, PR #62922, 3.4) is formalizing.
@@ -107,8 +125,12 @@ Not advisable. In Airflow 3 the same API server that serves `/api/v2` also serve
 heartbeats through (on MWAA it is the webserver, 2–5 Fargate containers), and MWAA throttles the REST endpoint at 10 requests/s.
 The REST filters you would need exist (`partition_key_pattern`, `partition_key_prefix_pattern`, `partition_date_gte/lte`,
 `state`), but page size is capped at 100 and the 3.3.x pending-partitions UI endpoint is unpaginated. Project status out
-instead: a listener plugin (`on_dag_run_success/failed`, `on_task_instance_*`) or the batcher's own state-store writes feed a
-status table your users query; Airflow's UI stays for operators.
+instead: DagRun listeners (`on_dag_run_running/success/failed`, fired in the scheduler with the ORM `DagRun` incl. `partition_key`;
+QUEUED is deliberately not notified, exceptions are swallowed) or the batcher's own state-store writes feed a status table your
+users query; Airflow's UI stays for operators. The asset state store itself is a point-lookup KV (`get/set/delete/clear` from
+tasks, scoped to the task's declared inlets/outlets; REST `GET/PUT/DELETE /assets/{id}/state-store/{key}` plus a paginated
+list); `[state_store] max_value_storage_bytes` (65,535) is enforced only on the REST path, and there is no retention for asset
+entries. It is the right ledger for per-account status; it is not a query engine for end users.
 
 ## Q5. Scaling — "10k–100k account-grain partitions per business date: within intentions? where does it break?"
 

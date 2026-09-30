@@ -11,6 +11,7 @@ ap.add_argument("--burst", type=int, default=60); ap.add_argument("--trickle-eve
 ap.add_argument("--burst-runs", type=int, default=3, help="how many producer runs the burst is split into (<=~900 keys each)")
 ap.add_argument("--K", type=int, default=3); ap.add_argument("--startup", type=float, default=15.0); ap.add_argument("--per-account", type=float, default=0.5)
 ap.add_argument("--b-max", type=int, default=60); ap.add_argument("--target", type=float, default=90.0)
+ap.add_argument("--ledger", default="state_store", choices=["state_store", "postgres"])
 a = ap.parse_args()
 tok = H.token(); c = H.client(tok); conn = H.db(); conn.autocommit = True; cur = conn.cursor()
 T0 = time.time(); t = lambda: f"{time.time()-T0:6.1f}s"
@@ -28,7 +29,9 @@ for st in ["delete from partitioned_asset_key_log where target_dag_id='rev5_pnl_
            "delete from asset_event where asset_id in (select id from asset where name in ('rev5_positions','rev5_pnl'))",
            "delete from asset_state_store where asset_id in (select id from asset where name in ('rev5_positions','rev5_pnl'))"]:
     cur.execute(st)
-policy = {"mode": a.policy, "K": a.K, "startup_s": a.startup, "per_account_s": a.per_account, "b_min": 3, "b_max": a.b_max, "t_max_s": 90, "fixed_size": 10, "target_s": a.target}
+policy = {"mode": a.policy, "K": a.K, "startup_s": a.startup, "per_account_s": a.per_account, "b_min": 3, "b_max": a.b_max, "t_max_s": 90, "fixed_size": 10, "target_s": a.target, "ledger": a.ledger}
+if a.ledger == "postgres":
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "dags")); from ledger_pg import PgLedger; _l = PgLedger(); _l.reset(); _l.close(); print("postgres ledger reset")
 c.patch("/api/v2/pools/spark_jobs", json={"slots": a.K})
 r = c.put(f"/api/v2/assets/{AID}/state-store/policy", json={"value": policy}); print("policy set:", r.status_code, policy)
 c.patch("/api/v2/dags/rev5_batcher", json={"is_paused": False})

@@ -77,7 +77,14 @@ def rev5_batcher():
         store = asset_state_store[POS]
         pol = {**DEFAULT_POLICY, **(store.get("policy") or {})}
         now = time.time()
-        ledger = store.get("ledger") or {"processed": {}, "inflight": {}, "pending": {}, "watermark": None}
+        use_pg = pol.get("ledger") == "postgres"
+        pg = None
+        if use_pg:
+            from ledger_pg import PgLedger
+            pg = PgLedger()
+            ledger = {"processed": {}, "inflight": {}, "pending": {}, "watermark": pg.get_watermark()}
+        else:
+            ledger = store.get("ledger") or {"processed": {}, "inflight": {}, "pending": {}, "watermark": None}
         processed, inflight, pending = ledger["processed"], ledger["inflight"], ledger.setdefault("pending", {})
         # --- page through new events (each page must fit the 5 s execution-API timeout) ---
         wm = ledger.get("watermark")
@@ -100,6 +107,17 @@ def rev5_batcher():
                 break
             since = last_ts if hasattr(last_ts, "isoformat") else since
         lam = max(recent / 600.0, 1e-3)
+        if use_pg:
+            # locked ledger: merge what we saw, then claim under FOR UPDATE SKIP LOCKED (atomic across concurrent batcher runs)
+            pg.merge_seen(newest)
+            batches = pg.claim(lambda ready, running: plan_batches(ready, running, lam, pol, now))
+            pg.tag_batches(run_id, batches)
+            if last_ts is not None and hasattr(last_ts, "isoformat"):
+                pg.set_watermark(last_ts.isoformat())
+            pg.close()
+            print(f"policy={pol['mode']} ledger=postgres pages={pages} events_seen={len(newest)} lam={lam:.3f}/s "
+                  f"-> {len(batches)} batches sizes={[len(b) for b in batches]}")
+            return batches
         # merge newly seen events into the persistent pending set (the watermark moves on; unclaimed accounts must not be lost)
         for acct, (ver, first_seen) in newest.items():
             old = pending.get(acct)
@@ -140,6 +158,11 @@ def rev5_batcher():
         outlet_events[PNL].extra = {"batch_size": len(batch)}
         outlet_events[PNL].add_partitions(batch)
         store = asset_state_store[POS]
+        pol = {**DEFAULT_POLICY, **(store.get("policy") or {})}
+        if pol.get("ledger") == "postgres":
+            from ledger_pg import PgLedger
+            pg = PgLedger(); pg.done(batch); pg.close()
+            return
         ledger = store.get("ledger") or {"processed": {}, "inflight": {}, "watermark": None}
         for acct in batch:
             ledger["inflight"].pop(acct, None)
@@ -150,6 +173,12 @@ def rev5_batcher():
     @task(inlets=[POS], trigger_rule="one_failed")
     def release(batches: list[list[str]], *, asset_state_store=None) -> None:
         store = asset_state_store[POS]
+        pol = {**DEFAULT_POLICY, **(store.get("policy") or {})}
+        if pol.get("ledger") == "postgres":
+            from ledger_pg import PgLedger
+            pg = PgLedger()
+            for batch in batches or []: pg.release(batch)
+            pg.close(); return
         ledger = store.get("ledger") or {"processed": {}, "inflight": {}, "watermark": None}
         for batch in batches or []:
             for acct in batch:

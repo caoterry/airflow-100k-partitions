@@ -1,0 +1,33 @@
+===== test_db (ORM vs migrations) =====
+airflow-core/tests/unit/utils/test_db.py::TestAutocommitEngineForMySQL::test_mysql_database_modifies_engine PASSED [ 80%]
+airflow-core/tests/unit/utils/test_db.py::TestAutocommitEngineForMySQL::test_mysql_variants_detected PASSED [ 83%]
+airflow-core/tests/unit/utils/test_db.py::TestAutocommitEngineForMySQL::test_none_sql_alchemy_conn PASSED [ 87%]
+airflow-core/tests/unit/utils/test_db.py::TestAutocommitEngineForMySQL::test_prepare_engine_args_with_parameters PASSED [ 90%]
+airflow-core/tests/unit/utils/test_db.py::TestAutocommitEngineForMySQL::test_exception_during_context PASSED [ 93%]
+airflow-core/tests/unit/utils/test_db.py::TestAutocommitEngineForMySQL::test_logging_messages PASSED [ 96%]
+airflow-core/tests/unit/utils/test_db.py::TestAutocommitEngineForMySQL::test_integration_with_actual_settings_module PASSED [100%]
+===================== Warning summary. Total: 9, Unique: 4 =====================
+other: total 9, unique 4
+  runtest: total 9, unique 4
+Warnings saved into /Users/caotia/Code/airflow-fork/devel-common/warnings.txt file.
+
+=========================== short test summary info ============================
+SKIPPED [1] devel-common/src/tests_common/pytest_plugin.py:868: The test 'airflow-core/tests/unit/utils/test_db.py::TestDb::test_check_team_names_can_be_lower_cased_reports_a_collision' requires one of 'postgres', 'sqlite' backend started and 'BACKEND' environment variable to be set (currently it set to None). It can be set by specifying backend at breeze startup.
+================== 30 passed, 1 skipped, 1 warning in 18.37s ===================
+===== db_cleanup tests =====
+airflow-core/tests/unit/utils/test_db_cleanup.py::TestDBCleanup::test_no_models_missing PASSED [ 33%]
+airflow-core/tests/unit/utils/test_db_cleanup.py::TestDBCleanup::test_dag_id_column_name_matches_schema PASSED [ 44%]
+airflow-core/tests/unit/utils/test_db_cleanup.py::TestPartitionedAssetKeyLogCleanup::test_only_orphaned_key_log_rows_are_purged PASSED [ 55%]
+airflow-core/tests/unit/utils/test_db_cleanup.py::TestAssetPartitionDagRunCleanup::test_only_fired_partition_runs_are_purged PASSED [ 66%]
+airflow-core/tests/unit/utils/test_db_cleanup.py::TestSchemaQualifiedTableConfig::test_table_config_parses_schema_qualified_table_name PASSED [ 77%]
+airflow-core/tests/unit/utils/test_db_cleanup.py::TestSchemaQualifiedTableConfig::test_table_config_without_schema_prefix PASSED [ 88%]
+airflow-core/tests/unit/utils/test_db_cleanup.py::TestSchemaQualifiedTableCleanupIntegration::test_clean_archive_export_and_drop_schema_qualified_table SKIPPED [100%]
+===================== Warning summary. Total: 1, Unique: 1 =====================
+other: total 1, unique 1
+  runtest: total 1, unique 1
+Warnings saved into /Users/caotia/Code/airflow-fork/devel-common/warnings.txt file.
+
+=========================== short test summary info ============================
+SKIPPED [1] devel-common/src/tests_common/pytest_plugin.py:868: The test 'airflow-core/tests/unit/utils/test_db_cleanup.py::TestSchemaQualifiedTableCleanupIntegration::test_clean_archive_export_and_drop_schema_qualified_table' requires one of 'postgres' backend started and 'BACKEND' environment variable to be set (currently it set to None). It can be set by specifying backend at breeze startup.
+============ 8 passed, 1 skipped, 93 deselected, 1 warning in 2.66s ============
+===== migration pattern tests =====

@@ -1,0 +1,1270 @@
+Using CPython 3.13.13
+Creating virtual environment at: .venv
+Resolved 998 packages in 1.74s
+   Building apache-airflow-task-sdk @ file:///Users/caotia/Code/airflow-fork/task-sdk
+   Building apache-airflow-devel-common @ file:///Users/caotia/Code/airflow-fork/devel-common
+   Building apache-airflow-docker-tests @ file:///Users/caotia/Code/airflow-fork/docker-tests
+   Building apache-airflow-helm-chart @ file:///Users/caotia/Code/airflow-fork/chart
+   Building apache-airflow-kubernetes-tests @ file:///Users/caotia/Code/airflow-fork/kubernetes-tests
+   Building apache-airflow-scripts @ file:///Users/caotia/Code/airflow-fork/scripts
+   Building apache-airflow-ctl @ file:///Users/caotia/Code/airflow-fork/airflow-ctl
+   Building apache-airflow-ctl-tests @ file:///Users/caotia/Code/airflow-fork/airflow-ctl-tests
+   Building apache-airflow-shared-listeners @ file:///Users/caotia/Code/airflow-fork/shared/listeners
+   Building apache-airflow-shared-logging @ file:///Users/caotia/Code/airflow-fork/shared/logging
+   Building apache-airflow-shared-module-loading @ file:///Users/caotia/Code/airflow-fork/shared/module_loading
+   Building apache-airflow-shared-observability @ file:///Users/caotia/Code/airflow-fork/shared/observability
+   Building apache-airflow-shared-plugins-manager @ file:///Users/caotia/Code/airflow-fork/shared/plugins_manager
+   Building apache-airflow-shared-providers-discovery @ file:///Users/caotia/Code/airflow-fork/shared/providers_discovery
+   Building apache-airflow-shared-secrets-backend @ file:///Users/caotia/Code/airflow-fork/shared/secrets_backend
+   Building apache-airflow-shared-serialization @ file:///Users/caotia/Code/airflow-fork/shared/serialization
+   Building apache-airflow-shared-secrets-masker @ file:///Users/caotia/Code/airflow-fork/shared/secrets_masker
+   Building apache-airflow-shared-state @ file:///Users/caotia/Code/airflow-fork/shared/state
+   Building apache-airflow-shared-template-rendering @ file:///Users/caotia/Code/airflow-fork/shared/template_rendering
+   Building apache-airflow-shared-timezones @ file:///Users/caotia/Code/airflow-fork/shared/timezones
+   Building apache-airflow-task-sdk-integration-tests @ file:///Users/caotia/Code/airflow-fork/task-sdk-integration-tests
+   Building apache-airflow-core @ file:///Users/caotia/Code/airflow-fork/airflow-core
+   Building apache-airflow-providers-airbyte @ file:///Users/caotia/Code/airflow-fork/providers/airbyte
+   Building apache-airflow-providers-akeyless @ file:///Users/caotia/Code/airflow-fork/providers/akeyless
+   Building apache-airflow-providers-alibaba @ file:///Users/caotia/Code/airflow-fork/providers/alibaba
+   Building apache-airflow-providers-amazon @ file:///Users/caotia/Code/airflow-fork/providers/amazon
+   Building apache-airflow-providers-anthropic @ file:///Users/caotia/Code/airflow-fork/providers/anthropic
+   Building apache-airflow-providers-apache-hive @ file:///Users/caotia/Code/airflow-fork/providers/apache/hive
+   Building apache-airflow-providers-apache-iceberg @ file:///Users/caotia/Code/airflow-fork/providers/apache/iceberg
+   Building apache-airflow-providers-apache-beam @ file:///Users/caotia/Code/airflow-fork/providers/apache/beam
+   Building apache-airflow-providers-apache-arrow @ file:///Users/caotia/Code/airflow-fork/providers/apache/arrow
+   Building apache-airflow-providers-apache-cassandra @ file:///Users/caotia/Code/airflow-fork/providers/apache/cassandra
+   Building apache-airflow-providers-apache-drill @ file:///Users/caotia/Code/airflow-fork/providers/apache/drill
+   Building apache-airflow-providers-apache-druid @ file:///Users/caotia/Code/airflow-fork/providers/apache/druid
+   Building apache-airflow-providers-apache-flink @ file:///Users/caotia/Code/airflow-fork/providers/apache/flink
+   Building apache-airflow-providers-apache-hdfs @ file:///Users/caotia/Code/airflow-fork/providers/apache/hdfs
+   Building apache-airflow-providers-apache-impala @ file:///Users/caotia/Code/airflow-fork/providers/apache/impala
+   Building apache-airflow-providers-apache-kafka @ file:///Users/caotia/Code/airflow-fork/providers/apache/kafka
+   Building apache-airflow-providers-apache-kylin @ file:///Users/caotia/Code/airflow-fork/providers/apache/kylin
+   Building apache-airflow-providers-apache-livy @ file:///Users/caotia/Code/airflow-fork/providers/apache/livy
+   Building apache-airflow-providers-apache-pig @ file:///Users/caotia/Code/airflow-fork/providers/apache/pig
+   Building apache-airflow-providers-apache-pinot @ file:///Users/caotia/Code/airflow-fork/providers/apache/pinot
+   Building apache-airflow-providers-apache-spark @ file:///Users/caotia/Code/airflow-fork/providers/apache/spark
+   Building apache-airflow-providers-apache-tinkerpop @ file:///Users/caotia/Code/airflow-fork/providers/apache/tinkerpop
+   Building apache-airflow-providers-apprise @ file:///Users/caotia/Code/airflow-fork/providers/apprise
+   Building apache-airflow-providers-arangodb @ file:///Users/caotia/Code/airflow-fork/providers/arangodb
+   Building apache-airflow-providers-asana @ file:///Users/caotia/Code/airflow-fork/providers/asana
+   Building apache-airflow-providers-atlassian-jira @ file:///Users/caotia/Code/airflow-fork/providers/atlassian/jira
+   Building apache-airflow-providers-celery @ file:///Users/caotia/Code/airflow-fork/providers/celery
+   Building apache-airflow-providers-clickhousedb @ file:///Users/caotia/Code/airflow-fork/providers/clickhousedb
+   Building apache-airflow-providers-cloudant @ file:///Users/caotia/Code/airflow-fork/providers/cloudant
+   Building apache-airflow-providers-cncf-kubernetes @ file:///Users/caotia/Code/airflow-fork/providers/cncf/kubernetes
+   Building apache-airflow-providers-cohere @ file:///Users/caotia/Code/airflow-fork/providers/cohere
+   Building apache-airflow-providers-common-io @ file:///Users/caotia/Code/airflow-fork/providers/common/io
+   Building apache-airflow-providers-common-ai @ file:///Users/caotia/Code/airflow-fork/providers/common/ai
+   Building apache-airflow-providers-common-compat @ file:///Users/caotia/Code/airflow-fork/providers/common/compat
+   Building apache-airflow-providers-common-messaging @ file:///Users/caotia/Code/airflow-fork/providers/common/messaging
+   Building apache-airflow-providers-common-sql @ file:///Users/caotia/Code/airflow-fork/providers/common/sql
+   Building apache-airflow-providers-databricks @ file:///Users/caotia/Code/airflow-fork/providers/databricks
+   Building apache-airflow-providers-dingding @ file:///Users/caotia/Code/airflow-fork/providers/dingding
+   Building apache-airflow-providers-datadog @ file:///Users/caotia/Code/airflow-fork/providers/datadog
+   Building apache-airflow-providers-dbt-cloud @ file:///Users/caotia/Code/airflow-fork/providers/dbt/cloud
+   Building apache-airflow-providers-discord @ file:///Users/caotia/Code/airflow-fork/providers/discord
+   Building apache-airflow-providers-docker @ file:///Users/caotia/Code/airflow-fork/providers/docker
+   Building apache-airflow-providers-elasticsearch @ file:///Users/caotia/Code/airflow-fork/providers/elasticsearch
+   Building apache-airflow-providers-exasol @ file:///Users/caotia/Code/airflow-fork/providers/exasol
+   Building apache-airflow-providers-duckdb @ file:///Users/caotia/Code/airflow-fork/providers/duckdb
+   Building apache-airflow-providers-edge3 @ file:///Users/caotia/Code/airflow-fork/providers/edge3
+   Building apache-airflow-providers-fab @ file:///Users/caotia/Code/airflow-fork/providers/fab
+   Building apache-airflow-providers-facebook @ file:///Users/caotia/Code/airflow-fork/providers/facebook
+   Building apache-airflow-providers-ftp @ file:///Users/caotia/Code/airflow-fork/providers/ftp
+   Building apache-airflow-providers-git @ file:///Users/caotia/Code/airflow-fork/providers/git
+   Building apache-airflow-providers-github @ file:///Users/caotia/Code/airflow-fork/providers/github
+   Building apache-airflow-providers-google @ file:///Users/caotia/Code/airflow-fork/providers/google
+   Building apache-airflow-providers-grpc @ file:///Users/caotia/Code/airflow-fork/providers/grpc
+   Building apache-airflow-providers-hashicorp @ file:///Users/caotia/Code/airflow-fork/providers/hashicorp
+   Building apache-airflow-providers-imap @ file:///Users/caotia/Code/airflow-fork/providers/imap
+   Building apache-airflow-providers-http @ file:///Users/caotia/Code/airflow-fork/providers/http
+   Building apache-airflow-providers-ibm-db2 @ file:///Users/caotia/Code/airflow-fork/providers/ibm/db2
+   Building apache-airflow-providers-influxdb @ file:///Users/caotia/Code/airflow-fork/providers/influxdb
+   Building apache-airflow-providers-microsoft-psrp @ file:///Users/caotia/Code/airflow-fork/providers/microsoft/psrp
+   Building apache-airflow-providers-informatica @ file:///Users/caotia/Code/airflow-fork/providers/informatica
+   Building apache-airflow-providers-jdbc @ file:///Users/caotia/Code/airflow-fork/providers/jdbc
+   Building apache-airflow-providers-keycloak @ file:///Users/caotia/Code/airflow-fork/providers/keycloak
+   Building apache-airflow-providers-jenkins @ file:///Users/caotia/Code/airflow-fork/providers/jenkins
+   Building apache-airflow-providers-microsoft-azure @ file:///Users/caotia/Code/airflow-fork/providers/microsoft/azure
+   Building apache-airflow-providers-odbc @ file:///Users/caotia/Code/airflow-fork/providers/odbc
+   Building apache-airflow-providers-microsoft-winrm @ file:///Users/caotia/Code/airflow-fork/providers/microsoft/winrm
+   Building apache-airflow-providers-microsoft-mssql @ file:///Users/caotia/Code/airflow-fork/providers/microsoft/mssql
+   Building apache-airflow-providers-postgres @ file:///Users/caotia/Code/airflow-fork/providers/postgres
+   Building apache-airflow-providers-modal @ file:///Users/caotia/Code/airflow-fork/providers/modal
+   Building apache-airflow-providers-mysql @ file:///Users/caotia/Code/airflow-fork/providers/mysql
+   Building apache-airflow-providers-mongo @ file:///Users/caotia/Code/airflow-fork/providers/mongo
+   Building apache-airflow-providers-neo4j @ file:///Users/caotia/Code/airflow-fork/providers/neo4j
+   Building apache-airflow-providers-oracle @ file:///Users/caotia/Code/airflow-fork/providers/oracle
+   Building apache-airflow-providers-ssh @ file:///Users/caotia/Code/airflow-fork/providers/ssh
+   Building apache-airflow-providers-openai @ file:///Users/caotia/Code/airflow-fork/providers/openai
+   Building apache-airflow-providers-openfaas @ file:///Users/caotia/Code/airflow-fork/providers/openfaas
+   Building apache-airflow-providers-papermill @ file:///Users/caotia/Code/airflow-fork/providers/papermill
+   Building apache-airflow-providers-openlineage @ file:///Users/caotia/Code/airflow-fork/providers/openlineage
+   Building apache-airflow-providers-opensearch @ file:///Users/caotia/Code/airflow-fork/providers/opensearch
+   Building apache-airflow-providers-opsgenie @ file:///Users/caotia/Code/airflow-fork/providers/opsgenie
+   Building apache-airflow-providers-pagerduty @ file:///Users/caotia/Code/airflow-fork/providers/pagerduty
+   Building apache-airflow-providers-pinecone @ file:///Users/caotia/Code/airflow-fork/providers/pinecone
+   Building apache-airflow-providers-pgvector @ file:///Users/caotia/Code/airflow-fork/providers/pgvector
+   Building apache-airflow-providers-qdrant @ file:///Users/caotia/Code/airflow-fork/providers/qdrant
+   Building apache-airflow-providers-redis @ file:///Users/caotia/Code/airflow-fork/providers/redis
+   Building apache-airflow-providers-presto @ file:///Users/caotia/Code/airflow-fork/providers/presto
+   Building apache-airflow-providers-salesforce @ file:///Users/caotia/Code/airflow-fork/providers/salesforce
+   Building apache-airflow-providers-samba @ file:///Users/caotia/Code/airflow-fork/providers/samba
+   Building apache-airflow-providers-segment @ file:///Users/caotia/Code/airflow-fork/providers/segment
+   Building apache-airflow-providers-sendgrid @ file:///Users/caotia/Code/airflow-fork/providers/sendgrid
+   Building apache-airflow-providers-sftp @ file:///Users/caotia/Code/airflow-fork/providers/sftp
+   Building apache-airflow-providers-singularity @ file:///Users/caotia/Code/airflow-fork/providers/singularity
+   Building apache-airflow-providers-slack @ file:///Users/caotia/Code/airflow-fork/providers/slack
+   Building apache-airflow-providers-smtp @ file:///Users/caotia/Code/airflow-fork/providers/smtp
+   Building apache-airflow-providers-snowflake @ file:///Users/caotia/Code/airflow-fork/providers/snowflake
+   Building apache-airflow-providers-sqlite @ file:///Users/caotia/Code/airflow-fork/providers/sqlite
+   Building apache-airflow-providers-standard @ file:///Users/caotia/Code/airflow-fork/providers/standard
+   Building apache-airflow-providers-tableau @ file:///Users/caotia/Code/airflow-fork/providers/tableau
+   Building apache-airflow-providers-telegram @ file:///Users/caotia/Code/airflow-fork/providers/telegram
+   Building apache-airflow-providers-teradata @ file:///Users/caotia/Code/airflow-fork/providers/teradata
+   Building apache-airflow-providers-trino @ file:///Users/caotia/Code/airflow-fork/providers/trino
+   Building apache-airflow-providers-vertica @ file:///Users/caotia/Code/airflow-fork/providers/vertica
+   Building apache-airflow-providers-vespa @ file:///Users/caotia/Code/airflow-fork/providers/vespa
+   Building apache-airflow-providers-weaviate @ file:///Users/caotia/Code/airflow-fork/providers/weaviate
+   Building apache-airflow-dev @ file:///Users/caotia/Code/airflow-fork/dev
+   Building apache-airflow-providers-yandex @ file:///Users/caotia/Code/airflow-fork/providers/yandex
+   Building apache-airflow-providers-ydb @ file:///Users/caotia/Code/airflow-fork/providers/ydb
+   Building apache-airflow-providers-zendesk @ file:///Users/caotia/Code/airflow-fork/providers/zendesk
+   Building apache-airflow-shared-configuration @ file:///Users/caotia/Code/airflow-fork/shared/configuration
+      Built apache-airflow-task-sdk @ file:///Users/caotia/Code/airflow-fork/task-sdk
+   Building apache-airflow-mypy @ file:///Users/caotia/Code/airflow-fork/dev/mypy
+   Building apache-airflow-breeze @ file:///Users/caotia/Code/airflow-fork/dev/breeze
+   Building apache-airflow @ file:///Users/caotia/Code/airflow-fork
+   Building apache-airflow-shared-dagnode @ file:///Users/caotia/Code/airflow-fork/shared/dagnode
+Downloading pycountry (7.7MiB)
+Downloading jedi (4.7MiB)
+Downloading kubernetes (4.4MiB)
+Downloading debugpy (2.4MiB)
+Downloading psycopg2-binary (3.6MiB)
+Downloading polars-runtime-32 (41.3MiB)
+Downloading gevent (3.0MiB)
+Downloading memray (2.1MiB)
+Downloading confluent-kafka (4.2MiB)
+Downloading pinecone (2.9MiB)
+Downloading tokenizers (3.0MiB)
+Downloading google-cloud-compute (3.9MiB)
+Downloading google-api-python-client (15.3MiB)
+Downloading py-spy (3.6MiB)
+Downloading akeyless (3.3MiB)
+Downloading duckdb (14.8MiB)
+Downloading pycryptodome (2.4MiB)
+Downloading virtualenv (5.2MiB)
+Downloading httpr (2.1MiB)
+Downloading psycopg-binary (4.6MiB)
+Downloading pyarrow (34.2MiB)
+Downloading botocore (14.9MiB)
+Downloading litellm (16.2MiB)
+Downloading uv (16.3MiB)
+Downloading openlineage-sql (5.2MiB)
+Downloading hf-xet (3.7MiB)
+Downloading lxml (8.2MiB)
+Downloading pymssql (3.0MiB)
+Downloading kubernetes-asyncio (2.9MiB)
+Downloading numpy (5.0MiB)
+Downloading grpcio-tools (5.5MiB)
+Downloading ruff (9.4MiB)
+Downloading flask-appbuilder (2.1MiB)
+Downloading pillow (4.6MiB)
+Downloading mypy (13.3MiB)
+Downloading prek (5.3MiB)
+Downloading scipy (19.5MiB)
+Downloading cassandra-driver (3.3MiB)
+Downloading scikit-learn (7.9MiB)
+Downloading google-ads (22.6MiB)
+Downloading yandexcloud (6.5MiB)
+Downloading teradatasql (124.0MiB)
+Downloading pandas (9.6MiB)
+Downloading mysql-connector-python (19.3MiB)
+Downloading grpcio (11.8MiB)
+Downloading google-cloud-aiplatform (9.0MiB)
+Downloading oracledb (4.7MiB)
+Downloading ray (64.0MiB)
+Downloading apache-beam (6.2MiB)
+Downloading ibm-db (19.9MiB)
+ Downloaded memray
+ Downloaded httpr
+Downloading sqlalchemy (2.1MiB)
+ Downloaded flask-appbuilder
+Downloading pyodps (2.1MiB)
+Downloading libcst (1.9MiB)
+ Downloaded pycryptodome
+ Downloaded debugpy
+Downloading pydantic-core (1.8MiB)
+Downloading pydantic-ai-slim (1.8MiB)
+ Downloaded tokenizers
+Downloading snowflake-snowpark-python (1.8MiB)
+ Downloaded pinecone
+ Downloaded kubernetes-asyncio
+ Downloaded gevent
+Downloading apprise (1.7MiB)
+Downloading pip (1.7MiB)
+Downloading black (1.7MiB)
+ Downloaded pymssql
+ Downloaded cassandra-driver
+Downloading openai (1.6MiB)
+ Downloaded akeyless
+Downloading facebook-business (1.5MiB)
+Downloading pipdeptree (1.5MiB)
+ Downloaded py-spy
+Downloading ydb (1.5MiB)
+ Downloaded hf-xet
+ Downloaded psycopg2-binary
+Downloading nh3 (1.4MiB)
+Downloading pyzmq (1.4MiB)
+ Downloaded google-cloud-compute
+Downloading anthropic (1.3MiB)
+ Downloaded confluent-kafka
+Downloading beartype (1.3MiB)
+ Downloaded libcst
+ Downloaded pyodps
+Downloading ast-serialize (1.2MiB)
+Downloading snowflake-connector-python (1.2MiB)
+ Downloaded sqlalchemy
+ Downloaded pydantic-core
+ Downloaded pydantic-ai-slim
+ Downloaded kubernetes
+Downloading google-genai (1.1MiB)
+Downloading chardet (1.0MiB)
+Downloading airbyte-api (1.0MiB)
+ Downloaded psycopg-binary
+ Downloaded pillow
+ Downloaded jedi
+ Downloaded snowflake-snowpark-python
+ Downloaded oracledb
+ Downloaded apprise
+ Downloaded black
+ Downloaded pip
+ Downloaded facebook-business
+ Downloaded openai
+ Downloaded pipdeptree
+ Downloaded numpy
+ Downloaded ydb
+ Downloaded pyzmq
+ Downloaded openlineage-sql
+ Downloaded anthropic
+ Downloaded nh3
+ Downloaded virtualenv
+ Downloaded prek
+ Downloaded beartype
+ Downloaded chardet
+ Downloaded ast-serialize
+ Downloaded airbyte-api
+ Downloaded snowflake-connector-python
+ Downloaded google-genai
+ Downloaded grpcio-tools
+ Downloaded apache-beam
+ Downloaded yandexcloud
+ Downloaded pycountry
+ Downloaded scikit-learn
+ Downloaded lxml
+ Downloaded google-cloud-aiplatform
+ Downloaded ruff
+ Downloaded pandas
+Downloading babel (9.7MiB)
+Downloading cryptography (3.8MiB)
+Downloading pygments (1.2MiB)
+   Building multi-key-dict==2.0.3
+   Building pytest-timeouts==1.2.1
+   Building pure-sasl==0.6.2
+   Building pykerberos==1.2.4
+   Building alibabacloud-tea==0.4.3
+   Building docopt==0.6.2
+   Building kylinpy==2.8.4
+   Building hdfs==2.7.3
+   Building pyhive==0.7.0
+   Building atlasclient==1.0.0
+   Building pydruid==0.6.9
+   Building python-ldap==3.4.8
+ Downloaded pygments
+      Built apache-airflow-ctl-tests @ file:///Users/caotia/Code/airflow-fork/airflow-ctl-tests
+      Built apache-airflow-shared-plugins-manager @ file:///Users/caotia/Code/airflow-fork/shared/plugins_manager
+ Downloaded grpcio
+      Built apache-airflow-shared-listeners @ file:///Users/caotia/Code/airflow-fork/shared/listeners
+      Built apache-airflow-shared-module-loading @ file:///Users/caotia/Code/airflow-fork/shared/module_loading
+      Built apache-airflow-docker-tests @ file:///Users/caotia/Code/airflow-fork/docker-tests
+      Built apache-airflow-shared-secrets-backend @ file:///Users/caotia/Code/airflow-fork/shared/secrets_backend
+      Built apache-airflow-mypy @ file:///Users/caotia/Code/airflow-fork/dev/mypy
+   Building pyspark-client==4.2.0
+      Built apache-airflow-scripts @ file:///Users/caotia/Code/airflow-fork/scripts
+      Built apache-airflow-shared-observability @ file:///Users/caotia/Code/airflow-fork/shared/observability
+      Built apache-airflow-task-sdk-integration-tests @ file:///Users/caotia/Code/airflow-fork/task-sdk-integration-tests
+      Built apache-airflow-kubernetes-tests @ file:///Users/caotia/Code/airflow-fork/kubernetes-tests
+      Built apache-airflow-shared-secrets-masker @ file:///Users/caotia/Code/airflow-fork/shared/secrets_masker
+      Built apache-airflow-shared-configuration @ file:///Users/caotia/Code/airflow-fork/shared/configuration
+      Built apache-airflow-ctl @ file:///Users/caotia/Code/airflow-fork/airflow-ctl
+      Built apache-airflow-providers-common-ai @ file:///Users/caotia/Code/airflow-fork/providers/common/ai
+      Built apache-airflow-shared-state @ file:///Users/caotia/Code/airflow-fork/shared/state
+      Built apache-airflow-shared-template-rendering @ file:///Users/caotia/Code/airflow-fork/shared/template_rendering
+      Built apache-airflow-helm-chart @ file:///Users/caotia/Code/airflow-fork/chart
+      Built apache-airflow-shared-logging @ file:///Users/caotia/Code/airflow-fork/shared/logging
+      Built apache-airflow-dev @ file:///Users/caotia/Code/airflow-fork/dev
+      Built apache-airflow-providers-yandex @ file:///Users/caotia/Code/airflow-fork/providers/yandex
+      Built apache-airflow-providers-fab @ file:///Users/caotia/Code/airflow-fork/providers/fab
+ Downloaded mypy
+      Built apache-airflow-providers-microsoft-psrp @ file:///Users/caotia/Code/airflow-fork/providers/microsoft/psrp
+      Built apache-airflow-providers-apache-hive @ file:///Users/caotia/Code/airflow-fork/providers/apache/hive
+      Built apache-airflow-shared-dagnode @ file:///Users/caotia/Code/airflow-fork/shared/dagnode
+      Built apache-airflow-shared-serialization @ file:///Users/caotia/Code/airflow-fork/shared/serialization
+      Built apache-airflow @ file:///Users/caotia/Code/airflow-fork
+      Built apache-airflow-shared-providers-discovery @ file:///Users/caotia/Code/airflow-fork/shared/providers_discovery
+      Built apache-airflow-providers-airbyte @ file:///Users/caotia/Code/airflow-fork/providers/airbyte
+      Built apache-airflow-providers-alibaba @ file:///Users/caotia/Code/airflow-fork/providers/alibaba
+      Built apache-airflow-shared-timezones @ file:///Users/caotia/Code/airflow-fork/shared/timezones
+      Built apache-airflow-providers-ftp @ file:///Users/caotia/Code/airflow-fork/providers/ftp
+      Built apache-airflow-providers-weaviate @ file:///Users/caotia/Code/airflow-fork/providers/weaviate
+      Built apache-airflow-providers-apache-livy @ file:///Users/caotia/Code/airflow-fork/providers/apache/livy
+      Built apache-airflow-providers-postgres @ file:///Users/caotia/Code/airflow-fork/providers/postgres
+      Built apache-airflow-providers-apache-kylin @ file:///Users/caotia/Code/airflow-fork/providers/apache/kylin
+      Built apache-airflow-providers-apache-cassandra @ file:///Users/caotia/Code/airflow-fork/providers/apache/cassandra
+      Built apache-airflow-providers-apache-impala @ file:///Users/caotia/Code/airflow-fork/providers/apache/impala
+      Built apache-airflow-providers-ibm-db2 @ file:///Users/caotia/Code/airflow-fork/providers/ibm/db2
+      Built apache-airflow-providers-apprise @ file:///Users/caotia/Code/airflow-fork/providers/apprise
+      Built apache-airflow-providers-asana @ file:///Users/caotia/Code/airflow-fork/providers/asana
+      Built apache-airflow-providers-apache-hdfs @ file:///Users/caotia/Code/airflow-fork/providers/apache/hdfs
+      Built apache-airflow-providers-celery @ file:///Users/caotia/Code/airflow-fork/providers/celery
+      Built apache-airflow-providers-apache-pinot @ file:///Users/caotia/Code/airflow-fork/providers/apache/pinot
+      Built apache-airflow-devel-common @ file:///Users/caotia/Code/airflow-fork/devel-common
+      Built apache-airflow-providers-jdbc @ file:///Users/caotia/Code/airflow-fork/providers/jdbc
+      Built apache-airflow-providers-git @ file:///Users/caotia/Code/airflow-fork/providers/git
+      Built apache-airflow-providers-edge3 @ file:///Users/caotia/Code/airflow-fork/providers/edge3
+      Built apache-airflow-providers-sendgrid @ file:///Users/caotia/Code/airflow-fork/providers/sendgrid
+      Built apache-airflow-providers-trino @ file:///Users/caotia/Code/airflow-fork/providers/trino
+      Built apache-airflow-providers-mongo @ file:///Users/caotia/Code/airflow-fork/providers/mongo
+      Built apache-airflow-providers-http @ file:///Users/caotia/Code/airflow-fork/providers/http
+      Built apache-airflow-providers-apache-pig @ file:///Users/caotia/Code/airflow-fork/providers/apache/pig
+      Built apache-airflow-providers-singularity @ file:///Users/caotia/Code/airflow-fork/providers/singularity
+      Built apache-airflow-providers-imap @ file:///Users/caotia/Code/airflow-fork/providers/imap
+      Built apache-airflow-providers-redis @ file:///Users/caotia/Code/airflow-fork/providers/redis
+ Downloaded cryptography
+      Built apache-airflow-providers-microsoft-azure @ file:///Users/caotia/Code/airflow-fork/providers/microsoft/azure
+ Downloaded duckdb
+      Built apache-airflow-providers-odbc @ file:///Users/caotia/Code/airflow-fork/providers/odbc
+      Built apache-airflow-providers-informatica @ file:///Users/caotia/Code/airflow-fork/providers/informatica
+      Built apache-airflow-providers-salesforce @ file:///Users/caotia/Code/airflow-fork/providers/salesforce
+      Built apache-airflow-providers-pinecone @ file:///Users/caotia/Code/airflow-fork/providers/pinecone
+      Built apache-airflow-providers-papermill @ file:///Users/caotia/Code/airflow-fork/providers/papermill
+      Built apache-airflow-providers-segment @ file:///Users/caotia/Code/airflow-fork/providers/segment
+      Built apache-airflow-providers-openfaas @ file:///Users/caotia/Code/airflow-fork/providers/openfaas
+      Built apache-airflow-providers-presto @ file:///Users/caotia/Code/airflow-fork/providers/presto
+      Built apache-airflow-providers-grpc @ file:///Users/caotia/Code/airflow-fork/providers/grpc
+      Built apache-airflow-providers-openlineage @ file:///Users/caotia/Code/airflow-fork/providers/openlineage
+      Built apache-airflow-providers-opensearch @ file:///Users/caotia/Code/airflow-fork/providers/opensearch
+      Built apache-airflow-providers-qdrant @ file:///Users/caotia/Code/airflow-fork/providers/qdrant
+      Built apache-airflow-providers-sqlite @ file:///Users/caotia/Code/airflow-fork/providers/sqlite
+      Built apache-airflow-providers-opsgenie @ file:///Users/caotia/Code/airflow-fork/providers/opsgenie
+      Built apache-airflow-providers-standard @ file:///Users/caotia/Code/airflow-fork/providers/standard
+      Built apache-airflow-providers-snowflake @ file:///Users/caotia/Code/airflow-fork/providers/snowflake
+      Built apache-airflow-providers-samba @ file:///Users/caotia/Code/airflow-fork/providers/samba
+      Built apache-airflow-providers-apache-drill @ file:///Users/caotia/Code/airflow-fork/providers/apache/drill
+      Built apache-airflow-providers-sftp @ file:///Users/caotia/Code/airflow-fork/providers/sftp
+      Built apache-airflow-providers-pagerduty @ file:///Users/caotia/Code/airflow-fork/providers/pagerduty
+      Built apache-airflow-providers-amazon @ file:///Users/caotia/Code/airflow-fork/providers/amazon
+      Built apache-airflow-providers-apache-iceberg @ file:///Users/caotia/Code/airflow-fork/providers/apache/iceberg
+      Built apache-airflow-providers-akeyless @ file:///Users/caotia/Code/airflow-fork/providers/akeyless
+      Built apache-airflow-providers-apache-tinkerpop @ file:///Users/caotia/Code/airflow-fork/providers/apache/tinkerpop
+      Built apache-airflow-providers-apache-beam @ file:///Users/caotia/Code/airflow-fork/providers/apache/beam
+      Built apache-airflow-providers-apache-druid @ file:///Users/caotia/Code/airflow-fork/providers/apache/druid
+      Built apache-airflow-providers-apache-arrow @ file:///Users/caotia/Code/airflow-fork/providers/apache/arrow
+      Built apache-airflow-providers-ydb @ file:///Users/caotia/Code/airflow-fork/providers/ydb
+      Built apache-airflow-providers-apache-kafka @ file:///Users/caotia/Code/airflow-fork/providers/apache/kafka
+      Built apache-airflow-providers-modal @ file:///Users/caotia/Code/airflow-fork/providers/modal
+      Built apache-airflow-providers-anthropic @ file:///Users/caotia/Code/airflow-fork/providers/anthropic
+      Built apache-airflow-providers-zendesk @ file:///Users/caotia/Code/airflow-fork/providers/zendesk
+      Built apache-airflow-providers-vespa @ file:///Users/caotia/Code/airflow-fork/providers/vespa
+      Built apache-airflow-providers-arangodb @ file:///Users/caotia/Code/airflow-fork/providers/arangodb
+      Built apache-airflow-providers-atlassian-jira @ file:///Users/caotia/Code/airflow-fork/providers/atlassian/jira
+      Built apache-airflow-breeze @ file:///Users/caotia/Code/airflow-fork/dev/breeze
+      Built apache-airflow-providers-databricks @ file:///Users/caotia/Code/airflow-fork/providers/databricks
+      Built apache-airflow-providers-cncf-kubernetes @ file:///Users/caotia/Code/airflow-fork/providers/cncf/kubernetes
+      Built apache-airflow-providers-apache-flink @ file:///Users/caotia/Code/airflow-fork/providers/apache/flink
+      Built apache-airflow-providers-cloudant @ file:///Users/caotia/Code/airflow-fork/providers/cloudant
+      Built apache-airflow-providers-cohere @ file:///Users/caotia/Code/airflow-fork/providers/cohere
+      Built apache-airflow-providers-google @ file:///Users/caotia/Code/airflow-fork/providers/google
+      Built apache-airflow-providers-apache-spark @ file:///Users/caotia/Code/airflow-fork/providers/apache/spark
+      Built apache-airflow-providers-clickhousedb @ file:///Users/caotia/Code/airflow-fork/providers/clickhousedb
+      Built apache-airflow-providers-common-messaging @ file:///Users/caotia/Code/airflow-fork/providers/common/messaging
+      Built apache-airflow-providers-common-sql @ file:///Users/caotia/Code/airflow-fork/providers/common/sql
+ Downloaded botocore
+      Built apache-airflow-providers-hashicorp @ file:///Users/caotia/Code/airflow-fork/providers/hashicorp
+      Built apache-airflow-providers-common-io @ file:///Users/caotia/Code/airflow-fork/providers/common/io
+      Built apache-airflow-providers-facebook @ file:///Users/caotia/Code/airflow-fork/providers/facebook
+      Built apache-airflow-providers-dbt-cloud @ file:///Users/caotia/Code/airflow-fork/providers/dbt/cloud
+      Built apache-airflow-providers-datadog @ file:///Users/caotia/Code/airflow-fork/providers/datadog
+      Built apache-airflow-providers-slack @ file:///Users/caotia/Code/airflow-fork/providers/slack
+      Built apache-airflow-providers-docker @ file:///Users/caotia/Code/airflow-fork/providers/docker
+      Built apache-airflow-providers-discord @ file:///Users/caotia/Code/airflow-fork/providers/discord
+      Built apache-airflow-providers-exasol @ file:///Users/caotia/Code/airflow-fork/providers/exasol
+      Built apache-airflow-providers-duckdb @ file:///Users/caotia/Code/airflow-fork/providers/duckdb
+      Built apache-airflow-providers-common-compat @ file:///Users/caotia/Code/airflow-fork/providers/common/compat
+      Built apache-airflow-providers-keycloak @ file:///Users/caotia/Code/airflow-fork/providers/keycloak
+      Built apache-airflow-providers-mysql @ file:///Users/caotia/Code/airflow-fork/providers/mysql
+      Built apache-airflow-providers-elasticsearch @ file:///Users/caotia/Code/airflow-fork/providers/elasticsearch
+      Built apache-airflow-providers-influxdb @ file:///Users/caotia/Code/airflow-fork/providers/influxdb
+ Downloaded google-api-python-client
+      Built apache-airflow-providers-github @ file:///Users/caotia/Code/airflow-fork/providers/github
+      Built apache-airflow-providers-openai @ file:///Users/caotia/Code/airflow-fork/providers/openai
+      Built apache-airflow-providers-vertica @ file:///Users/caotia/Code/airflow-fork/providers/vertica
+      Built apache-airflow-providers-pgvector @ file:///Users/caotia/Code/airflow-fork/providers/pgvector
+      Built apache-airflow-providers-teradata @ file:///Users/caotia/Code/airflow-fork/providers/teradata
+      Built apache-airflow-providers-oracle @ file:///Users/caotia/Code/airflow-fork/providers/oracle
+      Built apache-airflow-providers-ssh @ file:///Users/caotia/Code/airflow-fork/providers/ssh
+      Built apache-airflow-providers-microsoft-winrm @ file:///Users/caotia/Code/airflow-fork/providers/microsoft/winrm
+      Built apache-airflow-providers-neo4j @ file:///Users/caotia/Code/airflow-fork/providers/neo4j
+      Built apache-airflow-providers-microsoft-mssql @ file:///Users/caotia/Code/airflow-fork/providers/microsoft/mssql
+      Built apache-airflow-providers-tableau @ file:///Users/caotia/Code/airflow-fork/providers/tableau
+      Built apache-airflow-providers-smtp @ file:///Users/caotia/Code/airflow-fork/providers/smtp
+      Built apache-airflow-providers-jenkins @ file:///Users/caotia/Code/airflow-fork/providers/jenkins
+      Built apache-airflow-providers-telegram @ file:///Users/caotia/Code/airflow-fork/providers/telegram
+      Built apache-airflow-providers-dingding @ file:///Users/caotia/Code/airflow-fork/providers/dingding
+ Downloaded litellm
+      Built multi-key-dict==2.0.3
+ Downloaded uv
+      Built pytest-timeouts==1.2.1
+      Built pure-sasl==0.6.2
+      Built docopt==0.6.2
+      Built kylinpy==2.8.4
+      Built alibabacloud-tea==0.4.3
+      Built apache-airflow-core @ file:///Users/caotia/Code/airflow-fork/airflow-core
+      Built hdfs==2.7.3
+      Built pydruid==0.6.9
+      Built atlasclient==1.0.0
+      Built pyhive==0.7.0
+      Built pykerberos==1.2.4
+      Built pyspark-client==4.2.0
+      Built python-ldap==3.4.8
+ Downloaded mysql-connector-python
+ Downloaded scipy
+ Downloaded ibm-db
+ Downloaded babel
+ Downloaded google-ads
+ Downloaded pyarrow
+ Downloaded polars-runtime-32
+ Downloaded ray
+ Downloaded teradatasql
+Prepared 794 packages in 1m 13s
+Installed 818 packages in 2.99s
+ + a2wsgi==1.10.10
+ + adal==1.2.7
+ + adbc-driver-manager==1.12.0
+ + adlfs==2026.8.0
+ + aenum==3.1.17
+ + aiobotocore==3.9.1
+ + aiofiles==24.1.0
+ + aiohappyeyeballs==2.7.1
+ + aiohttp==3.14.3
+ + aiohttp-cors==0.8.1
+ + aioitertools==0.13.0
+ + aiomysql==0.3.2
+ + aiosignal==1.4.0
+ + aiosmtplib==5.1.3
+ + aiosqlite==0.22.1
+ + airbyte-api==1.0.1
+ + akeyless==5.0.38
+ + alembic==1.20.0
+ + alibabacloud-adb20211201==4.5.0
+ + alibabacloud-credentials==1.0.12
+ + alibabacloud-credentials-api==1.0.1
+ + alibabacloud-gateway-spi==0.0.4
+ + alibabacloud-oss-v2==1.4.0
+ + alibabacloud-tea==0.4.3
+ + alibabacloud-tea-openapi==0.4.6
+ + alibabacloud-tea-util==0.3.15
+ + amqp==5.4.0
+ + annotated-doc==0.0.5
+ + annotated-types==0.8.0
+ + ansicolors==1.1.8
+ + anthropic==1.8.0
+ + anyio==4.15.1
+ + apache-airflow==3.4.0 (from file:///Users/caotia/Code/airflow-fork)
+ + apache-airflow-breeze==0.0.1 (from file:///Users/caotia/Code/airflow-fork/dev/breeze)
+ + apache-airflow-core==3.4.0 (from file:///Users/caotia/Code/airflow-fork/airflow-core)
+ + apache-airflow-ctl==0.1.5 (from file:///Users/caotia/Code/airflow-fork/airflow-ctl)
+ + apache-airflow-ctl-tests==0.0.1 (from file:///Users/caotia/Code/airflow-fork/airflow-ctl-tests)
+ + apache-airflow-dev==0.0.1 (from file:///Users/caotia/Code/airflow-fork/dev)
+ + apache-airflow-devel-common==0.1.0 (from file:///Users/caotia/Code/airflow-fork/devel-common)
+ + apache-airflow-docker-tests==0.0.1 (from file:///Users/caotia/Code/airflow-fork/docker-tests)
+ + apache-airflow-helm-chart==0.0.1 (from file:///Users/caotia/Code/airflow-fork/chart)
+ + apache-airflow-kubernetes-tests==0.0.1 (from file:///Users/caotia/Code/airflow-fork/kubernetes-tests)
+ + apache-airflow-mypy==0.1.0 (from file:///Users/caotia/Code/airflow-fork/dev/mypy)
+ + apache-airflow-providers-airbyte==6.1.0 (from file:///Users/caotia/Code/airflow-fork/providers/airbyte)
+ + apache-airflow-providers-akeyless==0.3.1 (from file:///Users/caotia/Code/airflow-fork/providers/akeyless)
+ + apache-airflow-providers-alibaba==3.5.0 (from file:///Users/caotia/Code/airflow-fork/providers/alibaba)
+ + apache-airflow-providers-amazon==9.37.0 (from file:///Users/caotia/Code/airflow-fork/providers/amazon)
+ + apache-airflow-providers-anthropic==1.1.0 (from file:///Users/caotia/Code/airflow-fork/providers/anthropic)
+ + apache-airflow-providers-apache-arrow==0.1.0 (from file:///Users/caotia/Code/airflow-fork/providers/apache/arrow)
+ + apache-airflow-providers-apache-beam==6.3.0 (from file:///Users/caotia/Code/airflow-fork/providers/apache/beam)
+ + apache-airflow-providers-apache-cassandra==3.10.0 (from file:///Users/caotia/Code/airflow-fork/providers/apache/cassandra)
+ + apache-airflow-providers-apache-drill==3.3.3 (from file:///Users/caotia/Code/airflow-fork/providers/apache/drill)
+ + apache-airflow-providers-apache-druid==4.6.0 (from file:///Users/caotia/Code/airflow-fork/providers/apache/druid)
+ + apache-airflow-providers-apache-flink==1.9.0 (from file:///Users/caotia/Code/airflow-fork/providers/apache/flink)
+ + apache-airflow-providers-apache-hdfs==4.14.0 (from file:///Users/caotia/Code/airflow-fork/providers/apache/hdfs)
+ + apache-airflow-providers-apache-hive==9.7.0 (from file:///Users/caotia/Code/airflow-fork/providers/apache/hive)
+ + apache-airflow-providers-apache-iceberg==2.1.1 (from file:///Users/caotia/Code/airflow-fork/providers/apache/iceberg)
+ + apache-airflow-providers-apache-impala==1.9.3 (from file:///Users/caotia/Code/airflow-fork/providers/apache/impala)
+ + apache-airflow-providers-apache-kafka==2.0.0 (from file:///Users/caotia/Code/airflow-fork/providers/apache/kafka)
+ + apache-airflow-providers-apache-kylin==3.11.0 (from file:///Users/caotia/Code/airflow-fork/providers/apache/kylin)
+ + apache-airflow-providers-apache-livy==4.6.2 (from file:///Users/caotia/Code/airflow-fork/providers/apache/livy)
+ + apache-airflow-providers-apache-pig==4.9.0 (from file:///Users/caotia/Code/airflow-fork/providers/apache/pig)
+ + apache-airflow-providers-apache-pinot==4.10.3 (from file:///Users/caotia/Code/airflow-fork/providers/apache/pinot)
+ + apache-airflow-providers-apache-spark==6.3.2 (from file:///Users/caotia/Code/airflow-fork/providers/apache/spark)
+ + apache-airflow-providers-apache-tinkerpop==1.2.0 (from file:///Users/caotia/Code/airflow-fork/providers/apache/tinkerpop)
+ + apache-airflow-providers-apprise==2.4.0 (from file:///Users/caotia/Code/airflow-fork/providers/apprise)
+ + apache-airflow-providers-arangodb==2.10.0 (from file:///Users/caotia/Code/airflow-fork/providers/arangodb)
+ + apache-airflow-providers-asana==2.12.0 (from file:///Users/caotia/Code/airflow-fork/providers/asana)
+ + apache-airflow-providers-atlassian-jira==3.4.0 (from file:///Users/caotia/Code/airflow-fork/providers/atlassian/jira)
+ + apache-airflow-providers-celery==3.24.1 (from file:///Users/caotia/Code/airflow-fork/providers/celery)
+ + apache-airflow-providers-clickhousedb==1.0.0 (from file:///Users/caotia/Code/airflow-fork/providers/clickhousedb)
+ + apache-airflow-providers-cloudant==4.3.6 (from file:///Users/caotia/Code/airflow-fork/providers/cloudant)
+ + apache-airflow-providers-cncf-kubernetes==10.23.0 (from file:///Users/caotia/Code/airflow-fork/providers/cncf/kubernetes)
+ + apache-airflow-providers-cohere==1.8.0 (from file:///Users/caotia/Code/airflow-fork/providers/cohere)
+ + apache-airflow-providers-common-ai==0.10.0 (from file:///Users/caotia/Code/airflow-fork/providers/common/ai)
+ + apache-airflow-providers-common-compat==1.20.0 (from file:///Users/caotia/Code/airflow-fork/providers/common/compat)
+ + apache-airflow-providers-common-io==1.10.0 (from file:///Users/caotia/Code/airflow-fork/providers/common/io)
+ + apache-airflow-providers-common-messaging==2.1.1 (from file:///Users/caotia/Code/airflow-fork/providers/common/messaging)
+ + apache-airflow-providers-common-sql==2.2.0 (from file:///Users/caotia/Code/airflow-fork/providers/common/sql)
+ + apache-airflow-providers-databricks==7.21.0 (from file:///Users/caotia/Code/airflow-fork/providers/databricks)
+ + apache-airflow-providers-datadog==3.11.0 (from file:///Users/caotia/Code/airflow-fork/providers/datadog)
+ + apache-airflow-providers-dbt-cloud==4.10.0 (from file:///Users/caotia/Code/airflow-fork/providers/dbt/cloud)
+ + apache-airflow-providers-dingding==3.10.0 (from file:///Users/caotia/Code/airflow-fork/providers/dingding)
+ + apache-airflow-providers-discord==3.12.3 (from file:///Users/caotia/Code/airflow-fork/providers/discord)
+ + apache-airflow-providers-docker==4.6.0 (from file:///Users/caotia/Code/airflow-fork/providers/docker)
+ + apache-airflow-providers-duckdb==0.1.0 (from file:///Users/caotia/Code/airflow-fork/providers/duckdb)
+ + apache-airflow-providers-edge3==5.0.0 (from file:///Users/caotia/Code/airflow-fork/providers/edge3)
+ + apache-airflow-providers-elasticsearch==6.9.1 (from file:///Users/caotia/Code/airflow-fork/providers/elasticsearch)
+ + apache-airflow-providers-exasol==4.11.0 (from file:///Users/caotia/Code/airflow-fork/providers/exasol)
+ + apache-airflow-providers-fab==3.10.0 (from file:///Users/caotia/Code/airflow-fork/providers/fab)
+ + apache-airflow-providers-facebook==3.9.5 (from file:///Users/caotia/Code/airflow-fork/providers/facebook)
+ + apache-airflow-providers-ftp==3.16.0 (from file:///Users/caotia/Code/airflow-fork/providers/ftp)
+ + apache-airflow-providers-git==1.0.0 (from file:///Users/caotia/Code/airflow-fork/providers/git)
+ + apache-airflow-providers-github==2.12.0 (from file:///Users/caotia/Code/airflow-fork/providers/github)
+ + apache-airflow-providers-google==22.6.0 (from file:///Users/caotia/Code/airflow-fork/providers/google)
+ + apache-airflow-providers-grpc==3.10.0 (from file:///Users/caotia/Code/airflow-fork/providers/grpc)
+ + apache-airflow-providers-hashicorp==4.8.2 (from file:///Users/caotia/Code/airflow-fork/providers/hashicorp)
+ + apache-airflow-providers-http==6.2.0 (from file:///Users/caotia/Code/airflow-fork/providers/http)
+ + apache-airflow-providers-ibm-db2==0.1.0 (from file:///Users/caotia/Code/airflow-fork/providers/ibm/db2)
+ + apache-airflow-providers-imap==3.13.0 (from file:///Users/caotia/Code/airflow-fork/providers/imap)
+ + apache-airflow-providers-influxdb==2.12.0 (from file:///Users/caotia/Code/airflow-fork/providers/influxdb)
+ + apache-airflow-providers-informatica==0.2.1 (from file:///Users/caotia/Code/airflow-fork/providers/informatica)
+ + apache-airflow-providers-jdbc==5.6.0 (from file:///Users/caotia/Code/airflow-fork/providers/jdbc)
+ + apache-airflow-providers-jenkins==4.2.6 (from file:///Users/caotia/Code/airflow-fork/providers/jenkins)
+ + apache-airflow-providers-keycloak==0.11.0 (from file:///Users/caotia/Code/airflow-fork/providers/keycloak)
+ + apache-airflow-providers-microsoft-azure==15.2.0 (from file:///Users/caotia/Code/airflow-fork/providers/microsoft/azure)
+ + apache-airflow-providers-microsoft-mssql==4.7.1 (from file:///Users/caotia/Code/airflow-fork/providers/microsoft/mssql)
+ + apache-airflow-providers-microsoft-psrp==4.0.0 (from file:///Users/caotia/Code/airflow-fork/providers/microsoft/psrp)
+ + apache-airflow-providers-microsoft-winrm==3.15.0 (from file:///Users/caotia/Code/airflow-fork/providers/microsoft/winrm)
+ + apache-airflow-providers-modal==0.1.0 (from file:///Users/caotia/Code/airflow-fork/providers/modal)
+ + apache-airflow-providers-mongo==5.5.0 (from file:///Users/caotia/Code/airflow-fork/providers/mongo)
+ + apache-airflow-providers-mysql==6.7.0 (from file:///Users/caotia/Code/airflow-fork/providers/mysql)
+ + apache-airflow-providers-neo4j==3.13.0 (from file:///Users/caotia/Code/airflow-fork/providers/neo4j)
+ + apache-airflow-providers-odbc==4.13.0 (from file:///Users/caotia/Code/airflow-fork/providers/odbc)
+ + apache-airflow-providers-openai==2.0.0 (from file:///Users/caotia/Code/airflow-fork/providers/openai)
+ + apache-airflow-providers-openfaas==3.9.5 (from file:///Users/caotia/Code/airflow-fork/providers/openfaas)
+ + apache-airflow-providers-openlineage==2.20.2 (from file:///Users/caotia/Code/airflow-fork/providers/openlineage)
+ + apache-airflow-providers-opensearch==1.13.0 (from file:///Users/caotia/Code/airflow-fork/providers/opensearch)
+ + apache-airflow-providers-opsgenie==5.11.0 (from file:///Users/caotia/Code/airflow-fork/providers/opsgenie)
+ + apache-airflow-providers-oracle==4.7.0 (from file:///Users/caotia/Code/airflow-fork/providers/oracle)
+ + apache-airflow-providers-pagerduty==5.3.0 (from file:///Users/caotia/Code/airflow-fork/providers/pagerduty)
+ + apache-airflow-providers-papermill==3.13.2 (from file:///Users/caotia/Code/airflow-fork/providers/papermill)
+ + apache-airflow-providers-pgvector==1.7.3 (from file:///Users/caotia/Code/airflow-fork/providers/pgvector)
+ + apache-airflow-providers-pinecone==2.5.0 (from file:///Users/caotia/Code/airflow-fork/providers/pinecone)
+ + apache-airflow-providers-postgres==7.1.0 (from file:///Users/caotia/Code/airflow-fork/providers/postgres)
+ + apache-airflow-providers-presto==5.13.0 (from file:///Users/caotia/Code/airflow-fork/providers/presto)
+ + apache-airflow-providers-qdrant==1.6.0 (from file:///Users/caotia/Code/airflow-fork/providers/qdrant)
+ + apache-airflow-providers-redis==4.7.0 (from file:///Users/caotia/Code/airflow-fork/providers/redis)
+ + apache-airflow-providers-salesforce==5.15.0 (from file:///Users/caotia/Code/airflow-fork/providers/salesforce)
+ + apache-airflow-providers-samba==4.14.0 (from file:///Users/caotia/Code/airflow-fork/providers/samba)
+ + apache-airflow-providers-segment==3.10.0 (from file:///Users/caotia/Code/airflow-fork/providers/segment)
+ + apache-airflow-providers-sendgrid==4.2.4 (from file:///Users/caotia/Code/airflow-fork/providers/sendgrid)
+ + apache-airflow-providers-sftp==6.1.0 (from file:///Users/caotia/Code/airflow-fork/providers/sftp)
+ + apache-airflow-providers-singularity==3.9.4 (from file:///Users/caotia/Code/airflow-fork/providers/singularity)
+ + apache-airflow-providers-slack==9.11.0 (from file:///Users/caotia/Code/airflow-fork/providers/slack)
+ + apache-airflow-providers-smtp==3.1.0 (from file:///Users/caotia/Code/airflow-fork/providers/smtp)
+ + apache-airflow-providers-snowflake==6.18.0 (from file:///Users/caotia/Code/airflow-fork/providers/snowflake)
+ + apache-airflow-providers-sqlite==4.3.3 (from file:///Users/caotia/Code/airflow-fork/providers/sqlite)
+ + apache-airflow-providers-ssh==6.1.0 (from file:///Users/caotia/Code/airflow-fork/providers/ssh)
+ + apache-airflow-providers-standard==1.20.0 (from file:///Users/caotia/Code/airflow-fork/providers/standard)
+ + apache-airflow-providers-tableau==5.7.0 (from file:///Users/caotia/Code/airflow-fork/providers/tableau)
+ + apache-airflow-providers-telegram==4.10.0 (from file:///Users/caotia/Code/airflow-fork/providers/telegram)
+ + apache-airflow-providers-teradata==3.7.0 (from file:///Users/caotia/Code/airflow-fork/providers/teradata)
+ + apache-airflow-providers-trino==6.7.0 (from file:///Users/caotia/Code/airflow-fork/providers/trino)
+ + apache-airflow-providers-vertica==4.4.0 (from file:///Users/caotia/Code/airflow-fork/providers/vertica)
+ + apache-airflow-providers-vespa==0.1.1 (from file:///Users/caotia/Code/airflow-fork/providers/vespa)
+ + apache-airflow-providers-weaviate==3.5.0 (from file:///Users/caotia/Code/airflow-fork/providers/weaviate)
+ + apache-airflow-providers-yandex==4.6.0 (from file:///Users/caotia/Code/airflow-fork/providers/yandex)
+ + apache-airflow-providers-ydb==2.6.0 (from file:///Users/caotia/Code/airflow-fork/providers/ydb)
+ + apache-airflow-providers-zendesk==4.12.0 (from file:///Users/caotia/Code/airflow-fork/providers/zendesk)
+ + apache-airflow-scripts==0.0.1 (from file:///Users/caotia/Code/airflow-fork/scripts)
+ + apache-airflow-shared-configuration==0.0 (from file:///Users/caotia/Code/airflow-fork/shared/configuration)
+ + apache-airflow-shared-dagnode==0.0 (from file:///Users/caotia/Code/airflow-fork/shared/dagnode)
+ + apache-airflow-shared-listeners==0.0 (from file:///Users/caotia/Code/airflow-fork/shared/listeners)
+ + apache-airflow-shared-logging==0.0 (from file:///Users/caotia/Code/airflow-fork/shared/logging)
+ + apache-airflow-shared-module-loading==0.0 (from file:///Users/caotia/Code/airflow-fork/shared/module_loading)
+ + apache-airflow-shared-observability==0.0 (from file:///Users/caotia/Code/airflow-fork/shared/observability)
+ + apache-airflow-shared-plugins-manager==0.0 (from file:///Users/caotia/Code/airflow-fork/shared/plugins_manager)
+ + apache-airflow-shared-providers-discovery==0.0 (from file:///Users/caotia/Code/airflow-fork/shared/providers_discovery)
+ + apache-airflow-shared-secrets-backend==0.0 (from file:///Users/caotia/Code/airflow-fork/shared/secrets_backend)
+ + apache-airflow-shared-secrets-masker==0.0 (from file:///Users/caotia/Code/airflow-fork/shared/secrets_masker)
+ + apache-airflow-shared-serialization==0.0 (from file:///Users/caotia/Code/airflow-fork/shared/serialization)
+ + apache-airflow-shared-state==0.0 (from file:///Users/caotia/Code/airflow-fork/shared/state)
+ + apache-airflow-shared-template-rendering==0.0 (from file:///Users/caotia/Code/airflow-fork/shared/template_rendering)
+ + apache-airflow-shared-timezones==0.0 (from file:///Users/caotia/Code/airflow-fork/shared/timezones)
+ + apache-airflow-task-sdk==1.4.0 (from file:///Users/caotia/Code/airflow-fork/task-sdk)
+ + apache-airflow-task-sdk-integration-tests==0.0.1 (from file:///Users/caotia/Code/airflow-fork/task-sdk-integration-tests)
+ + apache-beam==2.77.0rc2
+ + apispec==6.10.0
+ + appnope==1.0.0
+ + apprise==1.13.1
+ + apscheduler==3.11.3
+ + argcomplete==3.7.2
+ + arrow==1.4.0
+ + asana==5.3.0
+ + asgiref==3.12.1
+ + asn1crypto==1.5.1
+ + ast-serialize==0.11.2
+ + astor==0.8.1
+ + asttokens==3.0.2
+ + async-timeout==4.0.3
+ + asyncpg==0.31.0
+ + asyncssh==2.24.0
+ + atlasclient==1.0.0
+ + atlassian-python-api==5.0.5
+ + attrs==26.1.0
+ + authlib==1.8.0
+ + azure-ai-projects==2.4.0
+ + azure-batch==15.1.0
+ + azure-common==1.1.28
+ + azure-core==1.41.0
+ + azure-cosmos==4.17.1
+ + azure-datalake-store==0.0.53
+ + azure-identity==1.25.3
+ + azure-keyvault-secrets==4.11.2
+ + azure-kusto-data==6.0.4
+ + azure-mgmt-compute==38.3.0
+ + azure-mgmt-containerinstance==10.1.0
+ + azure-mgmt-containerregistry==15.0.0
+ + azure-mgmt-core==1.6.0
+ + azure-mgmt-cosmosdb==10.0.0
+ + azure-mgmt-datafactory==10.0.0
+ + azure-mgmt-datalake-nspkg==3.0.1
+ + azure-mgmt-datalake-store==0.5.0
+ + azure-mgmt-nspkg==3.0.2
+ + azure-mgmt-resource==26.0.0
+ + azure-mgmt-storage==25.1.0
+ + azure-nspkg==3.0.2
+ + azure-servicebus==7.14.3
+ + azure-storage-blob==12.30.3
+ + azure-storage-file-datalake==12.25.0
+ + azure-storage-file-share==12.26.0
+ + azure-synapse-artifacts==0.22.0
+ + azure-synapse-spark==0.7.0
+ + babel==2.18.0
+ + backoff==2.2.1
+ + backports-zstd==1.7.0
+ + bcrypt==5.0.0
+ + beartype==0.22.9
+ + beautifulsoup4==4.15.0
+ + billiard==4.3.0
+ + bitarray==3.11.0
+ + black==26.5.1
+ + bleach==6.4.0
+ + blinker==1.9.0
+ + boto3==1.43.75
+ + botocore==1.43.75
+ + build==1.6.1
+ + cachelib==0.17.0
+ + cachetools==6.2.6
+ + cadwyn==7.0.0
+ + capi-param-builder-python==1.3.2
+ + cassandra-driver==3.30.1
+ + cattrs==26.2.0
+ + cbor2==6.1.4
+ + celery==5.6.3
+ + certifi==2026.7.22
+ + cffi==2.1.1
+ + chardet==7.6.0
+ + charset-normalizer==3.5.1
+ + ciso8601==2.3.3
+ + click==8.5.0
+ + click-didyoumean==0.3.1
+ + click-plugins==1.1.1.2
+ + click-repl==0.4.0
+ + clickhouse-connect==1.9.0
+ + cloudpickle==3.1.1
+ + cohere==7.1.1
+ + colorama==0.4.6
+ + colorful==0.5.8
+ + colorlog==6.12.0
+ + comm==0.2.3
+ + confluent-kafka==2.15.1
+ + coverage==7.16.1
+ + crcmod-plus==2.3.1
+ + cron-descriptor==2.1.0
+ + croniter==6.2.4
+ + cryptography==50.0.1
+ + curlify==3.0.0
+ + darabonba-core==1.0.9
+ + databricks-sql-connector==4.5.0
+ + datadog==0.54.0
+ + db-dtypes==1.7.1
+ + debugpy==1.8.22
+ + decorator==5.3.1
+ + defusedxml==0.7.1
+ + deprecated==1.3.1
+ + deprecation==2.1.0
+ + dill==0.4.1
+ + distlib==0.4.3
+ + distro==1.9.0
+ + dnspython==2.8.0
+ + docker==7.2.0
+ + docopt==0.6.2
+ + docstring-parser==0.18.0
+ + docutils==0.22.4
+ + duckdb==1.5.5
+ + durationpy==0.11
+ + elastic-transport==9.4.2
+ + elasticsearch==9.5.1
+ + email-validator==2.3.0
+ + entrypoints==0.4
+ + et-xmlfile==2.0.0
+ + eventlet==0.41.2
+ + events==0.5
+ + execnet==2.1.2
+ + executing==2.2.1
+ + facebook-business==26.0.2
+ + fastapi==0.136.3
+ + fastapi-cli==0.0.32
+ + fastavro==1.12.2
+ + fastcore==2.2.30
+ + fasteners==0.20
+ + fastjsonschema==2.22.2
+ + fastuuid==0.14.0
+ + filelock==3.32.7
+ + flask==3.1.3
+ + flask-appbuilder==5.2.2
+ + flask-babel==4.0.0
+ + flask-jwt-extended==4.7.4
+ + flask-limiter==4.1.1
+ + flask-login==0.6.3
+ + flask-session==0.8.0
+ + flask-sqlalchemy==3.1.1
+ + flask-wtf==1.3.0
+ + flit==4.1.0
+ + flit-core==4.1.0
+ + flower==2.2.0
+ + frozenlist==1.8.0
+ + fsspec==2026.9.0
+ + future==1.0.0
+ + gcloud-aio-auth==5.5.0
+ + gcloud-aio-bigquery==7.1.0
+ + gcloud-aio-storage==9.6.4
+ + gcsfs==2026.8.1
+ + genai-prices==0.1.8
+ + geomet==1.1.0
+ + gevent==26.9.0
+ + gitdb==4.0.12
+ + gitpython==3.1.62
+ + google-ads==32.0.0
+ + google-analytics-admin==0.30.1
+ + google-api-core==2.38.0
+ + google-api-python-client==2.200.0
+ + google-auth==2.58.0
+ + google-auth-httplib2==0.2.1
+ + google-auth-oauthlib==1.4.1
+ + google-cloud-aiplatform==1.164.0
+ + google-cloud-alloydb==0.11.2
+ + google-cloud-appengine-logging==1.10.0
+ + google-cloud-audit-log==0.6.2
+ + google-cloud-automl==2.20.1
+ + google-cloud-batch==0.22.3
+ + google-cloud-bigquery==3.45.2
+ + google-cloud-bigquery-datatransfer==3.23.0
+ + google-cloud-bigquery-storage==2.41.0
+ + google-cloud-bigtable==2.46.0
+ + google-cloud-build==3.39.0
+ + google-cloud-compute==1.54.0
+ + google-cloud-container==2.66.0
+ + google-cloud-core==2.7.0
+ + google-cloud-datacatalog==3.31.0
+ + google-cloud-dataflow-client==0.13.0
+ + google-cloud-dataform==0.11.3
+ + google-cloud-dataplex==2.20.0
+ + google-cloud-dataproc==5.30.0
+ + google-cloud-dataproc-metastore==1.23.0
+ + google-cloud-dlp==3.39.0
+ + google-cloud-kms==3.17.0
+ + google-cloud-language==2.21.0
+ + google-cloud-logging==3.16.3
+ + google-cloud-managedkafka==0.4.1
+ + google-cloud-memcache==1.16.0
+ + google-cloud-monitoring==2.31.0
+ + google-cloud-orchestration-airflow==1.22.0
+ + google-cloud-os-login==2.22.0
+ + google-cloud-pubsub==2.41.0
+ + google-cloud-redis==2.22.0
+ + google-cloud-resource-manager==1.18.0
+ + google-cloud-run==0.16.1
+ + google-cloud-secret-manager==2.30.0
+ + google-cloud-spanner==3.71.0
+ + google-cloud-speech==2.40.0
+ + google-cloud-storage==3.14.1
+ + google-cloud-storage-control==1.15.0
+ + google-cloud-storage-transfer==1.21.0
+ + google-cloud-tasks==2.24.0
+ + google-cloud-texttospeech==2.37.0
+ + google-cloud-translate==3.27.0
+ + google-cloud-videointelligence==2.20.0
+ + google-cloud-vision==3.15.0
+ + google-cloud-workflows==1.23.0
+ + google-crc32c==1.8.0
+ + google-genai==2.25.0
+ + google-resumable-media==2.10.2
+ + googleapis-common-protos==1.75.3
+ + greenback==1.3.0
+ + greenlet==3.5.6
+ + gremlinpython==3.8.2
+ + griffelib==2.3.0
+ + grpc-google-iam-v1==0.14.5
+ + grpc-interceptor==0.15.4
+ + grpcio==1.84.0
+ + grpcio-gcp==0.2.2
+ + grpcio-health-checking==1.81.1
+ + grpcio-status==1.84.0
+ + grpcio-tools==1.81.1
+ + grpclib==0.4.9
+ + gssapi==1.12.0
+ + gunicorn==26.2.0
+ + h11==0.16.0
+ + h2==4.4.1
+ + hatch==1.18.1
+ + hatchling==1.32.4
+ + hdfs==2.7.3
+ + hf-xet==1.6.0
+ + hmsclient==0.1.1
+ + hpack==4.2.0
+ + httpcore==1.0.9
+ + httpcore2==2.13.1
+ + httplib2==0.32.0
+ + httpr==0.7.2
+ + httptools==0.8.0
+ + httpx==0.28.1
+ + httpx2==2.13.1
+ + huggingface-hub==1.32.0
+ + humanize==4.16.0
+ + hvac==2.4.0
+ + hyperframe==6.1.0
+ + hyperlink==21.0.0
+ + ibm-cloud-sdk-core==3.26.1
+ + ibm-db==3.3.0
+ + ibm-db-sa==0.4.4
+ + ibmcloudant==0.11.11
+ + icalendar==7.3.0
+ + icdiff==2.0.10
+ + id==1.6.1
+ + idna==3.20
+ + ijson==3.4.0.post0
+ + immutabledict==4.3.1
+ + importlib-metadata==8.9.0
+ + impyla==0.24.0
+ + incremental==24.11.0
+ + inflection==0.5.1
+ + influxdb-client==1.50.0
+ + influxdb3-python==0.21.0
+ + iniconfig==2.3.0
+ + inputimeout==1.0.4
+ + installer==1.0.1
+ + invoke==3.0.3
+ + ipdb==0.13.13
+ + ipykernel==7.3.0
+ + ipython==9.17.1
+ + ipython-pygments-lexers==1.1.1
+ + isodate==0.7.2
+ + isoduration==20.11.0
+ + itsdangerous==2.2.0
+ + jaraco-classes==3.4.0
+ + jaraco-context==6.1.2
+ + jaraco-functools==4.6.0
+ + jaydebeapi==1.2.3
+ + jedi==0.20.0
+ + jinja2==3.1.6
+ + jiter==0.17.0
+ + jmespath==1.1.0
+ + joblib==1.6.0
+ + joserfc==1.7.5
+ + jpype1==1.7.1
+ + jsonpath-ng==1.8.0
+ + jsonpickle==4.1.2
+ + jsonschema==4.26.0
+ + jsonschema-specifications==2025.9.1
+ + jupyter-client==8.10.0
+ + jupyter-core==5.9.1
+ + jupyterlab-pygments==0.3.0
+ + jwcrypto==1.6.1
+ + keyring==25.7.0
+ + kgb==7.3
+ + kombu==5.6.2
+ + krb5==0.10.0
+ + kubernetes==36.0.3
+ + kubernetes-asyncio==36.1.0
+ + kylinpy==2.8.4
+ + lazy-object-proxy==1.12.0
+ + libcst==1.9.0
+ + librt==0.15.0
+ + limits==5.8.0
+ + linkify-it-py==2.2.0
+ + litellm==1.85.7
+ + lockfile==0.12.2
+ + logfire-api==5.1.0
+ + looker-sdk==26.12.0
+ + lxml==6.1.3
+ + lz4==4.4.5
+ + mako==1.4.3
+ + markdown==3.10.3
+ + markdown-it-py==4.2.0
+ + markupsafe==3.0.3
+ + marshmallow==3.26.2
+ + marshmallow-sqlalchemy==1.5.0
+ + matplotlib-inline==0.2.2
+ + mdit-py-plugins==0.6.1
+ + mdurl==0.1.2
+ + memray==1.20.0
+ + mergedeep==1.3.4
+ + methodtools==0.4.7
+ + microsoft-kiota-abstractions==1.14.0
+ + microsoft-kiota-authentication-azure==1.14.0
+ + microsoft-kiota-http==1.14.0
+ + microsoft-kiota-serialization-json==1.14.0
+ + microsoft-kiota-serialization-text==1.14.0
+ + mistune==3.3.4
+ + mmh3==5.3.0
+ + modal==1.5.5
+ + more-itertools==11.1.0
+ + msal==1.39.0
+ + msal-extensions==1.3.1
+ + msgpack==1.2.2
+ + msgraph-core==1.5.1
+ + msgraphfs==0.5
+ + msgspec==0.21.1
+ + msrest==0.7.1
+ + msrestazure==0.6.4.post1
+ + multi-key-dict==2.0.3
+ + multidict==6.9.1
+ + mypy==2.3.1
+ + mypy-extensions==1.1.0
+ + mysql-connector-python==26.7.0
+ + nab==0.0.18
+ + nab-index==0.0.18
+ + nab-markersets==0.0.18
+ + nab-project==0.0.18
+ + nab-provider==0.0.18
+ + nab-resolver==0.0.18
+ + narwhals==2.26.0
+ + natsort==8.4.0
+ + nbclient==0.11.0
+ + nbconvert==7.17.1
+ + nbformat==5.11.1
+ + neo4j==6.3.1
+ + nest-asyncio==1.6.0
+ + nest-asyncio2==1.7.3
+ + nh3==0.3.7
+ + numpy==2.4.6
+ + oauthlib==3.3.1
+ + objsize==0.7.1
+ + openai==2.54.0
+ + opencensus==0.11.4
+ + opencensus-context==0.1.3
+ + openlineage-integration-common==1.53.0
+ + openlineage-python==1.53.0
+ + openlineage-sql==1.53.0
+ + openpyxl==3.1.5
+ + opensearch-protobufs==1.2.0
+ + opensearch-py==3.2.0
+ + opentelemetry-api==1.44.0
+ + opentelemetry-exporter-otlp==1.44.0
+ + opentelemetry-exporter-otlp-proto-common==1.44.0
+ + opentelemetry-exporter-otlp-proto-grpc==1.44.0
+ + opentelemetry-exporter-otlp-proto-http==1.44.0
+ + opentelemetry-exporter-prometheus==0.65b0
+ + opentelemetry-proto==1.44.0
+ + opentelemetry-resourcedetector-gcp==1.14.0
+ + opentelemetry-sdk==1.44.0
+ + opentelemetry-semantic-conventions==0.65b0
+ + opsgenie-sdk==2.1.5
+ + oracledb==26.0.1
+ + ordered-set==4.1.0
+ + orjson==3.12.0
+ + outcome==1.3.0.post0
+ + packaging==26.3
+ + pagerduty==7.0.1
+ + pandas==3.0.6
+ + pandas-gbq==0.35.2
+ + pandocfilters==1.5.1
+ + papermill==2.6.0
+ + paramiko==5.0.0
+ + parso==0.8.7
+ + pathlib-abc==0.5.2
+ + pathspec==1.1.1
+ + pbr==7.0.3
+ + pdbr==0.9.8
+ + pendulum==3.2.0
+ + pexpect==4.9.0
+ + pgvector==0.5.0
+ + pillow==12.3.0
+ + pinecone==10.0.0
+ + pinotdb==5.7.0
+ + pip==26.2.1
+ + pipdeptree==4.2.5
+ + platformdirs==4.11.12
+ + pluggy==1.6.0
+ + polars==1.44.2
+ + polars-runtime-32==1.44.2
+ + portalocker==3.2.0
+ + pprintpp==0.4.0
+ + prek==0.5.3
+ + presto-python-client==0.8.4
+ + prison==0.2.1
+ + prometheus-client==0.26.0
+ + prompt-toolkit==3.0.53
+ + propcache==0.5.4
+ + proto-plus==1.28.4
+ + protobuf==6.33.6
+ + psutil==7.2.2
+ + psycopg==3.3.6
+ + psycopg-binary==3.3.6
+ + psycopg2-binary==2.9.13
+ + ptyprocess==0.7.0
+ + pure-eval==0.2.4
+ + pure-sasl==0.6.2
+ + py-spy==0.4.2
+ + pyarrow==25.0.1
+ + pyasn1==0.6.4
+ + pyasn1-modules==0.4.2
+ + pyathena==3.36.0
+ + pybreaker==1.4.1
+ + pycountry==26.2.16
+ + pycparser==3.0
+ + pycryptodome==3.23.0
+ + pydantic==2.13.5
+ + pydantic-ai-slim==2.48.0
+ + pydantic-core==2.46.5
+ + pydantic-extra-types==2.11.1
+ + pydantic-graph==2.48.0
+ + pydantic-settings==2.15.0
+ + pydata-google-auth==1.9.1
+ + pydruid==0.6.9
+ + pyexasol==2.4.1
+ + pygithub==2.10.0
+ + pygments==2.21.0
+ + pygtrie==2.6.2
+ + pyhive==0.7.0
+ + pyiceberg==0.12.0
+ + pyjwt==2.14.0
+ + pykerberos==1.2.4
+ + pymongo==4.18.1
+ + pymssql==2.4.1
+ + pymysql==1.1.3
+ + pynacl==1.6.2
+ + pyodbc==5.3.0
+ + pyodps==0.13.2
+ + pyopenssl==26.4.0
+ + pyparsing==3.3.3
+ + pyproject-hooks==1.3.3
+ + pypsrp==0.9.1
+ + pyroaring==1.1.0
+ + pyspark-client==4.2.0
+ + pyspnego==0.12.2
+ + pytest==9.1.1
+ + pytest-asyncio==1.4.0
+ + pytest-cov==7.1.0
+ + pytest-custom-exit-code==0.3.0
+ + pytest-icdiff==0.9
+ + pytest-instafail==0.5.0
+ + pytest-mock==3.15.1
+ + pytest-rerunfailures==16.7
+ + pytest-timeouts==1.2.1
+ + pytest-unordered==0.8.0
+ + pytest-xdist==3.8.0
+ + python-arango==8.3.5
+ + python-daemon==3.1.2
+ + python-dateutil==2.9.0.post0
+ + python-discovery==1.6.1
+ + python-dotenv==1.2.3
+ + python-http-client==3.3.7
+ + python-jenkins==1.8.3
+ + python-keycloak==7.1.1
+ + python-ldap==3.4.8
+ + python-multipart==0.0.32
+ + python-on-whales==0.81.0
+ + python-slugify==9.1.1
+ + python-telegram-bot==22.8
+ + pytokens==0.4.1
+ + pytz==2026.3.post1
+ + pyvespa==1.2.7
+ + pywinrm==0.5.0
+ + pyyaml==6.0.3
+ + pyyaml-ft==8.0.0
+ + pyzmq==27.2.0
+ + qdrant-client==1.19.1
+ + ray==2.58.0
+ + reactivex==5.1.0
+ + readme-renderer==46.0
+ + redis==6.4.0
+ + redshift-connector==2.1.17
+ + referencing==0.37.0
+ + regex==2026.9.10
+ + requests==2.34.2
+ + requests-file==3.0.1
+ + requests-kerberos==0.15.0
+ + requests-mock==1.12.1
+ + requests-ntlm==1.3.0
+ + requests-oauthlib==2.0.0
+ + requests-toolbelt==1.0.0
+ + restructuredtext-lint==2.0.2
+ + retryhttp==1.5.0
+ + rfc3986==2.0.0
+ + rich==15.0.0
+ + rich-argparse==1.8.0
+ + rich-click==1.9.9
+ + rich-toolkit==0.20.5
+ + rpds-py==2026.6.3
+ + rsa==4.9.1
+ + ruamel-yaml==0.19.1
+ + ruff==0.16.8
+ + s3fs==2026.9.0
+ + s3transfer==0.19.2
+ + sagemaker-studio==1.0.27
+ + scikit-learn==1.9.1
+ + scipy==1.18.1
+ + scramp==1.4.17
+ + scrapbook==0.5.0
+ + segment-analytics-python==2.3.6
+ + semver==3.1.0
+ + sendgrid==6.12.5
+ + sentry-sdk==2.70.0
+ + setproctitle==1.3.7
+ + setuptools==84.0.0
+ + shellingham==1.5.4
+ + simple-salesforce==1.12.10
+ + six==1.17.0
+ + slack-sdk==3.44.1
+ + smart-open==8.0.1
+ + smbprotocol==1.17.0
+ + smmap==5.0.3
+ + sniffio==1.3.1
+ + snowflake-connector-python==4.7.5
+ + snowflake-snowpark-python==1.55.0
+ + snowflake-sqlalchemy==1.11.1
+ + sortedcontainers==2.4.0
+ + soupsieve==2.9.2
+ + spython==0.3.14
+ + sqlalchemy==2.0.54
+ + sqlalchemy-bigquery==1.17.2
+ + sqlalchemy-drill==1.1.10
+ + sqlalchemy-spanner==1.20.1
+ + sqlalchemy-utils==0.42.1
+ + sqlglot==30.19.0
+ + sqlparse==0.6.0
+ + stack-data==0.6.3
+ + starlette==1.7.0
+ + statsd==4.0.1
+ + std-uritemplate==2.0.12
+ + strictyaml==1.7.3
+ + structlog==26.1.0
+ + svcs==26.2.0
+ + synchronicity==0.12.5
+ + tableauserverclient==0.41
+ + tabulate==0.10.0
+ + tenacity==9.1.4
+ + teradatasql==20.0.0.68
+ + teradatasqlalchemy==20.0.0.9
+ + termcolor==3.3.0
+ + text-unidecode==1.3
+ + textual==8.2.8
+ + threadpoolctl==3.7.0
+ + thrift==0.24.0
+ + thrift-sasl==0.4.3
+ + tiktoken==0.14.0
+ + time-machine==3.5.1
+ + tinycss2==1.5.1
+ + tokenizers==0.23.2
+ + toml==0.10.2
+ + tomli==2.4.1
+ + tomli-w==1.2.0
+ + tomlkit==0.15.1
+ + tornado==6.5.10
+ + towncrier==26.9.0
+ + tqdm==4.70.1
+ + traitlets==5.16.1
+ + trino==0.340.0
+ + trove-classifiers==2026.9.21.13
+ + truststore==0.10.4
+ + twine==7.0.0
+ + typer==0.27.2
+ + types-aiofiles==25.1.0.20260518
+ + types-cachetools==7.0.0.20260713
+ + types-certifi==2021.10.8.3
+ + types-cffi==2.1.0.20260827
+ + types-croniter==6.2.4.20260711
+ + types-deprecated==1.3.1.20260728
+ + types-docutils==0.23.0.20260923
+ + types-markdown==3.10.2.20260712
+ + types-paramiko==5.0.0.20260724
+ + types-protobuf==7.35.1.20260906
+ + types-pymysql==1.2.0.20260923
+ + types-pyopenssl==24.1.0.20240722
+ + types-python-dateutil==2.9.0.20260807
+ + types-python-slugify==8.0.2.20240310
+ + types-pytz==2026.3.1.20260727
+ + types-pyyaml==6.0.12.20260906
+ + types-redis==4.6.0.20241004
+ + types-requests==2.33.0.20260906
+ + types-setuptools==84.0.0.20260812
+ + types-tabulate==0.10.0.20260508
+ + types-toml==0.10.8.20260518
+ + typing-extensions==4.16.0
+ + typing-inspection==0.4.4
+ + tzdata==2026.4
+ + tzlocal==5.4.4
+ + universal-pathlib==0.3.10
+ + uritemplate==4.2.0
+ + urllib3==2.8.0
+ + userpath==1.9.2
+ + uuid6==2025.0.1
+ + uv==0.12.18
+ + uvicorn==0.53.0
+ + uvloop==0.22.1
+ + validators==0.35.0
+ + vertica-python==1.4.0
+ + vine==5.1.0
+ + virtualenv==21.11.0
+ + watchfiles==1.3.0
+ + watchtower==3.4.0
+ + wcwidth==0.8.5
+ + weaviate-client==4.16.2
+ + webencodings==0.6.1
+ + websocket-client==1.9.0
+ + websockets==16.1.1
+ + werkzeug==3.1.8
+ + wheel==0.48.0
+ + wirerope==1.0.0
+ + wrapt==2.4.1
+ + wtforms==3.2.2
+ + xmltodict==1.0.4
+ + yamllint==1.38.0
+ + yandex-query-client==0.1.4
+ + yandexcloud==0.408.0
+ + yarl==1.25.1
+ + ydb==3.32.0
+ + ydb-dbapi==0.1.23
+ + zeep==4.3.3
+ + zenpy==2.0.57
+ + zipp==4.1.0
+ + zope-event==6.2
+ + zope-interface==8.6
+ + zstandard==0.25.0
+UV SYNC EXIT 0

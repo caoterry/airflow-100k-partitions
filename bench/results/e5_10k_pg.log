@@ -1,0 +1,3 @@
+postgres ledger reset
+policy set: 204 {'mode': 'adaptive_sla', 'K': 3, 'startup_s': 15.0, 'per_account_s': 0.02, 'b_min': 3, 'b_max': 600, 't_max_s': 90, 'fixed_size': 10, 'target_s': 120.0, 'ledger': 'postgres'}
+[   7.6s] BURST: 10000 accounts in 20 producer runs

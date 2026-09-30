@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0
       https://www.apache.org/licenses/LICENSE-2.0 -->
 
-Part of making AIP-76 asset partitions usable at high key cardinality (tens of thousands of partition keys per business day).
+Part of making AIP-76 asset partitions usable at high key cardinality (entity-keyed partitions; tens of thousands of keys per business day in our case). The fix is a no-behaviour-change index addition that helps at any cardinality — both queries scan the whole table today, once per emitted key and once per scheduler loop.
 Same plain-composite approach as `idx_asset_event_asset_id_partition_key` (migration 0127) for the neighbouring table;
 migration shape follows the index-only batch migrations 0129/0130, with the MySQL foreign-key handling of 0086.
 

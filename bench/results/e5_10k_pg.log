@@ -1,3 +1,69 @@
 postgres ledger reset
 policy set: 204 {'mode': 'adaptive_sla', 'K': 3, 'startup_s': 15.0, 'per_account_s': 0.02, 'b_min': 3, 'b_max': 600, 't_max_s': 90, 'fixed_size': 10, 'target_s': 120.0, 'ledger': 'postgres'}
 [   7.6s] BURST: 10000 accounts in 20 producer runs
+[   8.4s] TRICKLE: 1 account every 3.0s x 40
+[ 524.1s] published accounts: 10040/10040
+
+=== claim decisions (batch sizes per batcher run) ===
+   2026-09- adaptive lam=0.001/s ready=0 in_flight=0 running_batches=0 -> 0 batches sizes=[] oldest_wait=0s
+   2026-09- adaptive lam=0.001/s ready=0 in_flight=0 running_batches=0 -> 0 batches sizes=[] oldest_wait=0s
+   2026-09- adaptive lam=0.001/s ready=0 in_flight=0 running_batches=0 -> 0 batches sizes=[] oldest_wait=0s
+   2026-09- adaptive_sla lam=0.002/s ready=1 in_flight=0 running_batches=0 -> 0 batches sizes=[] oldest_wait=-0s
+   2026-09- adaptive_sla lam=0.103/s ready=62 in_flight=0 running_batches=0 -> 3 batches sizes=[21, 21, 20] oldest_wait=8s
+   2026-09- adaptive_sla lam=0.002/s ready=1 in_flight=0 running_batches=0 -> 0 batches sizes=[] oldest_wait=0s
+   2026-09- adaptive_sla lam=0.110/s ready=66 in_flight=0 running_batches=0 -> 3 batches sizes=[22, 22, 22] oldest_wait=32s
+   2026-09- adaptive_sla lam=0.127/s ready=10 in_flight=0 running_batches=0 -> 2 batches sizes=[5, 5] oldest_wait=57s
+   2026-09- adaptive_sla lam=0.143/s ready=10 in_flight=0 running_batches=0 -> 1 batches sizes=[10] oldest_wait=55s
+   2026-09- adaptive_sla lam=0.150/s ready=4 in_flight=0 running_batches=0 -> 1 batches sizes=[4] oldest_wait=55s
+   2026-09- fixed lam=0.108/s ready=65 in_flight=0 running_batches=0 -> 7 batches sizes=[10, 10, 10, 10, 10, 10, 5] oldest_wait=26s
+   2026-09- fixed lam=0.110/s ready=1 in_flight=65 running_batches=7 -> 0 batches sizes=[] oldest_wait=4s
+   2026-09- fixed lam=0.127/s ready=11 in_flight=0 running_batches=0 -> 2 batches sizes=[10, 1] oldest_wait=65s
+   2026-09- fixed lam=0.143/s ready=10 in_flight=0 running_batches=0 -> 1 batches sizes=[10] oldest_wait=56s
+   2026-09- fixed lam=0.150/s ready=4 in_flight=0 running_batches=0 -> 0 batches sizes=[] oldest_wait=57s
+   2026-09- fixed lam=0.040/s ready=4 in_flight=0 running_batches=0 -> 1 batches sizes=[4] oldest_wait=116s
+   2026-09- adaptive_sla lam=0.001/s ready=0 in_flight=0 running_batches=0 -> 0 batches sizes=[] oldest_wait=0s
+   2026-09- adaptive_sla pages=6 events_seen=10040 lam=16.742/s ready=10040 in_flight=1800 running_batches=0 -> 3 batches sizes=[600, 600, 600] oldest_wait=269s
+   2026-09- adaptive_sla pages=6 events_seen=10008 lam=16.688/s ready=10008 in_flight=1800 running_batches=0 -> 3 batches sizes=[600, 600, 600] oldest_wait=13s
+   2026-09- adaptive_sla pages=1 events_seen=8 lam=0.013/s ready=8 in_flight=1800 running_batches=3 -> 0 batches sizes=[] oldest_wait=22s
+   2026-09- adaptive_sla pages=1 events_seen=22 lam=0.037/s ready=22 in_flight=1222 running_batches=2 -> 1 batches sizes=[22] oldest_wait=67s
+   2026-09- adaptive_sla pages=6 events_seen=10008 lam=16.688/s ready=10008 in_flight=1800 running_batches=0 -> 3 batches sizes=[600, 600, 600] oldest_wait=11s
+   2026-09- adaptive_sla pages=1 events_seen=14 lam=0.023/s ready=8220 in_flight=1800 running_batches=2 -> 1 batches sizes=[600] oldest_wait=56s
+   2026-09- adaptive_sla pages=1 events_seen=22 lam=0.037/s ready=7640 in_flight=1800 running_batches=2 -> 1 batches sizes=[600] oldest_wait=125s
+   2026-09- adaptive_sla pages=1 events_seen=4 lam=0.007/s ready=7040 in_flight=1800 running_batches=3 -> 0 batches sizes=[] oldest_wait=176s
+   2026-09- adaptive_sla pages=1 events_seen=4 lam=0.007/s ready=7040 in_flight=1800 running_batches=2 -> 1 batches sizes=[600] oldest_wait=242s
+   2026-09- adaptive_sla pages=1 events_seen=4 lam=0.007/s ready=6440 in_flight=1800 running_batches=2 -> 1 batches sizes=[600] oldest_wait=314s
+   2026-09- adaptive_sla pages=1 events_seen=4 lam=0.007/s ready=5840 in_flight=1800 running_batches=3 -> 0 batches sizes=[] oldest_wait=354s
+   2026-09- adaptive_sla pages=1 events_seen=4 lam=0.007/s ready=5840 in_flight=1800 running_batches=2 -> 1 batches sizes=[600] oldest_wait=414s
+   2026-09- adaptive_sla pages=1 events_seen=4 lam=0.007/s ready=5240 in_flight=1800 running_batches=2 -> 1 batches sizes=[600] oldest_wait=480s
+   2026-09- adaptive_sla pages=1 events_seen=4 lam=0.007/s ready=4640 in_flight=1800 running_batches=2 -> 1 batches sizes=[600] oldest_wait=533s
+   2026-09- adaptive_sla pages=1 events_seen=4 lam=0.007/s ready=4040 in_flight=1800 running_batches=2 -> 1 batches sizes=[600] oldest_wait=601s
+   2026-09- adaptive_sla pages=1 events_seen=4 lam=0.007/s ready=3440 in_flight=1800 running_batches=2 -> 1 batches sizes=[600] oldest_wait=652s
+   2026-09- adaptive_sla pages=1 events_seen=4 lam=0.001/s ready=2840 in_flight=1800 running_batches=2 -> 1 batches sizes=[600] oldest_wait=715s
+   2026-09- adaptive_sla pages=1 events_seen=4 lam=0.001/s ready=2240 in_flight=1800 running_batches=2 -> 1 batches sizes=[600] oldest_wait=768s
+   2026-09- adaptive_sla pages=1 events_seen=4 lam=0.001/s ready=1640 in_flight=1800 running_batches=3 -> 0 batches sizes=[] oldest_wait=827s
+   2026-09- adaptive_sla pages=1 events_seen=4 lam=0.001/s ready=1640 in_flight=1800 running_batches=2 -> 1 batches sizes=[600] oldest_wait=887s
+   2026-09- adaptive_sla pages=1 events_seen=4 lam=0.001/s ready=1040 in_flight=1800 running_batches=2 -> 1 batches sizes=[600] oldest_wait=953s
+   2026-09- adaptive_sla pages=1 events_seen=4 lam=0.001/s ready=440 in_flight=1640 running_batches=2 -> 1 batches sizes=[440] oldest_wait=1005s
+   2026-09- adaptive_sla ledger=postgres pages=1 events_seen=0 lam=0.001/s -> 0 batches sizes=[]
+   2026-09- adaptive_sla ledger=postgres pages=6 events_seen=10010 lam=16.692/s -> 3 batches sizes=[600, 600, 600]
+   2026-09- adaptive_sla ledger=postgres pages=1 events_seen=16 lam=0.027/s -> 3 batches sizes=[600, 600, 600]
+   2026-09- adaptive_sla ledger=postgres pages=1 events_seen=19 lam=0.032/s -> 3 batches sizes=[600, 600, 600]
+   2026-09- adaptive_sla ledger=postgres pages=1 events_seen=2 lam=0.003/s -> 0 batches sizes=[]
+   2026-09- adaptive_sla ledger=postgres pages=1 events_seen=2 lam=0.003/s -> 3 batches sizes=[600, 600, 600]
+   2026-09- adaptive_sla ledger=postgres pages=1 events_seen=2 lam=0.003/s -> 0 batches sizes=[]
+   2026-09- adaptive_sla ledger=postgres pages=1 events_seen=2 lam=0.003/s -> 3 batches sizes=[600, 600, 600]
+   2026-09- adaptive_sla ledger=postgres pages=1 events_seen=2 lam=0.003/s -> 3 batches sizes=[347, 347, 346]
+   2026-09- adaptive_sla ledger=postgres pages=1 events_seen=2 lam=0.003/s -> 0 batches sizes=[]
+
+=== spark task instances: pool queueing (queued -> running) ===
+   22 spark TIs; queue wait p50/max: 0 0
+
+=== per-account latency: input event -> pnl event ===
+
+=== claim task durations (event-log pull + policy), seconds ===
+   min/avg/max/n: (Decimal('1.3'), Decimal('3.3'), Decimal('15.6'), 10)
+   ('burst', 10000, Decimal('211'), Decimal('488'), Decimal('492'))
+   ('trickle', 40, Decimal('428'), Decimal('485'), Decimal('488'))
+   jobs (pnl-emitting batches): 18, avg batch 557.8
+   rev5_pnl_consumer runs: 9347
+E5-PG DONE

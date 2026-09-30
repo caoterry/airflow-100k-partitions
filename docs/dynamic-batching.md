@@ -152,8 +152,12 @@ inlets/outlets (declare `inlets=[input]` on every task that touches it), and "pr
 | v2: paged pull, watermark advanced to the last event | dispatched 3 × 600, then the other 8,200 ready accounts **vanished** — the watermark had moved past their events and nothing remembered them | persist the `pending` set in the ledger (`pending / inflight / processed`); the watermark only bounds what to *read* |
 | v3: persistent ledger | works end to end: 10,040 accounts in 17 batches of ~590, 9,600+ per-account downstream runs; but `claim` and `publish` both `get → modify → set` the same ledger key and overwrite each other, so `inflight` stuck at 1,800 and only one new batch was released per minute instead of three | production: keep the ledger in a table with row locks or conditional writes (Postgres `SELECT … FOR UPDATE`, DynamoDB conditional update), or make the batcher single-writer |
 
+| v4: ledger in an external Postgres table (`bench/dags/ledger_pg.py`), `claim` = `SELECT … FOR UPDATE SKIP LOCKED` + plan + mark inflight in one transaction | — | 3 × 600 dispatched every minute the slots were free, no lost updates: 18 jobs, **burst p95 8.1 min** (vs 16.8 min with the state-store ledger), trickle p95 8.1 min, claim avg 3.3 s |
+
 Measured on v3: claim 1.1–12.1 s (avg 2.1 s; the 12 s one is the six-page burst pull); burst p95 **17 min**, entirely
-throughput-bound by the ledger race (600 accounts/min instead of 1,800/min). The lesson generalises: a batcher is a small
+throughput-bound by the ledger race (600 accounts/min instead of 1,800/min). v4 removes the race and halves the latency; the
+remaining gap to the 5.6-minute floor (10k ÷ 1,800 per minute) is the one-minute cadence — a claim that finds all three
+slots busy waits a full minute. The lesson generalises: a batcher is a small
 stateful service — the event log is its input stream, but "seen and not yet dispatched", "dispatched and not yet done" and
 "done at version v" are its own state, and none of them can be re-derived per tick at 10k accounts within a 5-second API
 budget. The balance-sheet gate (E6) gets away with no state because it recomputes the whole result each time and lets

@@ -38,7 +38,9 @@ about buses, warm-up time or parking spaces.
    3.6 → 7.0 s as the table grew, back to 3.4 s with an index. SDK client timeout 5 s ⇒ ≤ ~900 keys per emitting task.
 4. **No per-key concurrency control, no conflation, in the partition path.** A key that re-arrives while running gets a second
    concurrent run; `max_active_runs` is DAG-wide so unrelated keys queue behind duplicates. The non-partitioned OR path
-   conflates per scheduler loop (one ADRQ row per asset/DAG). Extension point: `[core] asset_manager_class`.
+   conflates per scheduler loop (one ADRQ row per asset/DAG). Extension point: `[core] asset_manager_class`. A 30-line
+   prototype (Patch E: hold a pending run while the key is queued/running; absorb events into a not-yet-started run)
+   turned E1 from 4 concurrent-ish ACC1 runs into 3 serialized ones with ACC5 admitted immediately.
 5. **The three grains need not match.** Schedule at region/pack grain, partition and observe at account grain: one batch task
    emits `add_partitions(accounts)` for lineage and writes per-account status to the state store. Works on stock 3.3.2 (E4/E5).
 6. **Burst latency is capacity, trickle latency is warm-up.** Burst p95 ≈ N·p/K + S regardless of policy; trickle p95 ≥ S + fill

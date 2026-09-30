@@ -112,6 +112,22 @@ can reuse the pending-or-queued run for a key (conflation) or hold a key while o
 — that is the "extension" the evaluation matrix asks about, and the natural shape for an upstream `max_active_runs_per_partition_key`.
 Pools cannot help (static, global; one per key would be 10k pools).
 
+**Prototype of that extension (Patch E, `patches/patch_e_partition_key_mutex.py`, ~30 lines).** Scheduler side: a pending
+partition run whose key already has a QUEUED/RUNNING run in the same DAG is held. Asset-manager side: a new event for a key
+whose latest run has not started yet is attached to that run instead of provisioning another. E1 rerun with the patch:
+
+| step | as shipped (3.3.2) | with Patch E |
+|---|---|---|
+| ACC1 again while run #1 running | second run, **concurrent** | pending, held; fires the moment run #1 finishes |
+| ACC1 + ACC5 while an ACC1 run is running | both queue behind `max_active_runs`, FIFO | ACC5 **starts immediately**; ACC1 stays pending |
+| ACC1 again while ACC1 pending/queued | another run | absorbed into the pending run |
+| total | ACC1 × 4 (two concurrent), ACC5 × 1 | ACC1 × 3, never concurrent, one follow-up per "burst during a run"; ACC5 × 1 |
+
+That is the T=1…5 table from the discussion page with "conflated delivery" and "fine-grained admission" both true. The same
+logic is what an upstream `max_active_runs_per_partition_key` would carry; as a local extension it could live in a custom
+`AssetManager` (`[core] asset_manager_class`) for the conflation half, but the mutex half needs the scheduler, i.e. a core
+change — which is why it belongs upstream.
+
 **3.3 Batching many ready accounts into one Spark job while keeping per-account lineage — supported, and it is the recommended
 shape.** Build one **batcher DAG**, not account-level runs:
 

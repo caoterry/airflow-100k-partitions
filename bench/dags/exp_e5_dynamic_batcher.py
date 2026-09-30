@@ -69,7 +69,7 @@ def rev5_producer():
     land()
 
 
-@dag(dag_id="rev5_batcher", schedule="* * * * *", catchup=False, max_active_runs=2, tags=["exp", "e5"])
+@dag(dag_id="rev5_batcher", schedule="* * * * *", catchup=False, max_active_runs=4, tags=["exp", "e5"])
 def rev5_batcher():
     @task.short_circuit(inlets=[POS])
     def claim(inlet_events=None, asset_state_store=None, run_id=None) -> list[list[str]]:

@@ -1,0 +1,36 @@
+{
+ "label": "e5_100k_pgledger",
+ "policy": {
+  "mode": "adaptive_sla",
+  "K": 10,
+  "startup_s": 15.0,
+  "per_account_s": 0.02,
+  "b_min": 3,
+  "b_max": 600,
+  "t_max_s": 90,
+  "fixed_size": 10,
+  "target_s": 120.0,
+  "ledger": "postgres"
+ },
+ "latency": [
+  [
+   5417.0,
+   1387.0,
+   2331.0,
+   2352.0
+  ],
+  [
+   48583.0,
+   1386.0,
+   2333.0,
+   2352.0
+  ]
+ ],
+ "phases": [
+  "burst",
+  "trickle"
+ ],
+ "jobs": 90,
+ "avg_batch": 600.0,
+ "spark_tis": 130
+}

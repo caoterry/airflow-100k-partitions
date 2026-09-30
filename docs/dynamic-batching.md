@@ -163,6 +163,16 @@ stateful service — the event log is its input stream, but "seen and not yet di
 budget. The balance-sheet gate (E6) gets away with no state because it recomputes the whole result each time and lets
 `max_active_runs=1` act as its in-flight flag; anything that processes *subsets* concurrently needs the ledger.
 
+### 100k accounts through the batcher (Postgres ledger, K = 10, 600 per batch) — first attempt, partial
+
+200 producer runs × 500 keys, then 40 trickle accounts. The mechanics held at this scale — `claim` 1.3–3.2 s (avg 1.8 s) with
+100k events behind it, 90 batches of exactly 600, no failed tasks, 54,000 accounts published within the driver's 40-minute
+window, 40,040 still pending, 6,000 in flight — but throughput was only ~1,350 accounts/min against a slot capacity of
+~13,000/min. Two experiment-design reasons, not batcher reasons: the one-minute cron with `max_active_runs=2` serialises
+"dispatch → wait for publish to clear the ledger → dispatch" into a ~4-minute cycle, and the downstream per-account
+`rev5_pnl_consumer` was simultaneously creating 54,000 partition runs on the same scheduler (the same load as the 100k
+limit run in the report). A rerun with the downstream consumer paused and `max_active_runs=4` is recorded below.
+
 ## 5b. Airflow prototype (E5) — burst of 60 accounts, then 1 account every 6 s; K = 3, S = 15 s, p = 0.5 s
 
 Same load for both policies (60 accounts in three producer runs, then 30 accounts one every 6 s); `spark` sleeps

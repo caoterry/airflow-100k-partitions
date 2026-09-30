@@ -163,6 +163,26 @@ retention in place, the partition path works; 100k/day needs the upstream fixes 
 
 ---
 
+## How this maps onto the "Proposal" page (Jobs + Datasets + Trigger Conditions)
+
+The proposal's MVP — *Jobs and Datasets as first-class objects, statically wired with trigger conditions, declared next to the
+business logic in GitLab, publishing data events, with lineage* — is, feature for feature, the Airflow 3 asset model: DAG =
+Job, `Asset` = Dataset, `schedule=(a & (b | c))` / `PartitionedAssetTimetable` = trigger condition, `outlet_events` = data
+event, `consumed_asset_events` / `upstreamAssetEvents` = lineage, and the 3.3 asset state store = "standardised state tracking"
+(requirement 6.2). Building a bespoke equivalent on the in-house job runner works against requirement 6.3 ("eliminate bespoke components with
+questionable ownership") unless Airflow demonstrably cannot do the job. What Airflow demonstrably cannot do, per this repo, is
+**schedule at account grain at 100k/day** — and the proposal's own narrative already separates the three grains: "job
+scheduling, data partitioning and observability … do not require the same grain as each other; the scheduler could schedule by
+region … as long as the end-user can still observe availability by account". That split is exactly what §6 recommends and E4
+demonstrates on 3.3.2: schedule by region (3) or pack (~500), partition and observe by account via keyed events and the state
+store. On the SLA footnote (p95 38 min → 2 min): that is calculation time, not orchestration; at pack grain Airflow's own
+overhead per unit is seconds, so faster engines and coarse-grained scheduling are complementary, not alternatives.
+
+Where the proposal's Airflow caveat is right: "AIP-73 still maturing as of July 2026" — the partition features are one to two
+minor releases old, the per-key concurrency, conflation, retention and index gaps in this document are real, and MWAA lags by
+a month. Where it is out of date: AIP-76 is complete (3.3.0), the Dagster comparison is closer than it was, and the extension
+points needed for the remaining gaps exist (`asset_manager_class`, listeners, state store).
+
 ## The evaluation matrix, filled in
 
 | | 1. reruns | 2. observability | 3. polling | 4. scaling | 5. spark batching |
@@ -192,6 +212,23 @@ OR  consumer: 1,2,3,4,5 runs (gate skipped the first three: NOT READY) → 6 aft
 calc after a3v2: {a1: v2, a2: v1, a3: v2}      calc after burst: {a1: v3 (!), a2: v1, a3: v2}
 a1 event registration order in the burst: v5, v7, v6, v4, v3  → inlet_events[a1][-1] == v3
 ```
+
+**E4 (the batcher, `bench/dags/exp_e4_batcher.py`, driver `bench/exp_e4.py`).** Producers emit keyed events on
+`rev_positions`; `rev_batcher` (cron every minute, `max_active_runs=2`) claims ready accounts through the asset state store,
+runs one simulated Spark job, and emits one `rev_pnl` event per account from that single task. Observed:
+
+```
+15:58 batch: claimed=[ACC1..ACC6]                         -> 6 rev_pnl events, source_run_id = the 15:58 batcher run
+ACC1 v2 + ACC7 arrive while 15:58 runs
+15:59 batch: claimed=[ACC1, ACC7], up_to_date=[ACC2..ACC6] -> 2 more events; in an earlier run: claimed=[ACC7] in_flight=[ACC1..6]
+rev_pnl_consumer (PartitionedAssetTimetable): 8 runs, one per key (ACC1 twice), run_type=asset_triggered
+rev_nonpart_consumer (plain asset schedule on rev_positions): 0 runs — keyed events never queue non-partitioned DAGs
+asset_state_store rows: acct/ACC1 -> {"status": "done", "version": 2, "batch": "scheduled__…15:59…", …}
+```
+
+Two lessons from the first (failed) attempt: the state-store accessor is scoped to the task's declared inlets/outlets
+(`asset_state_store[asset]` raises `KeyError` otherwise), and a claim needs a release path (`trigger_rule="one_failed"` task or
+a lease timeout) or accounts stay "running" forever after a failed batch.
 
 **E3 (mapper payload).** `AllowedKeyMapper(10_000 keys)`: serialized DAG 36,317 B; `rollup_fingerprint` 33,659 B in each of the
 three APDR rows created by emitting three allowed keys; a fourth, disallowed key produced a `Log` row

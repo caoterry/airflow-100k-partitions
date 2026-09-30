@@ -70,7 +70,7 @@ every pending partition run, so that the scheduler can discard pending runs whos
 | `dag.partition_mapper_info` | 76 B | 76 B |
 | `rollup_fingerprint` **per APDR row** | 114 B | **33,659 B** |
 
-A 10k-key mapper therefore writes ~34 KB per partition run (340 MB/day at 10k keys/day) into a table that is never pruned,
+A 10k-key mapper therefore writes ~34 KB per partition run (340 MB/day at 10k keys/day) into a table that is only trimmed by cascade with `dag_run` cleanup,
 and every daily change to the mapping invalidates all pending partition runs. A disallowed key is silently dropped for that
 consumer with a `Log` row ("failed to map partition_key"). Doing a DB call inside `to_downstream` is technically possible
 (the mapper runs inside the API server's task-success request, under the asset row lock) and is not an intended pattern: it
@@ -169,7 +169,7 @@ Not within intentions at 100k; feasible with care at 10k. Measured on 3.3.2 (det
 | limit | where | number |
 |---|---|---|
 | keys per emitting task | `[workers] execution_api_timeout` 5 s vs ~5 ms/key registration | **~900 keys**; 10k in one task → 53 s request, 5 retries |
-| registration cost growth | `asset_partition_dag_run` has no index on `(target_dag_id, partition_key)` and is never pruned | 3.6 s → 7.0 s per 500 keys as the table grew to 60k rows; 3.4 s with an index |
+| registration cost growth | `asset_partition_dag_run` has no index on `(target_dag_id, partition_key)` and grows for the whole run-retention window | 3.6 s → 7.0 s per 500 keys as the table grew to 60k rows; 3.4 s with an index |
 | partition-run creation | 500 per scheduler tick, hard-coded | ~80 runs/s |
 | partition-run completion | scheduler loop, one scheduler | 3–10 runs/s (26–42 runs/s without the asset machinery) |
 | mapped task instances per `expand()` | one blocking transaction | 10k → 60 s scheduler pause, 100k → 317 s (threshold 30 s) |

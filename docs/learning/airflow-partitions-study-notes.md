@@ -21,7 +21,7 @@ about buses, warm-up time or parking spaces.
 | Asset / asset event | a dataset object; "asset X was updated" (`asset_event` row, may carry `extra` and `partition_key`) | passengers arriving |
 | inlet / outlet | what a task consumes / produces (declared on the task) | `add_partitions` emits keyed events through an outlet |
 | ADRQ | `asset_dag_run_queue`, one row per (asset, consumer DAG) — the trigger flag for non-partitioned scheduling | why bursts conflate into one run |
-| APDR | `asset_partition_dag_run`, a provisional partition run waiting to fire | unindexed, never pruned |
+| APDR | `asset_partition_dag_run`, a provisional partition run waiting to fire | unindexed; trimmed only by cascade with `dag_run` cleanup |
 | PAKL | `partitioned_asset_key_log`, "event E contributed to APDR A" | linear storage evidence |
 | asset state store | 3.3 per-asset key/value table, `get/set/delete` from tasks | per-account status ledger |
 | pool | global concurrency slots | parking spaces `K` |
@@ -34,7 +34,7 @@ about buses, warm-up time or parking spaces.
 2. **Every mapped TI downloads the whole upstream list** (`xcom_arg.py:338`): O(N²) bytes. 10k → 1.5 GB (fine),
    100k → 150 GB (not). Flat mapping is a thousands-scale tool.
 3. **Native partitions: storage linear, write time quadratic.** APDR/PAKL/events/runs all exactly N rows at 1k/10k/100k. But
-   `asset_partition_dag_run(target_dag_id, partition_key)` is unindexed and never pruned: 500-key registration went
+   `asset_partition_dag_run(target_dag_id, partition_key)` is unindexed and grows for the whole run-retention window: 500-key registration went
    3.6 → 7.0 s as the table grew, back to 3.4 s with an index. SDK client timeout 5 s ⇒ ≤ ~900 keys per emitting task.
 4. **No per-key concurrency control, no conflation, in the partition path.** A key that re-arrives while running gets a second
    concurrent run; `max_active_runs` is DAG-wide so unrelated keys queue behind duplicates. The non-partitioned OR path

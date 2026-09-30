@@ -1,6 +1,6 @@
 # Design: Can Airflow orchestrate 100k firm-account partitions?
 
-Date: 2026-09-29. Status: experiment in progress; findings are appended in `docs/FINDINGS.md`.
+Date: 2026-09-29. Status: experiments complete; findings and recommendation are in [`REPORT.md`](../../../REPORT.md).
 
 ## 1. Problem
 

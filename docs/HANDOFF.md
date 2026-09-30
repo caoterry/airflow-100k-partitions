@@ -55,7 +55,7 @@ Read this first if you are picking the work up (new session, different model, or
 - Contents: migration 0141 (`f954ddd21484`) with two indexes on `asset_partition_dag_run`; ORM `__table_args__`; `_REVISION_HEADS_MAP`;
   `migrations-ref.rst`; (db clean part dropped: fired rows already cascade with dag_run cleanup). Verified: test_db (30 passed),
   migration pattern tests (572 passed), SQLite migrate→downgrade→migrate round trip.
-- PR description: `docs/proposals/pr-apdr-indexes-and-cleanup.md`. **Terry opens the PR**; then add `airflow-core/newsfragments/<PR>.improvement.rst`
+- PR description: `docs/proposals/pr-apdr-indexes-and-cleanup.md`. PR opened 2026-09-30: https://github.com/apache/airflow/pull/73983 (newsfragment `73983.improvement.rst` pushed); watch CI / reviewers. Original note: **Terry opens the PR**; then add `airflow-core/newsfragments/<PR>.improvement.rst`
   (one line: "Add indexes on ``asset_partition_dag_run`` and let ``airflow db clean`` purge partition runs whose Dag run has been created.") in a follow-up commit.
 - Not run locally: `prek` hooks (needs `uv tool install prek`), `migration-round-trip`/`update-migration-references` (breeze); CI will run them.
 - Dev-list proposal draft: `docs/proposals/max-active-runs-per-partition-key.md`.

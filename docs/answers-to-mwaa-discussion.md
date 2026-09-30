@@ -1,0 +1,176 @@
+# Answers to the "AWS MWAA Discussion" questions
+
+*Written 2026-09-30 against Apache Airflow 3.3.2 (company baseline 3.3.0/3.3.1) with code references, benchmark data from
+[REPORT.md](../REPORT.md) and three targeted semantics experiments (E1–E3, appendix). Where the answer is "not natively",
+the least-bad pattern on 3.3.x and the upstream gap are both stated.*
+
+**One-paragraph position.** Airflow 3.3 can orchestrate the balance-sheet workload as designed (tens of inputs, a handful of
+netting-group partitions, 20-minute Glue calculations) and the evaluation matrix's Option B (assets) is the right basis. It
+cannot, as shipped, schedule at firm-account grain for the revenue workload (10k+ keys per business date): the partition
+machinery has no per-key concurrency control, no conflation, an unindexed and never-pruned bookkeeping table, and a per-key
+write path that times out past ~900 keys per task. The modelling answer to Q6 is therefore "yes, use a coarser scheduling
+grain" — but keep per-account lineage and status *inside* Airflow via partition keys emitted in bulk and the 3.3 asset state
+store, not off-graph. Every gap below is a contained upstream change; the benchmark harness in this repo is the evidence for them.
+
+---
+
+## Q1. Reruns — "we want additional runs on any later update, not only when *all* assets updated again"
+
+**What Airflow does.** An AND condition (`a1 & a2 & a3`) fires when every asset has at least one new event since the DAG's
+last asset-triggered run; the queue that tracks this is `asset_dag_run_queue` (one row per asset × consumer DAG), and the rows
+are deleted when the run is created. Experiment E2 reproduces the diagram exactly: the AND consumer fired once when the third
+asset arrived and **did not** fire when `a3` re-arrived (the "red X").
+
+**The pattern that works (your "custom-gate", with two corrections).**
+
+1. Schedule the consumer on **OR** (`a1 | a2 | a3`): a run per update. Measured: a run for every event, and a burst of five
+   events on one asset in the same scheduler loop produced **one** run (the queue row is upserted per asset, so events are
+   conflated per loop).
+2. First task = gate: `@task.short_circuit(inlets=[a1, a2, a3])` that reads every input's events via `inlet_events[asset]`
+   (the asset's *full* history, not only the events that triggered this run) and skips downstream until every input has one.
+3. **Pick the version explicitly, not positionally.** `inlet_events[asset][-1]` is the most recently *registered* event
+   (ordered by `asset_event.timestamp`), which is not the newest business version when producers run concurrently. In E2 a
+   burst v3…v7 registered as v5, v7, v6, v4, v3 and `[-1]` returned **v3**. Carry `{"version": n, "path": …}` in the event
+   `extra` and take `max(events, key=version)` per input; that also gives you "v2 for the one that re-arrived, v1 for the
+   others" for free.
+
+"Echoing" (re-emitting the other assets' events to satisfy AND) is not recommended: it fabricates lineage, doubles event
+volume, and still cannot express "which version". A reconcile daemon is not needed for correctness, only as a safety net.
+
+**Roadmap.** `batch_asset_events` (PR #68517, 3.4) makes conflation explicit; `AssetEventSensor` (#70225) and
+`AssetPartitionSensor` (#67941) let a time-scheduled DAG wait for events. Nothing on the roadmap changes the AND semantics.
+
+## Q2. Partition mappings — "region→account / account→trial changes daily; must mappers be static?"
+
+**Yes, in 3.3 mappers are static data baked into the DAG, and the cost is worse than the page suspected.** The mapper is
+serialized with the DAG, and the *entire mapper definition* is copied into `asset_partition_dag_run.rollup_fingerprint` for
+every pending partition run, so that the scheduler can discard pending runs whose mapper definition changed. Experiment E3:
+
+| | identity mapper | `AllowedKeyMapper` with 10,000 keys |
+|---|---|---|
+| serialized DAG | 1.3 KB | 36 KB |
+| `dag.partition_mapper_info` | 76 B | 76 B |
+| `rollup_fingerprint` **per APDR row** | 114 B | **33,659 B** |
+
+A 10k-key mapper therefore writes ~34 KB per partition run (340 MB/day at 10k keys/day) into a table that is never pruned,
+and every daily change to the mapping invalidates all pending partition runs. A disallowed key is silently dropped for that
+consumer with a `Log` row ("failed to map partition_key"). Doing a DB call inside `to_downstream` is technically possible
+(the mapper runs inside the API server's task-success request, under the asset row lock) and is not an intended pattern: it
+would put reference-data latency into every task completion.
+
+**Recommendation.** Keep mappers structural (identity, prefix/product, temporal). Resolve business mappings **in the
+producer**, which knows the data: the task that lands region data looks up the affected accounts/trials and emits those as
+partition keys (`outlet_events[asset].add_partitions(keys)`), ≤ ~900 keys per task (Q5). If the mapping must live in
+orchestration, a tiny "router" DAG (OR-scheduled on the raw inputs) that reads the reference table and emits target keys is
+the same idea with one more hop.
+
+## Q3. Per-partition concurrency & batching
+
+**3.1 Example variations (measured, E1).** Consumer on `PartitionedAssetTimetable`, `max_active_runs=2`, task sleeps 45 s:
+
+| step | event | what Airflow 3.3.2 did |
+|---|---|---|
+| 1 | ACC1 | run #1 RUNNING |
+| 2 | ACC1 again, run #1 running | **second APDR and second run, RUNNING concurrently** (no per-key mutex, no conflation) |
+| 3 | ACC1 + ACC5, two runs running | both QUEUED behind `max_active_runs`; **ACC5 waits behind the duplicate ACC1** (coarse-grained, FIFO by queued time) |
+| 4 | ACC1 while an ACC1 run is QUEUED | **another APDR/run** (not de-duplicated against the queued one) |
+| end | | ACC1 ran 4 times, ACC5 once |
+
+So: T=4 ACC5 *should* start (fine-grained) but with only `max_active_runs` as the knob it does not; T=4 ACC1 *should not* queue
+a second time (conflated) but it does. #71070/#71074 (3.4) de-duplicate *pending* APDRs, not queued or running runs.
+
+**3.2 Concurrency.** (a) There is no native "one run at a time per partition key" and no per-key ordering. (b) A gate task
+that polls the REST API is a legitimate stop-gap; call the public `/api/v2` (`GET /dags/{id}/dagRuns?partition_key_pattern=…&state=running`),
+never `/ui/*` (private, unversioned). At 10k keys it does not scale: every run spends a task slot polling, and admission
+decisions belong where the run is created, not after. (c) The right place is scheduler-side: a `max_active_runs_per_partition_key`
+(or a per-key "coalesce while queued" rule) is a small, well-scoped upstream change; until then, do admission in the batcher
+below. Airflow pools cannot help (static, global, one per key would be 10k pools).
+
+**3.3 Batching many ready accounts into one Spark job while keeping per-account lineage — supported, and it is the recommended
+shape.** Build one **batcher DAG**, not account-level runs:
+
+1. `schedule = (input_1 | … | input_6)` (or a short cron), `max_active_runs = N` (N concurrent batches).
+2. Gate task: read the ready set (events since the last processed watermark) and the in-flight set from the **asset state
+   store** (Airflow 3.3, per-asset key/value: `account → {status, batch_id, version}`); claim the accounts that are ready
+   and not in flight; skip if none.
+3. One task launches one Spark/Glue job for the claimed batch; on success it emits
+   `outlet_events[output_asset].add_partitions(claimed_accounts)` — one event per account, so downstream consumers, the asset
+   graph and `GET /assets/events?partition_key=` all see **per-account lineage from a single task**; then it writes per-account
+   status back to the state store.
+
+Dynamic task mapping and task groups are the wrong tool here (one task instance per account: §4.1/§4.4 of the report).
+This is also what AIP-104 (`.iterate()` / `.spread(across=N)`, PR #62922, 3.4) is formalizing.
+
+## Q4. End-user tracking through Airflow APIs (10s–100s of users)
+
+Not advisable. In Airflow 3 the same API server that serves `/api/v2` also serves the Execution API that every running task
+heartbeats through (on MWAA it is the webserver, 2–5 Fargate containers), and MWAA throttles the REST endpoint at 10 requests/s.
+The REST filters you would need exist (`partition_key_pattern`, `partition_key_prefix_pattern`, `partition_date_gte/lte`,
+`state`), but page size is capped at 100 and the 3.3.x pending-partitions UI endpoint is unpaginated. Project status out
+instead: a listener plugin (`on_dag_run_success/failed`, `on_task_instance_*`) or the batcher's own state-store writes feed a
+status table your users query; Airflow's UI stays for operators.
+
+## Q5. Scaling — "10k–100k account-grain partitions per business date: within intentions? where does it break?"
+
+Not within intentions at 100k; feasible with care at 10k. Measured on 3.3.2 (details in the report):
+
+| limit | where | number |
+|---|---|---|
+| keys per emitting task | `[workers] execution_api_timeout` 5 s vs ~5 ms/key registration | **~900 keys**; 10k in one task → 53 s request, 5 retries |
+| registration cost growth | `asset_partition_dag_run` has no index on `(target_dag_id, partition_key)` and is never pruned | 3.6 s → 7.0 s per 500 keys as the table grew to 60k rows; 3.4 s with an index |
+| partition-run creation | 500 per scheduler tick, hard-coded | ~80 runs/s |
+| partition-run completion | scheduler loop, one scheduler | 3–10 runs/s (26–42 runs/s without the asset machinery) |
+| mapped task instances per `expand()` | one blocking transaction | 10k → 60 s scheduler pause, 100k → 317 s (threshold 30 s) |
+| mapped input | every mapped TI pulls the whole list | O(N²) bytes; fine at 1k, 150 GB per run at 100k |
+| metadata growth | `dag_run` ≈ 0.8 KB, `task_instance` ≈ 1 KB per row | ~65 GB/year at 100k runs/day without retention; APDR not cleanable |
+| `max_active_runs` | DAG-wide, default 16 | 100k queued runs drain at ≤16 concurrent |
+| DAG count / workers / schedulers on MWAA | environment class | ≤ 4,000 DAGs (mw1.2xlarge), 2–5 schedulers, ≤ 25 (50) workers |
+
+At 10k/day with emitters serialized and ≤ 900 keys each, an APDR index (self-hosted only), `max_active_runs` raised and
+retention in place, the partition path works; 100k/day needs the upstream fixes in the report's §7.
+
+## Q6. Are we modelling this wrong?
+
+1. **Coarser scheduling grain + per-account status off the run graph: yes** — but "off-graph" should mean the asset state
+   store and per-account partition keys emitted in bulk, both inside Airflow, not an external system. That also covers the
+   empty-account edge case (status is written by orchestration, not inferred from output data).
+2. **One-node `@asset` DAGs are the intended granularity** in Airflow 3 (AIP-75: one asset function = one DAG), not a smell.
+   For a gate → batch → emit pipeline a normal multi-task DAG is the natural fit; it can declare outlets and emit partition
+   keys exactly like `@asset`. Do not avoid assets: they are the only source of lineage, push-based triggering (your matrix's
+   "polling" column) and the partition machinery. Avoid *account-grain scheduling*, not assets.
+
+---
+
+## The evaluation matrix, filled in
+
+| | 1. reruns | 2. observability | 3. polling | 4. scaling | 5. spark batching |
+|---|---|---|---|---|---|
+| **A classic DAGs (sensors)** | as the page says: DAG-level concurrency, whole-DAG reruns | per-task status only; no lineage; cross-date needs XCom/DB | reschedule-mode sensors poll the data platform; `up_for_reschedule` churn = scheduler load | account-level tasks: no (§4.1/§4.4); region/pack tasks: fine | no native batching; a "pack" task *is* the batch |
+| **B assets (3.3)** | OR schedule + version-aware gate (Q1); not native, no core change needed | asset graph + per-key events + `partition_key` on runs; per-account status via state store | push-based, no polling | netting-group/shard grain: yes; account grain: 10k with care, 100k no (Q5) | **yes**: batcher DAG + `add_partitions` for per-account lineage (Q3.3) |
+
+---
+
+## Appendix — experiments (reproducible with `bench/exp_e1.py`, `bench/exp_e2.py`, DAGs in `bench/dags/exp_semantics.py`)
+
+**E1 (per-key concurrency).** Output of `exp_e1.py` on 3.3.2, consumer `max_active_runs=2`, 45 s task:
+
+```
+step 1: after first ACC1 event      APDR: ACC1*            runs: ACC1:running
+step 2: ACC1 again, #1 running      APDR: ACC1*, ACC1*     runs: ACC1:running, ACC1:running
+step 3: ACC1+ACC5, 2 running        APDR: +ACC1*, ACC5*    runs: …, ACC1:queued, ACC5:queued
+step 4: ACC1 while ACC1 queued      APDR: +ACC1*           runs: …, ACC1:queued
+final                               runs per key: {'ACC1': 4, 'ACC5': 1}
+```
+
+**E2 (rerun semantics).** Events a1v1, a2v1, a1v2, a3v1, a3v2, then a burst a1 v3…v7:
+
+```
+AND consumer: 0,0,0 runs → 1 run at a3v1 → still 1 after a3v2 → still 1 after the burst
+OR  consumer: 1,2,3,4,5 runs (gate skipped the first three: NOT READY) → 6 after the burst (5 events → 1 run)
+calc after a3v2: {a1: v2, a2: v1, a3: v2}      calc after burst: {a1: v3 (!), a2: v1, a3: v2}
+a1 event registration order in the burst: v5, v7, v6, v4, v3  → inlet_events[a1][-1] == v3
+```
+
+**E3 (mapper payload).** `AllowedKeyMapper(10_000 keys)`: serialized DAG 36,317 B; `rollup_fingerprint` 33,659 B in each of the
+three APDR rows created by emitting three allowed keys; a fourth, disallowed key produced a `Log` row
+`failed to map partition_key` and no run.

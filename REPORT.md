@@ -34,7 +34,7 @@ upstream changes.** Every number below was measured on Airflow 3.3.2 with Postgr
 with per-account state in the 3.3 asset state store — this works on 3.3.1/MWAA today and is what AIP-104 (3.4) formalizes.
 Pursue account-level runs only after the upstream items in §7 (APDR index + retention, bulk expansion, batched or
 scheduler-side partition registration, configurable run creation) land in a release MWAA offers. The benchmark harness here is
-the evidence for those PRs; the 3.4.0 feature freeze is 2026-10-05.
+the evidence for those PRs; the 3.4.0 feature freeze is 2026-10-12 (release manager's dev@ post of 2026-09-30; final release planned 2026-11-02).
 
 ![expansion](docs/img/expansion_blocking.png)
 ![write path](docs/img/partition_write_path.png)
@@ -110,7 +110,7 @@ Keys are free-form strings ≤250 chars, so `ACCT00012345` works. Nothing caps t
 
 **Is the use case aligned with where Airflow is going?** Yes. The "expanded data awareness" line (AIP-73/74/75/76) is complete
 and AIP-103 (task/asset state store, 3.3.0) gives a per-asset key/value store suited to per-account watermarks. What is in flight
-as of 2026-09-29 (3.4.0 feature freeze is 2026-10-05, release planned 2026-10-26):
+as of 2026-09-29 (3.4.0 feature freeze 2026-10-12 and final release 2026-11-02 per the release manager's dev@ post of 2026-09-30):
 
 - **AIP-104 "Iterable Tasks and Task Spreading"** (PR #62922, milestone 3.4.0, updated 2026-09-29): `.iterate()` processes a
   collection inside one task instance with threads/async, `.spread(across=N)` splits items round-robin over exactly N task
@@ -191,9 +191,11 @@ The 100k run (200 emitters × 500 keys, serialized with `max_active_tis_per_dagr
    per-key lookup `WHERE partition_key=? AND target_dag_id=? ORDER BY id DESC LIMIT 1`, which is a sequential scan: `EXPLAIN`
    showed 1,843 shared buffers per key at 65k rows. Past ~5 s the SDK client started timing out and retrying again.
    Creating the obvious index online (`(target_dag_id, partition_key, id DESC)`) at 00:36:07 dropped the same request to
-   3.4 s immediately (4 buffers per lookup), removed the retries, and roughly tripled the scheduler's run-completion rate
-   because the drain loop hits the same table. Because the table is never pruned, without the index this cost keeps growing
-   across days, not just within a cycle.
+   3.4 s immediately (4 buffers per lookup), removed the retries, and doubled the rate at which keys were registered and
+   consumer runs created (47 → 94 per second, `bench/results/part_100k_e200/timeline.csv`). Run completion did not change in
+   that window: 3,698 runs had finished at 00:36:13 and none finished in the next six minutes, because the scheduler loop was
+   busy creating runs (item 4). Because the table is only pruned by `dag_run` cascade deletes and the scheduler's
+   stale-fingerprint cleanup, without the index this cost keeps growing across days, not just within a cycle.
 4. **Run creation keeps up; run completion does not.** All 100k `dag_run` rows existed 3 s after the last emitter finished
    (creation is bounded by emission, not by the 500/tick cap, once emitters are serialized). But the runs then finish at only
    3–10 per second: the scheduler examines `max_dagruns_per_loop_to_schedule` runs per loop (default 20, we used 200), each
@@ -420,7 +422,7 @@ later move to Shape 1 is a key-format change, not a re-architecture — once the
 ## 7. What to contribute upstream
 
 Ordered by impact ÷ effort. Items 1–3 are small, self-contained, and backed by measurements in this repo; the 3.4.0 feature
-freeze is 2026-10-05, so realistically these land in 3.4.x/3.5 and reach MWAA a month after that.
+freeze is 2026-10-12, so realistically these land in 3.4.x/3.5 and reach MWAA a month after that.
 
 | # | Change | Evidence | Size |
 |---|---|---|---|

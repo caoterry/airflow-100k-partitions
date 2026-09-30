@@ -197,7 +197,7 @@ key), not from `asset_event` filtered by `partition_key`, which has no index unt
 | option | runs today | index + upstream fixes | cost |
 |---|---|---|---|
 | MWAA as shipped (3.3.1) | Shape 2 | not needed | none |
-| MWAA, wait for images | Shape 2 now, Shape 1 later | 3–4 weeks after an Apache release that contains them (3.4.0 is planned for 2026-10-26; otherwise the following minor) | waiting |
+| MWAA, wait for images | Shape 2 now, Shape 1 later | 3–4 weeks after an Apache release that contains them (3.4.0 feature freeze 2026-10-12, final release planned 2026-11-02; otherwise the following minor) | waiting |
 | self-hosted on Kubernetes (e.g. EKS) | Shape 1 now (100k account runs in 31 min, §4.2a) | index today (`patches/apdr_index.sql`); code patches possible, advisable only as backports of merged fixes | the team operates Airflow, the database and upgrades |
 
 The self-hosted row is the escape hatch, not the recommendation: it is the only option with a plan B for anything below the

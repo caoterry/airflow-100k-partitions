@@ -67,7 +67,7 @@ Read this first if you are picking the work up (new session, different model, or
 3. Optional engineering: batched partition write path prototype (per-request bulk insert) — the one fix not yet tried; a
    `max_active_runs_per_partition_key` sketch via a custom `AssetManager` (`asset_manager_class`).
 4. Optional measurements: E4 with a 90 s Spark step to show in-flight skipping live; E1 with `max_active_runs=1`.
-5. Before the 3.4.0 freeze (2026-10-05): dev-list post with the harness + APDR index PR.
+5. ~~Before the 3.4.0 freeze (2026-10-05): dev-list post with the harness + APDR index PR.~~ Freeze is 2026-10-12 (RM dev@ post 2026-09-30); the index PR is #73983; the dev-list post is deferred until after the freeze and conditional on the platform decision (see HANDOVER 2026-09-30 addenda).
 
 ## Conventions
 Chat with Terry in Chinese; everything committed is English. Commit messages carry the Claude co-author line. Never commit

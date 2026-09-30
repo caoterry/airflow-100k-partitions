@@ -115,7 +115,7 @@ def proc_metrics() -> dict:
 
 
 # ---------- sampling loop ----------
-def sample_loop(label: str, dag_id: str, run_id: str | None, expected: int, interval: float, timeout: float, done_fn):
+def sample_loop(label: str, dag_id: str, run_id: str | None, expected: int, interval: float, timeout: float, done_fn, extra_fn=None):
     out = RESULTS / label; out.mkdir(parents=True, exist_ok=True)
     conn = db(); conn.autocommit = True; cur = conn.cursor()
     t0 = now(); rows = []; t_expanded = None; t_first_success = None; last_print = 0
@@ -131,6 +131,8 @@ def sample_loop(label: str, dag_id: str, run_id: str | None, expected: int, inte
             if t_first_success is None and h.get("success", 0) > 0: t_first_success = t
             row = {"ts": iso(), "t": round(t - t0, 1), "mapped_tis": mc, **{f"ti_{k}": v for k, v in h.items()},
                    **{f"run_{k}": v for k, v in rh.items()}, **proc_metrics(), **{f"sz_{k}_mb": round(v / 2**20, 1) for k, v in table_sizes(cur).items()}}
+            if extra_fn:
+                row.update(extra_fn(cur))
             rows.append(row)
             if w is None or set(row) - set(fields):
                 fields = sorted(set(fields or []) | set(row), key=lambda k: (k != "ts", k != "t", k))
@@ -140,7 +142,8 @@ def sample_loop(label: str, dag_id: str, run_id: str | None, expected: int, inte
                 w.writerow(row)
             f.flush()
             if t - last_print > 15:
-                print(f"[{row['t']:>7}s] mapped={mc} {h} sched_rss={row['scheduler_rss_mb']}MB tasks={row['task_n']} avail={row['sys_avail_mb']}MB", flush=True)
+                ex = {k: v for k, v in row.items() if k.startswith("p_")}
+                print(f"[{row['t']:>7}s] mapped={mc} {h} {ex} sched_rss={row['scheduler_rss_mb']}MB tasks={row['task_n']} avail={row['sys_avail_mb']}MB", flush=True)
                 last_print = t
             d = done_fn(cur)
             if d or (t - t0) > timeout:
@@ -227,6 +230,95 @@ def cmd_bulk(a):
     sample_loop(a.label, a.dag, None, a.n, a.interval, a.timeout, done)
 
 
+PART_TABLES = {
+    "asset_event": "select count(*) from asset_event e join asset a on a.id=e.asset_id where a.name='bench_accounts'",
+    "apdr": "select count(*) from asset_partition_dag_run where target_dag_id='bench_partition_consumer'",
+    "apdr_pending": "select count(*) from asset_partition_dag_run where target_dag_id='bench_partition_consumer' and created_dag_run_id is null",
+    "pakl": "select count(*) from partitioned_asset_key_log where target_dag_id='bench_partition_consumer'",
+    "dagrun_asset_event": "select count(*) from dagrun_asset_event x join dag_run r on r.id=x.dag_run_id where r.dag_id='bench_partition_consumer'",
+    "consumer_dag_run": "select count(*) from dag_run where dag_id='bench_partition_consumer'",
+    "consumer_ti": "select count(*) from task_instance where dag_id='bench_partition_consumer'",
+    "log_rows": "select count(*) from log where dag_id in ('bench_partition_consumer','bench_partition_producer')",
+}
+
+
+def part_counts(cur) -> dict:
+    out = {}
+    for k, q in PART_TABLES.items():
+        cur.execute(q); out[k] = cur.fetchone()[0]
+    return out
+
+
+def part_clean():
+    """Remove all rows from previous partition-scenario runs so counts start from zero."""
+    conn = db(); conn.autocommit = True; cur = conn.cursor()
+    stmts = [
+        "delete from partitioned_asset_key_log where target_dag_id='bench_partition_consumer'",
+        "delete from asset_partition_dag_run where target_dag_id='bench_partition_consumer'",
+        "delete from dagrun_asset_event where dag_run_id in (select id from dag_run where dag_id='bench_partition_consumer')",
+        "delete from task_instance where dag_id in ('bench_partition_consumer','bench_partition_producer')",
+        "delete from dag_run where dag_id in ('bench_partition_consumer','bench_partition_producer')",
+        "delete from asset_event where asset_id in (select id from asset where name='bench_accounts')",
+        "delete from task_map where dag_id='bench_partition_producer'",
+        "delete from xcom where dag_id='bench_partition_producer'",
+    ]
+    for st in stmts:
+        try:
+            cur.execute(st); print("clean:", st.split(" where")[0], cur.rowcount)
+        except Exception as e:
+            print("clean failed:", st, e)
+
+
+def cmd_partition(a):
+    if a.clean:
+        part_clean()
+    tok = token(); c = client(tok)
+    run_id = a.run_id or f"{a.label}_{int(now())}"
+    conf = {"n": a.n, "emitters": a.emitters}
+    r = c.post("/api/v2/dags/bench_partition_producer/dagRuns", json={"dag_run_id": run_id, "conf": conf, "logical_date": None})
+    if r.status_code >= 300:
+        print(r.status_code, r.text); sys.exit(1)
+    print("triggered producer", run_id, conf, flush=True)
+    conn0 = db(); base = part_counts(conn0.cursor()); conn0.close()
+    marks = {}
+
+    def extra(cur):
+        pc = part_counts(cur)
+        d = {f"p_{k}": v - base[k] for k, v in pc.items()}
+        d["p_apdr_pending"] = pc["apdr_pending"]
+        st = run_state(cur, "bench_partition_producer", run_id)
+        d["p_producer_state"] = st[0] if st else None
+        cur.execute("select coalesce(state,'none'), count(*) from task_instance where dag_id='bench_partition_producer' and run_id=%s and task_id='emit' group by 1", (run_id,))
+        d["p_emit_tis"] = json.dumps(dict(cur.fetchall()))
+        t = round(now() - marks["t0"], 1)
+        if "producer_done_s" not in marks and st and st[0] in ("success", "failed"): marks["producer_done_s"] = t; marks["producer_state"] = st[0]
+        if "events_s" not in marks and d["p_asset_event"] >= a.n: marks["events_s"] = t
+        if "apdr_created_s" not in marks and d["p_apdr"] - pc["apdr_pending"] >= a.n: marks["apdr_created_s"] = t
+        if "runs_created_s" not in marks and d["p_consumer_dag_run"] >= a.n: marks["runs_created_s"] = t
+        return d
+
+    def done(cur):
+        st = run_state(cur, "bench_partition_producer", run_id)
+        if not st or st[0] not in ("success", "failed"):
+            return False
+        if st[0] == "failed" and (now() - marks["t0"]) > 60:
+            return True
+        rh = run_hist(cur, "bench_partition_consumer")
+        pc = part_counts(cur)
+        finished = (pc["consumer_dag_run"] - base["consumer_dag_run"]) >= a.n and rh.get("running", 0) == 0 and rh.get("queued", 0) == 0
+        return finished
+
+    marks["t0"] = now()
+    s = sample_loop(a.label, "bench_partition_consumer", None, a.n, a.interval, a.timeout, done, extra_fn=extra)
+    conn1 = db(); after = part_counts(conn1.cursor()); conn1.close()
+    s["row_deltas"] = {k: after[k] - base[k] for k in after}
+    s["marks"] = {k: v for k, v in marks.items() if k != "t0"}
+    s["conf"] = conf
+    (RESULTS / a.label / "summary.json").write_text(json.dumps(s, indent=2, default=str))
+    print("row deltas:", s["row_deltas"]); print("marks:", s["marks"])
+    return s
+
+
 def cmd_probe(a):
     """API/UI latency against a finished run with many mapped TIs."""
     tok = token(); c = client(tok, timeout=300); res = {}
@@ -269,6 +361,9 @@ if __name__ == "__main__":
     b.add_argument("--concurrency", type=int, default=32); b.add_argument("--label", required=True); b.add_argument("--as-of", default="2026-09-29")
     b.add_argument("--interval", type=float, default=3.0); b.add_argument("--timeout", type=float, default=4 * 3600)
     pr = sub.add_parser("probe"); pr.add_argument("--dag", required=True); pr.add_argument("--run-id", required=True); pr.add_argument("--label", required=True); pr.add_argument("--task-id", default="noop")
+    pt = sub.add_parser("partition"); pt.add_argument("--n", type=int, required=True); pt.add_argument("--emitters", type=int, default=1)
+    pt.add_argument("--label", required=True); pt.add_argument("--run-id"); pt.add_argument("--clean", action="store_true")
+    pt.add_argument("--interval", type=float, default=3.0); pt.add_argument("--timeout", type=float, default=4 * 3600)
     sub.add_parser("dbsize")
     a = p.parse_args()
-    {"run": cmd_run, "bulk": cmd_bulk, "probe": cmd_probe, "dbsize": cmd_dbsize}[a.cmd](a)
+    {"run": cmd_run, "bulk": cmd_bulk, "probe": cmd_probe, "dbsize": cmd_dbsize, "partition": cmd_partition}[a.cmd](a)

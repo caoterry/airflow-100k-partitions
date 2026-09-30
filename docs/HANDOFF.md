@@ -49,6 +49,17 @@ Read this first if you are picking the work up (new session, different model, or
 - HA test (2 schedulers, same laptop): partition 10k creation 143 → 67 s, completion 207 → 93 s (split 5,000/5,000 by job id);
   flat expand 30k 114 → 191 s (contention; second scheduler unaffected). Second scheduler stopped afterwards.
 
+## Upstream branch (evening 2026-09-30)
+- Fork `caoterry/airflow`, branch `apdr-indexes-and-cleanup` (commit 4991e583bd on top of apache/airflow main e364ee7648),
+  pushed: https://github.com/caoterry/airflow/tree/apdr-indexes-and-cleanup . Local clone: `~/Code/airflow-fork` (blobless), dev env via `uv sync`.
+- Contents: migration 0141 (`f954ddd21484`) with two indexes on `asset_partition_dag_run`; ORM `__table_args__`; `_REVISION_HEADS_MAP`;
+  `migrations-ref.rst`; `db clean` config for fired APDR rows + widened PAKL filter; tests. Verified: test_db (30 passed),
+  db_cleanup subset (8 passed), migration pattern tests (572 passed), SQLite migrate→downgrade→migrate round trip.
+- PR description: `docs/proposals/pr-apdr-indexes-and-cleanup.md`. **Terry opens the PR**; then add `airflow-core/newsfragments/<PR>.improvement.rst`
+  (one line: "Add indexes on ``asset_partition_dag_run`` and let ``airflow db clean`` purge partition runs whose Dag run has been created.") in a follow-up commit.
+- Not run locally: `prek` hooks (needs `uv tool install prek`), `migration-round-trip`/`update-migration-references` (breeze); CI will run them.
+- Dev-list proposal draft: `docs/proposals/max-active-runs-per-partition-key.md`.
+
 ## Suggested next steps (pick by available time)
 1. Review `docs/answers-to-mwaa-discussion.md` with Terry; tighten wording; decide what goes back onto Confluence.
 2. Learning notes: `docs/learning/` — three code walks (scheduler loop → expansion; task success → asset registration → APDR;

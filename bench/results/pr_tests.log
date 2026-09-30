@@ -31,3 +31,10 @@ Warnings saved into /Users/caotia/Code/airflow-fork/devel-common/warnings.txt fi
 SKIPPED [1] devel-common/src/tests_common/pytest_plugin.py:868: The test 'airflow-core/tests/unit/utils/test_db_cleanup.py::TestSchemaQualifiedTableCleanupIntegration::test_clean_archive_export_and_drop_schema_qualified_table' requires one of 'postgres' backend started and 'BACKEND' environment variable to be set (currently it set to None). It can be set by specifying backend at breeze startup.
 ============ 8 passed, 1 skipped, 93 deselected, 1 warning in 2.66s ============
 ===== migration pattern tests =====
+airflow-core/tests/unit/migrations/test_no_orm_refs_in_migration_scripts.py::test_migration_script_has_no_orm_references[0061_3_0_0_use_ti_id_as_primary_key_to_TINote.py] PASSED [ 99%]
+airflow-core/tests/unit/migrations/test_no_orm_refs_in_migration_scripts.py::test_migration_script_has_no_orm_references[0083_3_1_0_add_teams.py] PASSED [ 99%]
+airflow-core/tests/unit/migrations/test_no_orm_refs_in_migration_scripts.py::test_migration_script_has_no_orm_references[0025_2_10_0_dataset_alias_dataset.py] PASSED [ 99%]
+airflow-core/tests/unit/migrations/test_no_orm_refs_in_migration_scripts.py::test_migration_script_has_no_orm_references[0136_3_4_0_fold_task_map_into_xcom_mapped_length.py] PASSED [100%]
+
+======================== 572 passed, 1 warning in 3.12s ========================
+TESTS DONE

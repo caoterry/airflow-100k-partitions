@@ -38,7 +38,9 @@ def bench_partition_producer():
         n, e = int(params["n"]), int(params["emitters"])
         return chunks(account_ids(n), max(1, -(-n // e)))
 
-    @task(outlets=[ACCOUNTS], do_xcom_push=False)
+    # Emitters are serialized on purpose: concurrent emitters queue on the asset row lock and the default
+    # workers.execution_api_timeout (5 s) then turns lock wait into client retries.
+    @task(outlets=[ACCOUNTS], do_xcom_push=False, max_active_tis_per_dagrun=1)
     def emit(keys: list[str], *, outlet_events=None) -> None:
         outlet_events[ACCOUNTS].add_partitions(keys)
 

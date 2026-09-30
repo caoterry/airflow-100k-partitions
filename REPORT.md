@@ -39,6 +39,30 @@ and 3.3.0 (2026-07) shipped the authoring API**, so the company's 3.3.0 baseline
 
 Keys are free-form strings ≤250 chars, so `ACCT00012345` works. Nothing caps the number of distinct keys.
 
+**Is the use case aligned with where Airflow is going?** Yes. The "expanded data awareness" line (AIP-73/74/75/76) is complete
+and AIP-103 (task/asset state store, 3.3.0) gives a per-asset key/value store suited to per-account watermarks. What is in flight
+as of 2026-09-29 (3.4.0 feature freeze is 2026-10-05, release planned 2026-10-26):
+
+- **AIP-104 "Iterable Tasks and Task Spreading"** (PR #62922, milestone 3.4.0, updated 2026-09-29): `.iterate()` processes a
+  collection inside one task instance with threads/async, `.spread(across=N)` splits items round-robin over exactly N task
+  instances. Its motivation is literally that dynamic task mapping makes "each item a separate Task Instance". This is the
+  first-class version of the batching pattern in §4.5.
+- **AIP-88** streaming/lazy task expansion (WIP) and **AIP-100** scheduler starvation (awaiting review); starvation issues #45636
+  and #49508 are on the 3.4.0 milestone.
+- Partition follow-ups: #71070/#71074 duplicate pending runs for one key (bug + fix), **#71072 "log and audit when the
+  partitioned-run per-tick cap is reached"** (someone else has hit the 500/tick cap), #68778 rollup re-run policy,
+  #67941 `AssetPartitionSensor` / #70225 `AssetEventSensor`, #68517 `batch_asset_events`, #73119/#70444 deleting partitioned
+  events, #64610 (merged for 3.4) `asset_event(asset_id, partition_key)` index and key filters.
+- Airflow Summit 2026 (Nov 4–5) has a dedicated AIP-76 session by Wei Lee (Astronomer, the main implementer) on "authoring
+  ergonomics, observability, and partition-aware workflow capabilities" — the same three gaps this report finds.
+
+Nobody has proposed a per-partition materialization/"missing partitions" view, a key-list backfill, or any work at 10⁵ keys.
+AIP-76's own design discussion assumed static partition sets would carry "an artificial limit similar to dynamic task
+mapping's 1024". Dagster is not comfortable there either: its docs recommend ≤100,000 partitions per asset (raised from 25,000
+only in 2025), with field reports of sensor timeouts at ~15k, a 90 s partitions tab at ~34k and a stalled backfill daemon at
+~50k. "One partition per account" is a legitimate requirement; "100k scheduler-visible units per cycle" is at the edge of
+every orchestrator.
+
 ## 4. Experiments
 
 Environment: MacBook (8 cores, 8 GB RAM), Postgres 16 in Docker (`shared_buffers=512MB`, `synchronous_commit=off`), Airflow 3.3.2
@@ -78,7 +102,7 @@ Producer emits N keys via `add_partitions`; consumer has `PartitionedAssetTimeta
 |---|---|---|---|---|---|
 | 1,000 (1) | 12 s | 22 s | 41 s | 116 MB | none |
 | 10,000 (1) | 76 s | 219 s | 426 s | 158 MB | none |
-| 100,000 (200 × 500, serialized) | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ |
+| 100,000 (200 × 500, serialized) | 1,505 s (25 min) | 1,524 s | stopped: 3.7k done after 26 min, ~3–10 runs/s | 155 MB | none |
 
 Two things the 10k run exposed:
 
@@ -91,27 +115,52 @@ Two things the 10k run exposed:
 2. **Run creation is capped at 500 per scheduler tick** (`MAX_PARTITION_DAG_RUNS_PER_LOOP`, hard-coded). Measured steady state:
    ~80 runs/s. 100k keys ⇒ ~21 minutes of run creation per cycle, single-threaded, before any work runs.
 
+The 100k run (200 emitters × 500 keys, serialized with `max_active_tis_per_dagrun=1`) added three more:
+
+3. **The per-key write cost grows with the size of `asset_partition_dag_run`.** The task-success request for 500 keys took 3.6 s
+   when the table was empty and 7.0 s at ~60k rows (API-server access log, 124 requests, monotonic). The reason is the
+   per-key lookup `WHERE partition_key=? AND target_dag_id=? ORDER BY id DESC LIMIT 1`, which is a sequential scan: `EXPLAIN`
+   showed 1,843 shared buffers per key at 65k rows. Past ~5 s the SDK client started timing out and retrying again.
+   Creating the obvious index online (`(target_dag_id, partition_key, id DESC)`) at 00:36:07 dropped the same request to
+   3.4 s immediately (4 buffers per lookup), removed the retries, and roughly tripled the scheduler's run-completion rate
+   because the drain loop hits the same table. Because the table is never pruned, without the index this cost keeps growing
+   across days, not just within a cycle.
+4. **Run creation keeps up; run completion does not.** All 100k `dag_run` rows existed 3 s after the last emitter finished
+   (creation is bounded by emission, not by the 500/tick cap, once emitters are serialized). But the runs then finish at only
+   3–10 per second: the scheduler examines `max_dagruns_per_loop_to_schedule` runs per loop (default 20, we used 200), each
+   run needs at least two examinations (one to schedule the task, one to notice it finished), and the loop is pure Python.
+   We stopped the run after 26 minutes with 3,698 runs finished and 96k queued/running; completing 100k trivial runs would
+   have taken about three hours on one scheduler, with `max_active_runs` set to 100000. At the default `max_active_runs=16`
+   it would take far longer.
+5. **Scheduler memory stayed flat** (155 MB peak) — unlike dynamic task mapping, the partition path never holds 100k ORM
+   objects at once.
+
 ### 4.3 Does partition storage grow as n²? (question raised by a colleague's analysis)
 
-No, not for identity (one account = one key) mapping. Row deltas after each run:
+**Storage: no.** For identity mapping (one account = one key) every table grows exactly linearly, measured at three scales:
 
-| table | 1k keys | 10k keys | exponent |
-|---|---|---|---|
-| `asset_event` | 1,000 | 10,000 | 1.00 |
-| `asset_partition_dag_run` (APDR) | 1,000 | 10,000 | 1.00 |
-| `partitioned_asset_key_log` (PAKL) | 1,000 | 10,000 | 1.00 |
-| `dagrun_asset_event` | 1,000 | 10,000 | 1.00 |
-| `dag_run` / `task_instance` (consumer) | 1,000 | 10,000 | 1.00 |
+| table | 1k keys | 10k keys | 100k keys | exponent |
+|---|---|---|---|---|
+| `asset_event` | 1,000 | 10,000 | 100,000 | 1.00 |
+| `asset_partition_dag_run` (APDR) | 1,000 | 10,000 | 100,000 | 1.00 |
+| `partitioned_asset_key_log` (PAKL) | 1,000 | 10,000 | 100,000 | 1.00 |
+| `dagrun_asset_event` | 1,000 | 10,000 | 100,000 | 1.00 |
+| `dag_run` / `task_instance` (consumer) | 1,000 | 10,000 | 100,000 | 1.00 |
 
-The code confirms why: when a partition run is created, only the events joined through *its own* PAKL rows are attached
+**Time: yes, in the write path.** Registering key *i* scans the APDR table, which already holds *i−1* rows for this cycle plus
+every previous cycle's rows (never pruned). Total write time per cycle is therefore O(N²) and gets worse every day. The
+responsible table and columns are **`asset_partition_dag_run (target_dag_id, partition_key)`**, unindexed in 3.2.0 through
+3.3.2 and on main as of 2026-09-30 (`models/asset.py`; only the primary key exists). Measured: 3.6 s → 7.0 s per 500 keys as
+the table grew 0 → 60k rows; back to 3.4 s the moment an index existed (§4.2).
+
+Why storage stays linear: when a partition run is created, only the events joined through *its own* PAKL rows are attached
 (`scheduler_job_runner.py`, `PartitionedAssetKeyLog.asset_partition_dag_run_id == apdr.id`), not all events of the asset.
-Quadratic growth would need a cross-product mapper (`FanOutMapper`/`ProductMapper`, bounded by `partition_mapper_max_downstream_keys`=1000).
+Quadratic *storage* would need a cross-product mapper (`FanOutMapper`/`ProductMapper`, bounded by `partition_mapper_max_downstream_keys`=1000).
 
-The real storage problem is different: `asset_partition_dag_run` rows are **never deleted and are excluded from `airflow db clean`**
-(see `models/asset.py` docstring and `utils/db_cleanup.py`), and the table has **no index other than the primary key** although the
-per-key write path queries it by `(partition_key, target_dag_id)`. That is linear, unbounded growth on an unindexed hot table:
-36.5 M rows/year at 100k keys/day. Separately, `task_instance` measured ~1 KB per row including indexes (142 MB for ~150k rows), so
-100k task instances/day is ~36 GB/year without retention.
+The retention problem compounds it: `asset_partition_dag_run` rows are **never deleted and are excluded from `airflow db clean`**
+(`models/asset.py` docstring, `utils/db_cleanup.py`), so at 100k keys/day the unindexed hot table reaches 36.5 M rows in a year.
+Measured row costs: `task_instance` ≈ 1 KB/row and `dag_run` ≈ 0.8 KB/row including indexes (243 MB and 81 MB after ~250k and
+~100k rows), so one 100k-partition cycle per day is roughly 65 GB/year of metadata without retention.
 
 The genuinely quadratic behaviour in Airflow at this scale is elsewhere — in dynamic task mapping, not partitions: **each of the N
 mapped task instances downloads the entire N-element upstream XCom** at start (`xcom_arg.py:338`, "No mapped task group - pull from
@@ -139,7 +188,32 @@ Details with file:line references: `docs/analysis/dynamic-task-mapping-expansion
 
 ## 7. What to contribute upstream ⏳
 
-## 8. Platform constraints: MWAA vs self-hosted ⏳
+## 8. Platform constraints: MWAA vs self-hosted
+
+Everything above gets harder on MWAA, and every fix arrives later (sources: MWAA user guide pages as read 2026-09-29, in
+`docs/research/`):
+
+- **Versions/images.** MWAA offers 3.3.1 (since 2026-09-01), 3.2.1 and 3.0.6; there is no 3.3.0 and no 3.1.x, and only
+  AWS-built images are allowed. Upstream fixes reach MWAA 3–4 weeks after an Apache release at best. Local patches (§7) are
+  impossible there.
+- **No database access.** The metadata DB is a single-tenant Aurora PostgreSQL (max 8 vCPU/64 GB) that customers cannot
+  connect to, size or tune. The missing APDR index cannot be added by the customer; `airflow db clean` runs only through the
+  CLI endpoint and does not cover APDR rows anyway.
+- **Executor and sizing.** CeleryExecutor only (executor, broker, `parallelism` and `worker_autoscale` are reserved), 2–5
+  schedulers, 1–25 workers (50 by quota), largest class mw1.2xlarge = 16 vCPU/48 GB per scheduler. A 5-minute blocked
+  scheduler loop (§4.1) sits under an AWS-managed health check whose threshold is not documented.
+- **Execution API inside the webserver.** On Airflow 3 MWAA runs the Task Execution API in the 2–5 webserver Fargate
+  containers (autoscale at CPU >70%). Both heavy paths we measured — the whole-list XCom pull per mapped task instance and the
+  per-key partition registration — land there, with no published sizing guidance.
+- **REST throttle 10 TPS.** Triggering or re-running partitions through the API tops out at ~36k requests/hour.
+- **Config overrides are allowed** for `core.max_map_length`, `scheduler.max_tis_per_query`, `scheduler.max_dagruns_*`,
+  `core.max_active_runs_per_dag` etc.; only `core.multi_team` and `triggerer.queues_enabled` are blocked.
+- **MWAA Serverless** (GA 2025-11) is out of scope: Airflow 3.0.6, 100 workflows/account, 20 concurrent runs per workflow,
+  no dynamic task mapping.
+
+Self-hosted Airflow on Kubernetes removes the first two bullets entirely and gives control over the third. If MWAA is mandatory,
+the design has to stay inside what 3.3.1 does well out of the box: ≤ ~900 keys per emitting task, a few thousand partition
+runs per cycle, batching inside runs.
 
 ## 9. Reproduce
 

@@ -1,0 +1,20 @@
+===== stop, purge partition-scenario rows, restart with parallelism=8 00:43:11 =====
+stopped scheduler
+stopped dag-processor
+stopped api-server
+clean: delete from partitioned_asset_key_log 100000
+clean: delete from asset_partition_dag_run 100000
+clean: delete from dagrun_asset_event 100000
+clean: delete from task_instance 100201
+clean: delete from dag_run 100001
+clean: delete from asset_event 100000
+clean: delete from task_map 0
+clean: delete from xcom 0
+ERROR:  VACUUM cannot run inside a transaction block
+started api-server pid 24453
+started dag-processor pid 24477
+started scheduler pid 24478
+api-server: up (24453)
+dag-processor: up (24477)
+scheduler: up (24478)
+===== flat_python 1k 00:44:24 =====

@@ -6,7 +6,8 @@ Feasibility experiment: can Apache Airflow 3.3.x (company baseline 3.3.0; here 3
 orchestrate 100k "partitions" keyed by firm account, for a shared balance-sheet / revenue platform that must run on
 self-hosted Airflow or AWS MWAA?
 
-**Start with [REPORT.md](REPORT.md)** — findings, measurements, recommendation, and the upstream contribution list.
+**One page first: [SUMMARY.md](SUMMARY.md)** — what was asked, what was done, what was found, what is proposed, and where to read more.
+Then **[REPORT.md](REPORT.md)** — findings, measurements, recommendation, and the upstream contribution list.
 Deep dives: `docs/analysis/` (source traces of 3.3.2 vs main), `docs/research/` (fact-checked literature/MWAA/Dagster sweep),
 `docs/superpowers/specs/` (design and assumptions). Charts in `docs/img/`.
 

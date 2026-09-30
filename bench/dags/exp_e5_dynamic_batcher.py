@@ -69,43 +69,57 @@ def rev5_producer():
     land()
 
 
-@dag(dag_id="rev5_batcher", schedule="* * * * *", catchup=False, max_active_runs=4, tags=["exp", "e5"])
+@dag(dag_id="rev5_batcher", schedule="* * * * *", catchup=False, max_active_runs=2, tags=["exp", "e5"])
 def rev5_batcher():
     @task.short_circuit(inlets=[POS])
     def claim(inlet_events=None, asset_state_store=None, run_id=None) -> list[list[str]]:
+        """Bounded reads only: page the event log with .after()/.limit(); one ledger key instead of one get per account."""
         store = asset_state_store[POS]
         pol = {**DEFAULT_POLICY, **(store.get("policy") or {})}
         now = time.time()
-        # event log since (watermark - t_max) so late-registered events are not missed; newest version + first-seen per account
-        wm = store.get("watermark")
-        since = (datetime.fromisoformat(wm) - timedelta(seconds=float(pol["t_max_s"]) * 2)) if wm else datetime(2000, 1, 1, tzinfo=timezone.utc)
+        ledger = store.get("ledger") or {"processed": {}, "inflight": {}, "watermark": None}
+        processed, inflight = ledger["processed"], ledger["inflight"]
+        # --- page through new events (each page must fit the 5 s execution-API timeout) ---
+        wm = ledger.get("watermark")
+        since = (datetime.fromisoformat(wm) - timedelta(seconds=5)) if wm else datetime(2000, 1, 1, tzinfo=timezone.utc)
         newest: dict[str, tuple[int, float]] = {}
-        recent = 0
-        for ev in inlet_events[POS].after(since.isoformat()):
-            if not ev.partition_key:
-                continue
-            ver = int((ev.extra or {}).get("version", 0)); ts = ev.timestamp.timestamp() if hasattr(ev.timestamp, "timestamp") else now
-            v0 = newest.get(ev.partition_key)
-            newest[ev.partition_key] = (max(ver, v0[0]) if v0 else ver, min(ts, v0[1]) if v0 else ts)
-            if now - ts <= 600: recent += 1
+        recent, pages, last_ts = 0, 0, None
+        while True:
+            page = list(inlet_events[POS].after(since.isoformat()).ascending(True).limit(int(pol.get("page", 2000))))
+            pages += 1
+            for ev in page:
+                if not ev.partition_key:
+                    continue
+                ver = int((ev.extra or {}).get("version", 0)); ts = ev.timestamp
+                tsf = ts.timestamp() if hasattr(ts, "timestamp") else now
+                v0 = newest.get(ev.partition_key)
+                newest[ev.partition_key] = (max(ver, v0[0]) if v0 else ver, min(tsf, v0[1]) if v0 else tsf)
+                if now - tsf <= 600: recent += 1
+                last_ts = ts
+            if len(page) < int(pol.get("page", 2000)) or last_ts is None or pages > 50:
+                break
+            since = last_ts if hasattr(last_ts, "isoformat") else since
         lam = max(recent / 600.0, 1e-3)
-        ready, in_flight, running_batches = [], [], set()
+        ready = []
         for acct, (ver, first_seen) in newest.items():
-            rec = store.get(f"acct/{acct}") or {}
-            if rec.get("status") == "running":
-                in_flight.append(acct); running_batches.add(rec.get("batch")); continue
-            if rec.get("status") == "done" and int(rec.get("version", -1)) >= ver:
-                continue                                   # failed/released accounts are re-claimed
+            if acct in inflight:
+                continue
+            if int(processed.get(acct, -1)) >= ver:
+                continue
             ready.append((acct, first_seen))
         ready.sort(key=lambda x: x[1])
-        batches = plan_batches(ready, len(running_batches), lam, pol, now)
+        running_batches = len(set(inflight.values()))
+        batches = plan_batches(ready, running_batches, lam, pol, now)
         for bi, batch in enumerate(batches):
             for acct in batch:
-                store.set(f"acct/{acct}", {"status": "running", "version": newest[acct][0], "batch": f"{run_id}#{bi}", "claimed_at": datetime.now(timezone.utc).isoformat()})
-        if newest:
-            store.set("watermark", datetime.now(timezone.utc).isoformat())
-        print(f"policy={pol['mode']} lam={lam:.3f}/s ready={len(ready)} in_flight={len(in_flight)} running_batches={len(running_batches)} "
-              f"-> {len(batches)} batches sizes={[len(b) for b in batches]} oldest_wait={(now - ready[0][1]) if ready else 0:.0f}s")
+                inflight[acct] = f"{run_id}#{bi}"
+        if last_ts is not None:
+            ledger["watermark"] = last_ts.isoformat() if hasattr(last_ts, "isoformat") else ledger.get("watermark")
+        ledger["inflight"] = inflight
+        store.set("ledger", ledger)
+        print(f"policy={pol['mode']} pages={pages} events_seen={sum(1 for _ in newest)} lam={lam:.3f}/s ready={len(ready)} "
+              f"in_flight={len(inflight)} running_batches={running_batches} -> {len(batches)} batches sizes={[len(b) for b in batches]} "
+              f"oldest_wait={(now - ready[0][1]) if ready else 0:.0f}s")
         return batches
 
     @task(pool="spark_jobs", inlets=[POS])   # inlets: state-store accessor is scoped to declared assets
@@ -121,19 +135,21 @@ def rev5_batcher():
         outlet_events[PNL].extra = {"batch_size": len(batch)}
         outlet_events[PNL].add_partitions(batch)
         store = asset_state_store[POS]
+        ledger = store.get("ledger") or {"processed": {}, "inflight": {}, "watermark": None}
         for acct in batch:
-            rec = store.get(f"acct/{acct}") or {}
-            rec.update({"status": "done", "finished_at": datetime.now(timezone.utc).isoformat()})
-            store.set(f"acct/{acct}", rec)
+            ledger["inflight"].pop(acct, None)
+            ledger["processed"][acct] = max(int(ledger["processed"].get(acct, -1)), 0) + 1   # bump processed version marker
+            store.set(f"acct/{acct}", {"status": "done", "finished_at": datetime.now(timezone.utc).isoformat()})
+        store.set("ledger", ledger)
 
     @task(inlets=[POS], trigger_rule="one_failed")
     def release(batches: list[list[str]], *, asset_state_store=None) -> None:
         store = asset_state_store[POS]
+        ledger = store.get("ledger") or {"processed": {}, "inflight": {}, "watermark": None}
         for batch in batches or []:
             for acct in batch:
-                rec = store.get(f"acct/{acct}") or {}
-                if rec.get("status") == "running":
-                    rec["status"] = "failed"; store.set(f"acct/{acct}", rec)
+                ledger["inflight"].pop(acct, None)
+        store.set("ledger", ledger)
 
     b = claim()
     s = spark.override(task_id="spark").expand(batch=b)

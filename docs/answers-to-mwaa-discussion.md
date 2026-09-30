@@ -45,6 +45,16 @@ asset arrived and **did not** fire when `a3` re-arrived (the "red X").
 "Echoing" (re-emitting the other assets' events to satisfy AND) is not recommended: it fabricates lineage, doubles event
 volume, and still cannot express "which version". A reconcile daemon is not needed for correctness, only as a safety net.
 
+**The full balance-sheet model (E6).** Inputs split into *reference* data (rates, FX) and *root* data (positions, cashflows);
+the readiness predicate is `all(reference for as-of D present) and any(root for D present)`, first run and every run after.
+That is a gate predicate, not a schedule expression: `schedule = OR over all inputs`, gate scoped to the business date named
+by the triggering event, versions chosen as `max(version)` per input for that date, and the output event carries
+`{as_of, roots included, versions used}` so downstream can tell a partial result from a complete one. Measured sequence
+(`bench/exp_e6.py`): rates → SKIP; positions → SKIP (fx missing); fx → **RUN** (roots: positions); cashflows → **RUN**
+(roots: both); rates v2 → **RUN** with rates 2 / others 1; next business date: positions → SKIP, rates → SKIP, fx → **RUN**
+for 2026-10-01 — date scoping holds, and the "v2 for the one that re-arrived, v1 for the others" rule falls out of
+`max(version)` per input with no daemon.
+
 **Roadmap.** `batch_asset_events` (PR #68517, 3.4) makes conflation explicit; `AssetEventSensor` (#70225) and
 `AssetPartitionSensor` (#67941) let a time-scheduled DAG wait for events. Nothing on the roadmap changes the AND semantics.
 
@@ -233,6 +243,21 @@ asset_state_store rows: acct/ACC1 -> {"status": "done", "version": 2, "batch": "
 Two lessons from the first (failed) attempt: the state-store accessor is scoped to the task's declared inlets/outlets
 (`asset_state_store[asset]` raises `KeyError` otherwise), and a claim needs a release path (`trigger_rule="one_failed"` task or
 a lease timeout) or accounts stay "running" forever after a failed batch.
+
+**E6 (balance-sheet readiness gate, `bench/dags/exp_e6_bs_gate.py`, driver `bench/exp_e6.py`).** Gate decisions for the
+eight arrivals, verbatim:
+
+```
+as_of=2026-09-30 refs_ok=False roots_in=[]                      -> SKIP   (rates v1)
+as_of=2026-09-30 refs_ok=False roots_in=['positions']           -> SKIP   (positions v1; fx missing)
+as_of=2026-09-30 refs_ok=True  roots_in=['positions']           -> RUN    (fx v1)
+as_of=2026-09-30 refs_ok=True  roots_in=['positions','cashflows'] -> RUN  (cashflows v1)
+as_of=2026-09-30 refs_ok=True  versions rates=2 fx=1 ...        -> RUN    (rates v2)
+as_of=2026-10-01 refs_ok=False roots_in=['positions']           -> SKIP   (positions for the next date)
+as_of=2026-10-01 refs_ok=False                                  -> SKIP   (rates for the next date; fx missing)
+as_of=2026-10-01 refs_ok=True  roots_in=['positions']           -> RUN    (fx for the next date)
+```
+Four result events were emitted, each with `{as_of, roots, versions}`; 8 consumer runs (one per arrival, gate skipped 4).
 
 **E3 (mapper payload).** `AllowedKeyMapper(10_000 keys)`: serialized DAG 36,317 B; `rollup_fingerprint` 33,659 B in each of the
 three APDR rows created by emitting three allowed keys; a fourth, disallowed key produced a `Log` row

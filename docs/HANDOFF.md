@@ -40,6 +40,11 @@ Read this first if you are picking the work up (new session, different model, or
 - Terry's two architecture points: subnet IPs bound K for Glue/EMR (pool_slots = workers+1); embarrassingly-parallel revenue
   PnL points to Lambda-class engines with Airflow scheduling at batch grain.
 
+- E6 (`exp_e6_bs_gate.py`): balance-sheet readiness predicate all(ref)+any(root) per business date — works as OR + gate
+  with max(version) per input; results in the answers doc (Q1). E5 at 10k: the claim task's unbounded `inlet_events` pull
+  took 7.6–9.1 s > 5 s SDK timeout → task failed; fixed by paging (`.after().limit(2000)`) + one ledger key (rerun pending).
+- `patches/patch_e_partition_key_mutex.py` written (per-key mutex in scheduler + conflation in AssetManager), not yet run.
+
 ## Suggested next steps (pick by available time)
 1. Review `docs/answers-to-mwaa-discussion.md` with Terry; tighten wording; decide what goes back onto Confluence.
 2. Learning notes: `docs/learning/` — three code walks (scheduler loop → expansion; task success → asset registration → APDR;

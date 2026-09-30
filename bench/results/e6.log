@@ -1,0 +1,29 @@
+clean slate
+[   0.4s] LAND rates 2026-09-30 v1
+[  14.5s] LAND positions 2026-09-30 v1
+[  28.6s] LAND fx 2026-09-30 v1
+[  44.7s] LAND cashflows 2026-09-30 v1
+[  58.9s] LAND rates 2026-09-30 v2
+[  73.0s] LAND positions 2026-10-01 v1
+[  87.1s] LAND rates 2026-10-01 v1
+[ 101.2s] LAND fx 2026-10-01 v1
+
+=== gate decisions ===
+   as_of=2026-09-30 refs_ok=False roots_in=[] versions={'rates': 1, 'fx': None, 'positions': None, 'cashflows': None} -> SKIP
+   as_of=2026-09-30 refs_ok=False roots_in=['positions'] versions={'rates': 1, 'fx': None, 'positions': 1, 'cashflows': None} -> SKIP
+   as_of=2026-09-30 refs_ok=True roots_in=['positions'] versions={'rates': 1, 'fx': 1, 'positions': 1, 'cashflows': None} -> RUN
+   as_of=2026-09-30 refs_ok=True roots_in=['positions', 'cashflows'] versions={'rates': 1, 'fx': 1, 'positions': 1, 'cashflows': 1} -> RUN
+   as_of=2026-09-30 refs_ok=True roots_in=['positions', 'cashflows'] versions={'rates': 2, 'fx': 1, 'positions': 1, 'cashflows': 1} -> RUN
+   as_of=2026-10-01 refs_ok=False roots_in=['positions'] versions={'rates': None, 'fx': None, 'positions': 1, 'cashflows': None} -> SKIP
+   as_of=2026-10-01 refs_ok=False roots_in=['positions'] versions={'rates': 1, 'fx': None, 'positions': 1, 'cashflows': None} -> SKIP
+   as_of=2026-10-01 refs_ok=True roots_in=['positions'] versions={'rates': 1, 'fx': 1, 'positions': 1, 'cashflows': None} -> RUN
+
+=== bs_pnl runs ===
+   [('success', 8)]
+
+=== results emitted (bs_pnl_out) ===
+   {'as_of': '2026-09-30', 'roots': ['positions'], 'versions': {'fx': 1, 'rates': 1, 'positions': 1}}
+   {'as_of': '2026-09-30', 'roots': ['positions', 'cashflows'], 'versions': {'fx': 1, 'rates': 1, 'cashflows': 1, 'positions': 1}}
+   {'as_of': '2026-09-30', 'roots': ['positions', 'cashflows'], 'versions': {'fx': 1, 'rates': 2, 'cashflows': 1, 'positions': 1}}
+   {'as_of': '2026-10-01', 'roots': ['positions'], 'versions': {'fx': 1, 'rates': 1, 'positions': 1}}
+E6 DONE

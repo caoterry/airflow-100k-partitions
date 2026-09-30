@@ -40,6 +40,44 @@ the evidence for those PRs; the 3.4.0 feature freeze is 2026-10-05.
 ![write path](docs/img/partition_write_path.png)
 ![shapes](docs/img/shapes_100k.png)
 
+*If images do not load on your network, every chart is also rendered as text in [docs/charts.md](docs/charts.md). The three above:*
+
+```
+N        as shipped (3.3.2)                            Patch A (backport #69565)
+ 10,000  ██████                            60 s   ███                               34 s
+ 30,000  ███████████                      114 s   ███████                           71 s
+100,000  ██████████████████████████████   315 s   ████████████████                 173 s
+default scheduler health threshold: 30 s  (every bar above is over it)
+```
+
+```
+rows in APDR   request duration (500 keys)          | 5 s = client timeout
+
+       0      ██████████████ 3.6 s
+   8,000      ███████████████ 3.8 s
+  16,000      █████████████████ 4.2 s
+  24,000      ██████████████████ 4.6 s
+  32,000      ████████████████████ 5.0 s
+  40,000      ███████████████████████ 5.7 s
+  48,000      ████████████████████████ 6.1 s
+  56,000      ██████████████████████████ 6.4 s
+  64,000      ████████████████████████████ 7.0 s
+         ---- CREATE INDEX (target_dag_id, partition_key, id) online ----
+  65,500      ████████████████ 3.9 s
+  66,500      ██████████████ 3.4 s
+  67,500      ███████████████ 3.7 s
+  68,500      ██████████████ 3.4 s
+```
+
+```
+
+A  flat expand, 100k TIs (scheduler-only)     ███   5.5 min 
+C  batched 100 x 1000 (real tasks)            ▏   0.6 min 
+D  100 child runs x 1000 (scheduler-only)     ██████████  20.4 min 
+F  native partitions, create 100k runs        █████████████  25.4 min (finishing them ~3 h more)
+E  run per account (10k measured x 10)        ███████████████████████████████  62.9 min (linear extrapolation)
+```
+
 ## 2. The question, and the assumptions we had to make
 
 A shared orchestration platform (balance-sheet + revenue teams) is being rebuilt cloud-native on Airflow or AWS MWAA. The revenue
@@ -179,6 +217,8 @@ The 100k run (200 emitters × 500 keys, serialized with `max_active_tis_per_dagr
 | `dag_run` / `task_instance` (consumer) | 1,000 | 10,000 | 100,000 | 1.00 |
 
 ![rows](docs/img/partition_rows.png)
+
+*(text version: [docs/charts.md §4](docs/charts.md))*
 
 **Time: yes, in the write path.** Registering key *i* scans the APDR table, which already holds *i−1* rows for this cycle plus
 every previous cycle's rows (never pruned). Total write time per cycle is therefore O(N²) and gets worse every day. The

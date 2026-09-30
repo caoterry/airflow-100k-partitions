@@ -31,6 +31,65 @@ saturated the slots with small jobs and the tail grew to 43 minutes.
 
 ![frontier](img/batching_frontier.png)
 
+*Text version of this figure (for networks that block images): [charts.md §5](charts.md). Two of the four panels:*
+
+**Glue-class: startup 60 s, 1 s/acct, K=20, SLA 5 min**
+
+| policy | jobs | avg batch | burst p95 | trickle p95 | job-hours |
+|---|---|---|---|---|---|
+| per_account | 5,740 | 1.0 | unstable | unstable | 97.3 |
+| fixed_pack | 116 | 211.4 | 10.2 min | 6.0 min | 8.7 |
+| fixed_cadence | 50 | 490.3 | 89.3 min | 10.9 min | 7.6 |
+| adaptive | 1,643 | 14.9 | 7.2 min | 1.6 min | 34.2 |
+| adaptive_sla | 534 | 45.9 | 9.7 min | 2.1 min | 15.7 |
+
+```
+trickle p95 (min)
+fixed_pack     ████████████   6.0   (8.7 job-h)
+fixed_cadence  ██████████████████████  10.9   (7.6 job-h)
+adaptive       ███   1.6   (34.2 job-h)
+adaptive_sla   ████   2.1   (15.7 job-h)
+SLA target     ----------| 5 min
+```
+
+**Glue-class, subnet-bound: K=8, SLA 5 min**
+
+| policy | jobs | avg batch | burst p95 | trickle p95 | job-hours |
+|---|---|---|---|---|---|
+| per_account | 2,296 | 1.0 | unstable | unstable | 38.9 |
+| fixed_pack | 114 | 215.1 | 20.8 min | 6.3 min | 8.7 |
+| fixed_cadence | 50 | 490.3 | 89.3 min | 10.9 min | 7.6 |
+| adaptive | 1,208 | 20.3 | 35.8 min | 2.5 min | 26.9 |
+| adaptive_sla | 492 | 49.8 | 30.5 min | 2.1 min | 15.0 |
+
+```
+trickle p95 (min)
+fixed_pack     █████████████   6.3   (8.7 job-h)
+fixed_cadence  ██████████████████████  10.9   (7.6 job-h)
+adaptive       █████   2.5   (26.9 job-h)
+adaptive_sla   ████   2.1   (15.0 job-h)
+SLA target     ----------| 5 min
+```
+
+**Warm Spark: startup 10 s, 0.5 s/acct, K=20, SLA 2 min**
+
+| policy | jobs | avg batch | burst p95 | trickle p95 | job-hours |
+|---|---|---|---|---|---|
+| per_account | 17,180 | 1.0 | unstable | unstable | 50.1 |
+| fixed_pack | 116 | 211.4 | 5.2 min | 3.8 min | 3.7 |
+| fixed_cadence | 50 | 490.3 | 46.6 min | 7.4 min | 3.5 |
+| adaptive | 2,959 | 8.3 | 0.9 min | 0.7 min ◀ meets SLA | 11.6 |
+| adaptive_sla | 554 | 44.3 | 2.0 min | 0.9 min ◀ meets SLA | 4.9 |
+
+```
+trickle p95 (min)
+fixed_pack     ████████   3.8   (3.7 job-h)
+fixed_cadence  ███████████████   7.4   (3.5 job-h)
+adaptive       █   0.7   (11.6 job-h)
+adaptive_sla   ██   0.9   (4.9 job-h)
+SLA target     ----| 2 min
+```
+
 | engine profile | best policy for the 2-min trickle SLA | burst p95 (capacity-bound) | cost vs fixed pack |
 |---|---|---|---|
 | **Glue-class** S=60 s, p=1 s, K=20 | `adaptive_sla` (target 5 min): trickle p95 **2.1 min** | 9.7 min for every policy except `adaptive` (7.2) | 1.8× (15.7 vs 8.7 job-h) |

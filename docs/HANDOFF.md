@@ -50,11 +50,11 @@ Read this first if you are picking the work up (new session, different model, or
   flat expand 30k 114 → 191 s (contention; second scheduler unaffected). Second scheduler stopped afterwards.
 
 ## Upstream branch (evening 2026-09-30)
-- Fork `caoterry/airflow`, branch `apdr-indexes-and-cleanup` (commit 4991e583bd on top of apache/airflow main e364ee7648),
+- Fork `caoterry/airflow`, branch `apdr-indexes-and-cleanup` (indexes only, amended; on top of apache/airflow main e364ee7648),
   pushed: https://github.com/caoterry/airflow/tree/apdr-indexes-and-cleanup . Local clone: `~/Code/airflow-fork` (blobless), dev env via `uv sync`.
 - Contents: migration 0141 (`f954ddd21484`) with two indexes on `asset_partition_dag_run`; ORM `__table_args__`; `_REVISION_HEADS_MAP`;
-  `migrations-ref.rst`; `db clean` config for fired APDR rows + widened PAKL filter; tests. Verified: test_db (30 passed),
-  db_cleanup subset (8 passed), migration pattern tests (572 passed), SQLite migrate→downgrade→migrate round trip.
+  `migrations-ref.rst`; (db clean part dropped: fired rows already cascade with dag_run cleanup). Verified: test_db (30 passed),
+  migration pattern tests (572 passed), SQLite migrate→downgrade→migrate round trip.
 - PR description: `docs/proposals/pr-apdr-indexes-and-cleanup.md`. **Terry opens the PR**; then add `airflow-core/newsfragments/<PR>.improvement.rst`
   (one line: "Add indexes on ``asset_partition_dag_run`` and let ``airflow db clean`` purge partition runs whose Dag run has been created.") in a follow-up commit.
 - Not run locally: `prek` hooks (needs `uv tool install prek`), `migration-round-trip`/`update-migration-references` (breeze); CI will run them.

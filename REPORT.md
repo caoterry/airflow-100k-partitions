@@ -264,8 +264,9 @@ Why storage stays linear: when a partition run is created, only the events joine
 (`scheduler_job_runner.py`, `PartitionedAssetKeyLog.asset_partition_dag_run_id == apdr.id`), not all events of the asset.
 Quadratic *storage* would need a cross-product mapper (`FanOutMapper`/`ProductMapper`, bounded by `partition_mapper_max_downstream_keys`=1000).
 
-The retention problem compounds it: `asset_partition_dag_run` rows are **never deleted and are excluded from `airflow db clean`**
-(`models/asset.py` docstring, `utils/db_cleanup.py`), so at 100k keys/day the unindexed hot table reaches 36.5 M rows in a year.
+The retention problem compounds it: `asset_partition_dag_run` rows are never deleted by the scheduler and are not cleaned by age themselves; they go only by
+cascade when their `dag_run` is deleted by `airflow db clean` (pending rows never), so the unindexed hot table is bounded
+only by the `dag_run` retention window — 36.5 M rows a year at 100k keys/day if runs are kept.
 Measured row costs: `task_instance` ≈ 1 KB/row and `dag_run` ≈ 0.8 KB/row including indexes (243 MB and 81 MB after ~250k and
 ~100k rows), so one 100k-partition cycle per day is roughly 65 GB/year of metadata without retention.
 
@@ -377,7 +378,7 @@ Details with file:line references: `docs/analysis/dynamic-task-mapping-expansion
 | 3 | Each mapped TI pulls the whole upstream XCom | 1,000 / 10,000 GETs of the full list per run, 35 KB (JSONB) at 10k, p50 78 ms | O(N²) bytes |
 | 4 | Partition key registration runs inside the task-success API request under the asset row lock, ~8 statements per key, APDR lookup unindexed | 5.3 ms/key; 53 s for 10k; client timeout 5 s; +50% per 60k rows in the table | O(keys) per request, O(table) per key |
 | 5 | Partition runs created ≤500 per tick, FIFO, single scheduler | ~80 runs/s | O(N/500) ticks |
-| 6 | `asset_partition_dag_run` never pruned, PK-only index | code | unbounded |
+| 6 | `asset_partition_dag_run` PK-only index; trimmed only by cascade with `dag_run` cleanup | code | bounded by run retention |
 
 ## 6. How to model 100k firm accounts on Airflow 3.3 today
 
@@ -417,7 +418,7 @@ freeze is 2026-10-05, so realistically these land in 3.4.x/3.5 and reach MWAA a 
 
 | # | Change | Evidence | Size |
 |---|---|---|---|
-| 1 | **Index `asset_partition_dag_run (target_dag_id, partition_key, id)`** and a partial index for `created_dag_run_id IS NULL`; add APDR to `db clean` | §4.2/§4.3: 7.0 s → 3.4 s per 500 keys, retries gone, ~3× faster drain | migration, tiny |
+| 1 | **Indexes on `asset_partition_dag_run`**: `(target_dag_id, partition_key, id)` for the write path and `(created_dag_run_id, created_at, id)` for the scheduler's pending scan — branch `caoterry/airflow:apdr-indexes-and-cleanup` | §4.2/§4.2a: 7.0 s → 3.4 s per 500 keys, retries gone; 100k runs finished in 31 min instead of ~3 h | migration, tiny |
 | 2 | **Bulk-create mapped task instances** (`TaskMap.expand_mapped_task`): ship #69565 in a 3.3.x patch release (Patch A: 1.6–1.8×), then go further — bulk INSERT without per-instance ORM objects and a hoisted `MappedTaskUpstreamDep` check | §4.1/§4.8: 315 s → 173 s at 100k with #69565 alone | backport + medium PR |
 | 3 | **Batch the partition write path per request**: one lock, bulk INSERT of `asset_event`/APDR/PAKL, `INSERT … ON CONFLICT` on a partial unique index instead of get-or-create per key; or move fan-out to the scheduler (level-triggered) | §4.8: memoisation alone changes nothing; ~8 statements per key | medium |
 | 4 | **Make `MAX_PARTITION_DAG_RUNS_PER_LOOP` configurable** and bulk-insert the created `dag_run`/`task_instance` rows (the time-based path already uses `bulk_insert_mappings`) | §4.2: ~80 runs/s creation ceiling | small |

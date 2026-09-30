@@ -10,7 +10,7 @@ Prototype of what an upstream `max_active_runs_per_partition_key = 1` would do. 
    (not started) re-uses that APDR instead of creating another one.
    -> conflation: events that arrive before the run starts collapse into it.
 
-Together: at most one running + one pending run per key; the T=1..5 table on the internal page becomes "conflated + fine-grained admission".
+Together: at most one running + one pending run per key; the evaluation page's T=1..5 table becomes "conflated + fine-grained admission".
 Controlled by AIRFLOW__SCHEDULER__PARTITION_KEY_MUTEX (default True once patched). Usage: patch_e_...py [--revert]
 """
 from __future__ import annotations

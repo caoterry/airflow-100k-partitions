@@ -4,7 +4,7 @@ Read this first if you are picking the work up (new session, different model, or
 
 ## What exists
 - `REPORT.md` — the 100k-partition feasibility study (measurements, charts, recommendation, upstream list). Complete.
-- `docs/answers-to-mwaa-discussion.md` — answers to a colleague's six questions + his evaluation matrix + mapping to his
+- `docs/answers-to-mwaa-discussion.md` — answers to the six questions on a colleague's internal evaluation page + that page's evaluation matrix + mapping to the internal
   "Proposal" page. Complete draft; evidence = E1–E4 + REPORT numbers + `docs/analysis/source-checks-mwaa-answers.md`.
 - `docs/analysis/` — source traces (native partitions 3.3.2 vs main; mapped-task expansion path; source checks with skeptic verdicts).
 - `docs/research/` — fact-checked literature/MWAA/Dagster sweep (36 claims checked).
@@ -61,7 +61,7 @@ Read this first if you are picking the work up (new session, different model, or
 - Dev-list proposal draft: `docs/proposals/max-active-runs-per-partition-key.md`.
 
 ## Suggested next steps (pick by available time)
-1. Review `docs/answers-to-mwaa-discussion.md` with Terry; tighten wording; decide what goes back onto Confluence.
+1. Review `docs/answers-to-mwaa-discussion.md` with Terry; tighten wording; decide what goes back onto the internal page.
 2. Learning notes: `docs/learning/` — three code walks (scheduler loop → expansion; task success → asset registration → APDR;
    partition run creation), each with the experiment that demonstrates it. Chat explanations in Chinese, notes in English.
 3. Optional engineering: batched partition write path prototype (per-request bulk insert) — the one fix not yet tried; a

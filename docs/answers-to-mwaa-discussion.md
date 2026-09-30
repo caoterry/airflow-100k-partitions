@@ -1,4 +1,4 @@
-# Answers to the "AWS MWAA Discussion" questions
+# Answers to the internal MWAA evaluation questions
 
 *Written 2026-09-30 against Apache Airflow 3.3.2 (company baseline 3.3.0/3.3.1) with code references, benchmark data from
 [REPORT.md](../REPORT.md) and three targeted semantics experiments (E1–E3, appendix). Where the answer is "not natively",

@@ -41,9 +41,19 @@ Every later section uses these names. The table column is where the thing lives 
 
 An asset update becomes a run by one of three paths, and the path depends on two things: whether the `AssetEvent` carries a `partition_key`, and whether any Dag subscribes to that asset per partition. All rows below are real rows from the test database.
 
-![One asset_event, three paths to a run](img/two-grains-paths.svg)
+![One asset_event, three paths to a run](img/two-grains-paths.png)
 
-<sub>asset event routing in Airflow 3.3 · three paths</sub>
+<sub>asset event routing in Airflow 3.3 · three paths · vector: [two-grains-paths.svg](img/two-grains-paths.svg)</sub>
+
+<details><summary>Text version of this figure</summary>
+
+| Path | The event | What the api-server and scheduler write | Result |
+| --- | --- | --- | --- |
+| A | unkeyed (balance sheet) | one `asset_dag_run_queue` row per consumer Dag | a consumer DagRun when the condition holds |
+| B | keyed, consumer has `PartitionedAssetTimetable` (native) | one APDR + PAKL row per partition key | one DagRun per key: 100,000 a day at account grain |
+| C | keyed, no partitioned consumer (this design) | nothing: no queue row, no APDR | the batcher Dag reads the `asset_event` rows into the journal each tick |
+
+</details>
 
 Path B is native account grain and costs one run per account; Path C is this design, where Airflow schedules nothing per account.
 
@@ -125,9 +135,46 @@ SELECT asset_partition_dag_run.* FROM asset_partition_dag_run
 | Scheduler pending scan | Seq Scan, 99,500 rows filtered, 935 buffers, 3.72 ms | Index Scan on `created_dag_run_id IS NULL`, 11 buffers, 0.43 ms |
 | Deleting 100 `dag_run` rows (FK cascade) | 360 ms in the FK trigger | 0.42 ms |
 
-![500-key registration time against rows in asset_partition_dag_run](img/two-grains-write-path.svg)
+![500-key registration time against rows in asset_partition_dag_run](img/two-grains-write-path.png)
 
-<sub>request_durations.csv from the 100k run on Airflow 3.3.2 (bench/results/part_100k_e200) · 27 samples</sub>
+<sub>request_durations.csv from the 100k run on Airflow 3.3.2 (bench/results/part_100k_e200) · 27 samples · vector: [two-grains-write-path.svg](img/two-grains-write-path.svg)</sub>
+
+<details><summary>Text version of this figure</summary>
+
+```
+rows in APDR   seconds per 500-key request   (█ = 0.25 s; the 5 s execution_api_timeout is 20 █)
+
+        0      ██████████████ 3.6 s
+    4,000      ███████████████ 3.7 s
+    8,000      ███████████████ 3.8 s
+   12,000      ████████████████ 3.9 s
+   16,000      █████████████████ 4.2 s
+   20,000      █████████████████ 4.2 s
+   24,000      ██████████████████ 4.6 s
+   28,000      ███████████████████ 4.8 s
+   32,000      ████████████████████ 5.0 s
+   36,000      █████████████████████ 5.3 s  over 5 s
+   40,000      ███████████████████████ 5.7 s  over 5 s
+   44,000      ████████████████████████ 6.0 s  over 5 s
+   48,000      ████████████████████████ 6.1 s  over 5 s
+   52,000      ███████████████████████████ 6.7 s  over 5 s
+   56,000      ██████████████████████████ 6.4 s  over 5 s
+   60,000      ███████████████████████████ 6.7 s  over 5 s
+   64,000      ████████████████████████████ 7.0 s  over 5 s
+   64,500      ████████████████████████████ 7.1 s  over 5 s
+   65,000      ████████████████████████████ 7.0 s  over 5 s
+        ---- index created online: (target_dag_id, partition_key, id) ----
+   65,500      ████████████████ 3.9 s
+   66,000      ██████████████ 3.5 s
+   66,500      ██████████████ 3.4 s
+   67,000      ██████████████ 3.5 s
+   67,500      ███████████████ 3.7 s
+   68,000      ██████████████ 3.4 s
+   68,500      ██████████████ 3.4 s
+   69,000      ██████████████ 3.5 s
+```
+
+</details>
 
 In the live 100,000-key run the request passed the 5-second client timeout at about 36,000 rows, and clients began to time out and retry. The index, created online mid-run, brought the next request back to 3.9 s.
 
@@ -211,9 +258,24 @@ b_{sla} = \frac{target - S}{1/\lambda + p}
 
 The journal answers the overlap question with three rules: an account in flight is never claimed again, unrelated accounts never wait for each other, and versions that pile up while an account waits collapse into one recompute. Today's prototype breaks the third rule for an account that is already in flight; the fix is one column.
 
-![Journal row lifecycle](img/two-grains-journal-states.svg)
+![Journal row lifecycle](img/two-grains-journal-states.png)
 
-<sub>journal.accounts row lifecycle · 4 states, 2 transitions still to build</sub>
+<sub>journal.accounts row lifecycle · 4 states, 2 transitions still to build · vector: [two-grains-journal-states.svg](img/two-grains-journal-states.svg)</sub>
+
+<details><summary>Text version of this figure</summary>
+
+| From | Event | To | In the prototype? |
+| --- | --- | --- | --- |
+| (no row) | first event for an account | `pending` | yes |
+| `pending` | newer version read | `pending`, same row, `seen_version` rises | yes |
+| `pending` | `claim` (`FOR UPDATE SKIP LOCKED`) | `inflight`, `claimed_version` set | yes, without `claimed_version` |
+| `inflight` | newer version read | `inflight`, `seen_version` rises, never claimed twice | yes |
+| `inflight` | `publish`, no newer version | `done`, `done_version` = `claimed_version` | yes |
+| `inflight` | `publish`, a newer version arrived in flight | `pending` (re-open) | **no**: the prototype marks it done |
+| `inflight` | spark task fails after retries | `failed`, status and timestamp recorded, only this batch released | **no**: the prototype returns every batch of the run to pending |
+| `done` | `claim` reads a newer `asset_event` | `pending` | yes |
+
+</details>
 
 The two blue paths are the fixes listed under the scenario. Today the prototype marks an account done even when a newer version arrived in flight, and on a failure it returns every batch of the run to pending.
 

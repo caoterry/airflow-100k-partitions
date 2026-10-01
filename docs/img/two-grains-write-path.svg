@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 356" role="img" aria-label="500 keys took 3.6 s, then 7.0 s at 64,000 rows; 3.4 to 3.9 s once indexed"><style>
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="356" viewBox="0 0 760 356" role="img" aria-label="500 keys took 3.6 s, then 7.0 s at 64,000 rows; 3.4 to 3.9 s once indexed"><style>
 svg{--ink:#1c1b19;--quiet:#5f5d57;--edge:#a9a69b;--grid:#e6e3da;--muted:#b3b0a6;--ref:#8a877d;--accent:#2f6fd6;--bad:#cf3a3a}
 text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
 .ink{fill:var(--ink)} .quiet{fill:var(--quiet)}

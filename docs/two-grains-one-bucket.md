@@ -47,13 +47,16 @@ An asset update becomes a run by one of three paths, and the path depends on two
 Producer task succeeds: the api-server writes one asset_event row
 │
 ├── A  unkeyed event (balance sheet)
-│      asset_dag_run_queue row, one per consumer Dag    ──▶  consumer DagRun when the condition holds
+│      asset_dag_run_queue row, one per consumer Dag
+│      ──▶ consumer DagRun when the condition holds
 │
 ├── B  keyed event, consumer has PartitionedAssetTimetable (native)
-│      APDR + PAKL row, one per partition key           ──▶  one DagRun per key: 100,000 a day
+│      APDR + PAKL row, one per partition key
+│      ──▶ one DagRun per key: 100,000 a day
 │
 └── C  keyed event, no partitioned consumer (this design)
-       nothing scheduled: no queue row, no APDR         ──▶  batcher Dag reads the rows into the journal
+       nothing scheduled: no queue row, no APDR
+       ──▶ batcher Dag reads the rows into the journal
 ```
 
 | Path | The event | What the api-server and scheduler write | Result |
@@ -153,7 +156,7 @@ SELECT asset_partition_dag_run.* FROM asset_partition_dag_run
 | Deleting 100 `dag_run` rows (FK cascade) | 360 ms in the FK trigger | 0.42 ms |
 
 ```
-rows in APDR   seconds per 500-key request   (█ = 0.25 s; the 5 s execution_api_timeout is 20 █)
+APDR rows   seconds per 500-key request   (█ = 0.25 s; 5 s timeout = 20 █)
 
         0      ██████████████ 3.6 s
     4,000      ███████████████ 3.7 s

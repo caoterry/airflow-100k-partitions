@@ -22,7 +22,7 @@ per-partition concurrency and batching, per-account status for end users, and it
 
 ## What was done
 
-- A benchmark harness and six DAG shapes at 1k / 10k / 30k / 100k units: flat dynamic mapping, batched mapping, two-level
+- A benchmark harness and six DAG shapes at 1k / 10k / 30k / 100k units (four of them run at 100k): flat dynamic mapping, batched mapping, two-level
   DAG-of-DAGs, one run per account, and native AIP-76 partitions; plus 100k limit runs with one and two schedulers
   (`bench/`, results under `bench/results/`).
 - Semantics experiments E1 to E6: per-key concurrency, AND/OR rerun rules, mapper payloads, a batcher with per-account lineage,

@@ -55,7 +55,8 @@ per-partition concurrency and batching, per-account status for end users, and it
 **Trigger at account granularity, execute at batch granularity, and put a leaky bucket between the two.** Native Airflow runs
 work at the grain it is triggered at, and one run per account at 100k a day costs hours of scheduler time; separating the two
 grains is what makes the account grain affordable. The full explanation, including a comparison with doing the same on Kafka,
-is in [docs/design-core.md](docs/design-core.md).
+is in [docs/design-core.md](docs/design-core.md); the in-depth version with real table rows, the overlap scenario row by
+row and diagrams is [docs/two-grains-one-bucket.md](docs/two-grains-one-bucket.md).
 
 - Producers emit one keyed asset event per changed account (`add_partitions`), with the version in `extra`.
 - The bucket is a journal table with one row per account (pending / in flight / done, latest version only), so versions of an

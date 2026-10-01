@@ -8,6 +8,7 @@ self-hosted Airflow or AWS MWAA?
 
 **One page first: [SUMMARY.md](SUMMARY.md)** — what was asked, what was done, what was found, what is proposed, and where to read more.
 The core design idea in one page: [docs/design-core.md](docs/design-core.md).
+The same design in depth, in Airflow terms with real table rows and diagrams: [docs/two-grains-one-bucket.md](docs/two-grains-one-bucket.md).
 Then **[REPORT.md](REPORT.md)** — findings, measurements, recommendation, and the upstream contribution list.
 Deep dives: `docs/analysis/` (source traces of 3.3.2 vs main), `docs/research/` (fact-checked literature/MWAA/Dagster sweep),
 `docs/superpowers/specs/` (design and assumptions). Charts in `docs/img/`.

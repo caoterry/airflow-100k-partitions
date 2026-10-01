@@ -294,9 +294,9 @@ The journal answers the overlap question with three rules: an account in flight 
                │                      ┌──────────────┐
                └──────────────────────│    failed    │
                                       └──────────────┘
-
-A first event for an account creates its row in pending.   [new] = not in the prototype yet.
 ```
+
+A first event for an account creates its row in `pending`. [new] = not in the prototype yet.
 
 | From | Event | To | In the prototype? |
 | --- | --- | --- | --- |

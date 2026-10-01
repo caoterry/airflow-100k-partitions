@@ -219,17 +219,14 @@ the upstream fixes reach an MWAA image.
 
 ## How this maps onto the "Proposal" page (Jobs + Datasets + Trigger Conditions)
 
-The proposal's MVP — *Jobs and Datasets as first-class objects, statically wired with trigger conditions, declared next to the
-business logic in GitLab, publishing data events, with lineage* — is, feature for feature, the Airflow 3 asset model: DAG =
+The proposal's MVP — *Jobs and Datasets as first-class objects, statically wired with trigger conditions, declared next to the business logic in the source repository, publishing data events, with lineage* — is, feature for feature, the Airflow 3 asset model: DAG =
 Job, `Asset` = Dataset, `schedule=(a & (b | c))` / `PartitionedAssetTimetable` = trigger condition, `outlet_events` = data
 event, `consumed_asset_events` / `upstreamAssetEvents` = lineage, and the 3.3 asset state store = standardised state tracking
-(the proposal's own requirement for it). Building a bespoke equivalent on the in-house job runner works against requirement 6.3 ("eliminate bespoke components with
-questionable ownership") unless Airflow demonstrably cannot do the job. What Airflow demonstrably cannot do, per this repo, is
-**schedule at account grain at 100k/day** — and the proposal's own narrative already separates the three grains: "job
-scheduling, data partitioning and observability … do not require the same grain as each other; the scheduler could schedule by
-region … as long as the end-user can still observe availability by account". That split is exactly what §6 recommends and E4
-demonstrates on 3.3.2: schedule by region (3) or pack (~500), partition and observe by account via keyed events and the state
-store. On the SLA footnote (p95 38 min → 2 min): that is calculation time, not orchestration; at pack grain Airflow's own
+(the proposal's own requirement for it). Building a bespoke equivalent works against the proposal's own goal of eliminating bespoke components unless Airflow demonstrably cannot do the job. What Airflow demonstrably cannot do, per this repo, is
+**schedule at account grain at 100k/day** — and the proposal's own narrative already separates the three grains: scheduling, partitioning and observability need not share a grain, as long as
+availability stays observable per account. That split is exactly what §6 recommends and E4
+demonstrates on 3.3.2: schedule by region or pack, partition and observe by account via keyed events and the state
+store. On the latency footnote: the gap between today's p95 and the target is calculation time, not orchestration; at pack grain Airflow's own
 overhead per unit is seconds, so faster engines and coarse-grained scheduling are complementary, not alternatives.
 
 Where the proposal's Airflow caveat is right: AIP-73 was still maturing as of mid-2026 — the partition features are one to two

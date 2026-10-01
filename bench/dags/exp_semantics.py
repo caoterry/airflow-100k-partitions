@@ -1,4 +1,4 @@
-"""Semantics experiments for the 'AWS MWAA Discussion' questions (E1-E3). Small volumes; behaviour, not throughput.
+"""Semantics experiments for the evaluation questions (E1-E3). Small volumes; behaviour, not throughput.
 
 E1  per-partition-key concurrency / conflation (Q3):
     exp_e1_producer  (PartitionedAtRuntime) emits conf["keys"] on asset exp_e1_acct

@@ -52,7 +52,7 @@ Read this first if you are picking the work up (new session, different model, or
 ## Upstream branch (evening 2026-09-30)
 - Fork `caoterry/airflow`, branch `apdr-indexes-and-cleanup` (indexes only, amended; on top of apache/airflow main e364ee7648),
   pushed: https://github.com/caoterry/airflow/tree/apdr-indexes-and-cleanup . Local clone: `~/Code/airflow-fork` (blobless), dev env via `uv sync`.
-- Contents: migration 0141 (`f954ddd21484`) with two indexes on `asset_partition_dag_run`; ORM `__table_args__`; `_REVISION_HEADS_MAP`;
+- Contents: migration 0142 (renumbered on 2026-10-01 after #58543 took 0141) (`f954ddd21484`) with two indexes on `asset_partition_dag_run`; ORM `__table_args__`; `_REVISION_HEADS_MAP`;
   `migrations-ref.rst`; (db clean part dropped: fired rows already cascade with dag_run cleanup). Verified: test_db (30 passed),
   migration pattern tests (572 passed), SQLite migrate→downgrade→migrate round trip.
 - PR description: `docs/proposals/pr-apdr-indexes-and-cleanup.md`. PR opened 2026-09-30: https://github.com/apache/airflow/pull/73983 (newsfragment `73983.improvement.rst` pushed); watch CI / reviewers. Original note: **Terry opens the PR**; then add `airflow-core/newsfragments/<PR>.improvement.rst`

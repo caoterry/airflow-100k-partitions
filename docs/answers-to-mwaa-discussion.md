@@ -222,8 +222,8 @@ the upstream fixes reach an MWAA image.
 The proposal's MVP — *Jobs and Datasets as first-class objects, statically wired with trigger conditions, declared next to the
 business logic in GitLab, publishing data events, with lineage* — is, feature for feature, the Airflow 3 asset model: DAG =
 Job, `Asset` = Dataset, `schedule=(a & (b | c))` / `PartitionedAssetTimetable` = trigger condition, `outlet_events` = data
-event, `consumed_asset_events` / `upstreamAssetEvents` = lineage, and the 3.3 asset state store = "standardised state tracking"
-(requirement 6.2). Building a bespoke equivalent on the in-house job runner works against requirement 6.3 ("eliminate bespoke components with
+event, `consumed_asset_events` / `upstreamAssetEvents` = lineage, and the 3.3 asset state store = standardised state tracking
+(the proposal's own requirement for it). Building a bespoke equivalent on the in-house job runner works against requirement 6.3 ("eliminate bespoke components with
 questionable ownership") unless Airflow demonstrably cannot do the job. What Airflow demonstrably cannot do, per this repo, is
 **schedule at account grain at 100k/day** — and the proposal's own narrative already separates the three grains: "job
 scheduling, data partitioning and observability … do not require the same grain as each other; the scheduler could schedule by
@@ -232,7 +232,7 @@ demonstrates on 3.3.2: schedule by region (3) or pack (~500), partition and obse
 store. On the SLA footnote (p95 38 min → 2 min): that is calculation time, not orchestration; at pack grain Airflow's own
 overhead per unit is seconds, so faster engines and coarse-grained scheduling are complementary, not alternatives.
 
-Where the proposal's Airflow caveat is right: "AIP-73 still maturing as of July 2026" — the partition features are one to two
+Where the proposal's Airflow caveat is right: AIP-73 was still maturing as of mid-2026 — the partition features are one to two
 minor releases old, the per-key concurrency, conflation, retention and index gaps in this document are real, and MWAA lags by
 a month. Where it is out of date: AIP-76 is complete (3.3.0), the Dagster comparison is closer than it was, and the extension
 points needed for the remaining gaps exist (`asset_manager_class`, listeners, state store).

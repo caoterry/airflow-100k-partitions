@@ -118,7 +118,7 @@ firm account, or a key-value slice), the work is embarrassingly parallel and a L
 account-level concurrency in the thousands, and in a VPC it uses shared Hyperplane ENIs rather than one IP per worker, so the
 subnet ceiling largely disappears. Rough cost per 100k accounts at 2 s × 2 GB each is in the single-digit dollars — the same
 order as Glue's DPU-hours for the same compute — so cost is not the discriminator; latency and operational simplicity are.
-The proposal page's own list ("alternative execution engines: kedro / polars") is this direction. Balance sheet, with
+The proposal already lists alternative execution engines as a direction to explore. Balance sheet, with
 cross-account netting, remains a Spark-shaped job.
 
 What this does to orchestration: **Airflow's unit stays the batch.** One task hands a batch of accounts to the fan-out

@@ -1,0 +1,70 @@
+-- after: lookup (_get_or_create_apdr)
+-- SQL: SELECT asset_partition_dag_run.id, asset_partition_dag_run.target_dag_id, asset_partition_dag_run.created_dag_run_id, asset_partition_dag_run.partition_key, asset_partition_dag_run.partition_date, asset_partition_dag_run.rollup_fingerprint, asset_partition_dag_run.created_at, asset_partition_dag_run.updated_at 
+FROM asset_partition_dag_run 
+WHERE asset_partition_dag_run.partition_key = 'acct_50000' AND asset_partition_dag_run.target_dag_id = 'consumer' ORDER BY asset_partition_dag_run.id DESC 
+ LIMIT 1
+Limit  (cost=0.42..8.44 rows=1 width=83) (actual time=0.005..0.005 rows=1 loops=1)
+  Buffers: shared hit=4
+  ->  Index Scan Backward using idx_apdr_target_dag_id_partition_key_id on asset_partition_dag_run  (cost=0.42..8.44 rows=1 width=83) (actual time=0.005..0.005 rows=1 loops=1)
+        Index Cond: (((target_dag_id)::text = 'consumer'::text) AND ((partition_key)::text = 'acct_50000'::text))
+        Buffers: shared hit=4
+Planning Time: 0.020 ms
+Execution Time: 0.008 ms
+
+-- after: pending scan (scheduler loop)
+-- SQL: SELECT asset_partition_dag_run.id, asset_partition_dag_run.target_dag_id, asset_partition_dag_run.created_dag_run_id, asset_partition_dag_run.partition_key, asset_partition_dag_run.partition_date, asset_partition_dag_run.rollup_fingerprint, asset_partition_dag_run.created_at, asset_partition_dag_run.updated_at 
+FROM asset_partition_dag_run JOIN dag ON dag.dag_id = asset_partition_dag_run.target_dag_id 
+WHERE asset_partition_dag_run.created_dag_run_id IS NULL AND dag.is_paused IS false AND dag.is_draining IS false AND dag.is_stale IS false ORDER BY asset_partition_dag_run.created_at, asset_partition_dag_run.id 
+ LIMIT 500 FOR UPDATE OF asset_partition_dag_run SKIP LOCKED
+Limit  (cost=690.25..695.91 rows=453 width=95) (actual time=0.175..0.403 rows=500 loops=1)
+  Buffers: shared hit=1012
+  ->  LockRows  (cost=690.25..695.91 rows=453 width=95) (actual time=0.174..0.375 rows=500 loops=1)
+        Buffers: shared hit=1012
+        ->  Sort  (cost=690.25..691.38 rows=453 width=95) (actual time=0.168..0.186 rows=500 loops=1)
+              Sort Key: asset_partition_dag_run.created_at, asset_partition_dag_run.id
+              Sort Method: quicksort  Memory: 67kB
+              Buffers: shared hit=12
+              ->  Nested Loop  (cost=0.42..670.27 rows=453 width=95) (actual time=0.006..0.107 rows=500 loops=1)
+                    Join Filter: ((asset_partition_dag_run.target_dag_id)::text = (dag.dag_id)::text)
+                    Buffers: shared hit=12
+                    ->  Seq Scan on dag  (cost=0.00..1.01 rows=1 width=15) (actual time=0.002..0.002 rows=1 loops=1)
+                          Filter: ((is_paused IS FALSE) AND (is_draining IS FALSE) AND (is_stale IS FALSE))
+                          Buffers: shared hit=1
+                    ->  Index Scan using idx_apdr_created_dag_run_id_created_at_id on asset_partition_dag_run  (cost=0.42..663.60 rows=453 width=89) (actual time=0.003..0.059 rows=500 loops=1)
+                          Index Cond: (created_dag_run_id IS NULL)
+                          Buffers: shared hit=11
+Planning Time: 0.037 ms
+Execution Time: 0.434 ms
+
+-- after: dag_run delete, 100 runs (ON DELETE CASCADE into APDR)
+-- SQL: DELETE FROM dag_run WHERE id IN (SELECT id FROM dag_run WHERE dag_id = 'consumer' ORDER BY id LIMIT 100)
+Delete on dag_run  (cost=6.11..765.83 rows=0 width=0) (actual time=0.218..0.218 rows=0 loops=1)
+  Buffers: shared hit=504
+  ->  Nested Loop  (cost=6.11..765.83 rows=100 width=34) (actual time=0.052..0.138 rows=100 loops=1)
+        Buffers: shared hit=304
+        ->  HashAggregate  (cost=5.82..6.82 rows=100 width=32) (actual time=0.050..0.059 rows=100 loops=1)
+              Group Key: "ANY_subquery".id
+              Batches: 1  Memory Usage: 24kB
+              Buffers: shared hit=4
+              ->  Subquery Scan on "ANY_subquery"  (cost=0.29..5.57 rows=100 width=32) (actual time=0.005..0.036 rows=100 loops=1)
+                    Buffers: shared hit=4
+                    ->  Limit  (cost=0.29..4.57 rows=100 width=4) (actual time=0.004..0.024 rows=100 loops=1)
+                          Buffers: shared hit=4
+                          ->  Index Scan using dag_run_pkey on dag_run dag_run_1  (cost=0.29..4252.54 rows=99500 width=4) (actual time=0.004..0.017 rows=100 loops=1)
+                                Filter: ((dag_id)::text = 'consumer'::text)
+                                Buffers: shared hit=4
+        ->  Index Scan using dag_run_pkey on dag_run  (cost=0.29..7.59 rows=1 width=10) (actual time=0.001..0.001 rows=1 loops=100)
+              Index Cond: (id = "ANY_subquery".id)
+              Buffers: shared hit=300
+Planning:
+  Buffers: shared hit=7
+Planning Time: 0.092 ms
+Trigger for constraint dag_run_note_dr_fkey: time=0.277 calls=100
+Trigger for constraint task_instance_dag_run_fkey: time=0.328 calls=100
+Trigger for constraint bdr_dag_run_fkey: time=0.273 calls=100
+Trigger for constraint dagrun_asset_event_dag_run_id_fkey: time=0.359 calls=100
+Trigger for constraint deadline_dagrun_id_fkey: time=0.232 calls=100
+Trigger for constraint apdr_created_dag_run_id_fkey: time=0.420 calls=100
+Trigger for constraint task_state_store_dag_run_fkey: time=0.305 calls=100
+Execution Time: 2.472 ms
+

@@ -1,5 +1,7 @@
 # PR draft: Add indexes on `asset_partition_dag_run`
 
+> Day-1 draft, superseded on 2026-09-30 by [`pr-73983-body.md`](pr-73983-body.md), which is the live PR body. Numbers here are as of the draft.
+
 *Opened as https://github.com/apache/airflow/pull/73983 on 2026-09-30. Branch: `caoterry/airflow` → `apdr-indexes-and-cleanup` (based on apache/airflow main e364ee7648). Terry opens the PR;
 this file is the description to paste. Newsfragment `<PR>.improvement.rst` (one line: "Add indexes on ``asset_partition_dag_run`` for the partition write path and the scheduler's pending scan.") is added in a follow-up commit once the number exists.*
 

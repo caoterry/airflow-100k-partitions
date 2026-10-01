@@ -161,7 +161,8 @@ Why this is disqualifying rather than merely slow: the default scheduler health 
 run is picked up again and the cycle repeats. **Above roughly 5k mapped instances per task the expansion transaction already
 outlives the default health threshold.**
 
-The REST API and the endpoints the grid UI calls stayed interactive at 100k (all under 400 ms).
+The REST API and the endpoints the grid UI calls stayed interactive at 100k (every probed endpoint under 400 ms) with one
+exception: `GET /dagRuns/{id}` took 8.4 s (`bench/results/flat_empty_100000/api_latency.json`).
 
 ### 4.2 Scenario F — native partitions (`bench_partition_producer` → `bench_partition_consumer`)
 
@@ -188,8 +189,10 @@ The 100k run (200 emitters × 500 keys, serialized with `max_active_tis_per_dagr
 
 3. **The per-key write cost grows with the size of `asset_partition_dag_run`.** The task-success request for 500 keys took 3.6 s
    when the table was empty and 7.0 s at ~60k rows (API-server access log, 124 requests, monotonic). The reason is the
-   per-key lookup `WHERE partition_key=? AND target_dag_id=? ORDER BY id DESC LIMIT 1`, which is a sequential scan: `EXPLAIN`
-   showed 1,843 shared buffers per key at 65k rows. Past ~5 s the SDK client started timing out and retrying again.
+   per-key lookup `WHERE partition_key=? AND target_dag_id=? ORDER BY id DESC LIMIT 1`, which is a sequential scan: the
+   committed `EXPLAIN` capture at 100k rows shows 3,306 shared buffers for the scan and 4 with the index
+   (`bench/results/part_100k_e200/explain_apdr_queries.txt`; the ~1,800-buffer plan seen at 65k rows during the run was not
+   captured). Past ~5 s the SDK client started timing out and retrying again.
    Creating the obvious index online (`(target_dag_id, partition_key, id DESC)`) at 00:36:07 dropped the same request to
    3.4 s immediately (4 buffers per lookup), removed the retries, and doubled the rate at which keys were registered and
    consumer runs created (47 → 94 per second, `bench/results/part_100k_e200/timeline.csv`). Run completion did not change in
@@ -316,11 +319,13 @@ A parent expands `TriggerDagRunOperator` 100 times; each child run expands 1,000
 
 | accounts | child runs | child TIs | parent duration | all children finished | scheduler heartbeat gaps |
 |---|---|---|---|---|---|
-| 100,000 | 100 | 100,000 | 790 s | 20.4 min after first child started | **up to 304 s** |
+| 100,000 | 100 | 100,000 | 790 s | 20.4 min after first child started (child `dag_run` rows, `child_runs.csv`) | **up to 304 s** (scheduler log of that run, not committed) |
 
 This shape does not automatically bound the scheduler pause. All 100 child runs were created within seconds, the scheduler
 examines up to `max_dagruns_per_loop_to_schedule` runs per loop (200 here, default 20), and it expanded dozens of children
-inside one loop iteration and one transaction: the heartbeat log shows gaps of 46, 49, 78, 198 and 304 s during this scenario.
+inside one loop iteration and one transaction: the scheduler log showed heartbeat gaps of 46, 49, 78, 198 and 304 s during this
+scenario (that log was not committed and the committed timeline has no heartbeat column, so the gap figures cannot be re-derived
+from the repository; the run duration can).
 Per-batch run state comes for free, but with the default of 20 runs per loop a burst of 100 children still means ~20 × 1000
 expansions per loop ≈ 2 minutes of blocked scheduler. It is strictly worse than scenario C for fan-out and only marginally
 better than A for observability.

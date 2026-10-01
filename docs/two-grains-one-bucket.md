@@ -4,13 +4,15 @@ October 1, 2026 · a design note for review
 
 ## Summary
 
-**Trigger at account granularity, execute at batch granularity, and put a leaky bucket between the two.** In Airflow terms: producers emit keyed `AssetEvent`s (`partition_key` = firm account), but no Dag subscribes to them per partition; a batcher Dag drains a journal table of pending accounts into mapped tasks capped by a pool; balance sheet stays on an OR schedule with a version-aware gate.
+**Trigger at account granularity, execute at batch granularity, and put a leaky bucket between the two.** Native Airflow cannot run one `DagRun` per account at 100,000 accounts a day, so the account stays the unit of tracking and the batch becomes the unit of execution.
 
-The reason is the scheduler. Native account-grain partitions mean one `DagRun` per account, and the scheduler pays per run: 100,000 one-task runs cost 0.7 to 1.1 hours of scheduler time a day as a lower bound. As shipped, on one scheduler, a 100,000-account test was stopped after 26 minutes with only 3,698 runs marked finished: 80,900 of their tasks had succeeded, but the scheduler was busy creating and starting new runs. With three extra indexes and a second scheduler, all 100,000 finished in 31 minutes, about one scheduler-hour. MWAA's managed database does not let us add those indexes.
+**Why native fails.** Native account-grain partitions mean one `DagRun` per account, and the scheduler pays per run: 100,000 one-task runs cost 0.7 to 1.1 hours of scheduler time a day as a lower bound. As shipped, on one scheduler, a 100,000-account test was stopped after 26 minutes with only 3,698 runs marked finished: 80,900 of their tasks had succeeded, but the scheduler was busy creating and starting new runs. With three extra indexes and a second scheduler, all 100,000 finished in 31 minutes, about one scheduler-hour. MWAA's managed database does not let us add those indexes.
 
-This asks for two things. A decision to build the journal and a continuously running dispatcher, then test them on a firm MWAA environment. And two answers from the data side: what an absent account means in the positions feed, and where the list of accounts expected on a business date comes from.
+**How we do it.** Producers emit keyed `AssetEvent`s (`partition_key` = firm account), but no Dag subscribes to them per partition, so Airflow schedules nothing per account. A batcher Dag drains a journal table of pending accounts into mapped Spark tasks, capped by a pool of K engine slots. Versions of an account that arrive while it waits collapse into one recompute. That is a leaky bucket; section 9 compares it with doing the same on Kafka.
 
 Everything here was measured on Airflow 3.3.2 with Postgres 16 and the LocalExecutor on a laptop. The engine was a stand-in: each Spark job in the prototype is a sleep of start-up time plus per-account time. Nothing has run on MWAA yet, and the prototype has known gaps, listed in section 8.
+
+Balance sheet is a different case: it aggregates across accounts, so it uses no bucket and keeps an OR schedule with a version-aware gate (section 6).
 
 ## 1. Vocabulary
 
@@ -41,17 +43,32 @@ Every later section uses these names. The table column is where the thing lives 
 
 An asset update becomes a run by one of three paths, and the path depends on two things: whether the `AssetEvent` carries a `partition_key`, and whether any Dag subscribes to that asset per partition. All rows below are real rows, read from the local test database (Postgres) after the runs. They are not committed to the repository.
 
-![One asset_event, three paths to a run](img/two-grains-paths.png)
-
-<sub>asset event routing in Airflow 3.3 · three paths · vector: [two-grains-paths.svg](img/two-grains-paths.svg)</sub>
-
-<details><summary>Text version of this figure</summary>
+```
+Producer task succeeds: the api-server writes one asset_event row
+│
+├── A  unkeyed event (balance sheet)
+│      asset_dag_run_queue row, one per consumer Dag    ──▶  consumer DagRun when the condition holds
+│
+├── B  keyed event, consumer has PartitionedAssetTimetable (native)
+│      APDR + PAKL row, one per partition key           ──▶  one DagRun per key: 100,000 a day
+│
+└── C  keyed event, no partitioned consumer (this design)
+       nothing scheduled: no queue row, no APDR         ──▶  batcher Dag reads the rows into the journal
+```
 
 | Path | The event | What the api-server and scheduler write | Result |
 | --- | --- | --- | --- |
 | A | unkeyed (balance sheet) | one `asset_dag_run_queue` row per consumer Dag | a consumer DagRun when the condition holds |
 | B | keyed, consumer has `PartitionedAssetTimetable` (native) | one APDR + PAKL row per partition key | one DagRun per key: 100,000 a day at account grain |
 | C | keyed, no partitioned consumer (this design) | nothing: no queue row, no APDR | the batcher Dag reads the `asset_event` rows into the journal each tick |
+
+<sub>asset event routing in Airflow 3.3 · three paths</sub>
+
+<details><summary>Image version (may not load on networks that block GitHub images)</summary>
+
+![One asset_event, three paths to a run](img/two-grains-paths.png)
+
+Vector: [two-grains-paths.svg](img/two-grains-paths.svg)
 
 </details>
 
@@ -135,12 +152,6 @@ SELECT asset_partition_dag_run.* FROM asset_partition_dag_run
 | Scheduler pending scan | Seq Scan, 99,500 rows filtered, 935 buffers, 3.72 ms | Index Scan on `created_dag_run_id IS NULL`, 11 buffers, 0.43 ms |
 | Deleting 100 `dag_run` rows (FK cascade) | 360 ms in the FK trigger | 0.42 ms |
 
-![500-key registration time against rows in asset_partition_dag_run](img/two-grains-write-path.png)
-
-<sub>request_durations.csv from the 100k run on Airflow 3.3.2 (bench/results/part_100k_e200) · 27 samples · vector: [two-grains-write-path.svg](img/two-grains-write-path.svg)</sub>
-
-<details><summary>Text version of this figure</summary>
-
 ```
 rows in APDR   seconds per 500-key request   (█ = 0.25 s; the 5 s execution_api_timeout is 20 █)
 
@@ -173,6 +184,14 @@ rows in APDR   seconds per 500-key request   (█ = 0.25 s; the 5 s execution_ap
    68,500      ██████████████ 3.4 s
    69,000      ██████████████ 3.5 s
 ```
+
+<sub>request_durations.csv from the 100k run on Airflow 3.3.2 (bench/results/part_100k_e200) · 27 samples</sub>
+
+<details><summary>Image version (may not load on networks that block GitHub images)</summary>
+
+![500-key registration time against rows in asset_partition_dag_run](img/two-grains-write-path.png)
+
+Vector: [two-grains-write-path.svg](img/two-grains-write-path.svg)
 
 </details>
 
@@ -260,11 +279,24 @@ b_{sla} = \frac{target - S}{1/\lambda + p}
 
 The journal answers the overlap question with three rules: an account in flight is never claimed again, unrelated accounts never wait for each other, and versions that pile up while an account waits collapse into one recompute. Today's prototype breaks the third rule for an account that is already in flight; the fix is one column.
 
-![Journal row lifecycle](img/two-grains-journal-states.png)
+```
+              claim reads a newer asset_event for a done account
+           ┌───────────────────────────────────────────────────────────────┐
+           │       publish, newer version in flight: re-open [new]         │
+           │     ┌───────────────────────────┐                             │
+           ▼     ▼                           │                             │
+        ┌─────────────┐    claim      ┌──────────────┐    publish     ┌──────────┐
+        │   pending   │──────────────▶│   inflight   │───────────────▶│   done   │
+        └─────────────┘               └──────────────┘                └──────────┘
+               ▲                             │
+               │ newer version, or           │ spark task fails after retries [new]
+               │ operator re-queues [new]    ▼
+               │                      ┌──────────────┐
+               └──────────────────────│    failed    │
+                                      └──────────────┘
 
-<sub>journal.accounts row lifecycle · 4 states, 3 transitions still to build · vector: [two-grains-journal-states.svg](img/two-grains-journal-states.svg)</sub>
-
-<details><summary>Text version of this figure</summary>
+A first event for an account creates its row in pending.   [new] = not in the prototype yet.
+```
 
 | From | Event | To | In the prototype? |
 | --- | --- | --- | --- |
@@ -277,6 +309,14 @@ The journal answers the overlap question with three rules: an account in flight 
 | `inflight` | spark task fails after retries | `failed`, error and time recorded, other batches keep running | **no**: the prototype returns every batch of the run to pending |
 | `failed` | a newer version arrives, or an operator re-queues | `pending` | **no**: no failed state; the account is claimed again every tick |
 | `done` | `claim` reads a newer `asset_event` | `pending` | yes |
+
+<sub>journal.accounts row lifecycle · 4 states, 3 transitions still to build</sub>
+
+<details><summary>Image version (may not load on networks that block GitHub images)</summary>
+
+![Journal row lifecycle](img/two-grains-journal-states.png)
+
+Vector: [two-grains-journal-states.svg](img/two-grains-journal-states.svg)
 
 </details>
 
@@ -435,6 +475,8 @@ A hybrid exists in principle. An `AssetWatcher` with the common.messaging provid
 ## 10. Decisions and questions
 
 Four decisions move this forward, and five questions need someone other than the author to answer them.
+
+This asks for two things. A decision to build the journal and a continuously running dispatcher, then test them on a firm MWAA environment. And two answers from the data side: what an absent account means in the positions feed, and where the list of accounts expected on a business date comes from.
 
 **Decisions needed**
 

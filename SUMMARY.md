@@ -1,5 +1,13 @@
 # Summary: can Airflow 3.x carry 100k firm-account partitions?
 
+**At a glance**
+
+- **Asked:** can Airflow (MWAA 3.3.1 or self-hosted) orchestrate revenue for 10k–100k firm accounts per business date, with late-input reruns, batching to engine capacity and per-account status.
+- **Done:** two days of measured experiments on Airflow 3.3.2 (six DAG shapes to 100k, semantics experiments E1–E6, a batching simulator, source traces, the six evaluation questions answered); everything in this repo re-runs.
+- **Breaks:** 100k task instances in one DagRun (5-minute scheduler stall) and one run per account at 100k (hours on one scheduler; 31 min only with an index MWAA cannot get today).
+- **Works on MWAA as shipped:** shard/pack-grain runs with account-grain partition keys and the asset state store, a capacity-aware batcher with its own ledger, OR-trigger + version gate for reruns; this needs no upstream change and never touches the table that breaks.
+- **Upstream:** one PR open for the missing indexes (apache/airflow#73983); it matters only if account-grain runs are ever wanted.
+
 Two days of evaluation (2026-09-29 and 2026-09-30), measured locally on Airflow 3.3.2 with `apache/airflow` main used for
 source study. MWAA ships 3.3.1, one patch release earlier; the partition code paths traced here are the same in both. Every
 number below was produced by code in this repository and can be re-run. Nothing here has been run on MWAA itself; the MWAA

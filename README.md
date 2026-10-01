@@ -1,6 +1,6 @@
 # airflow-100k-partitions
 
-Session entry: read the handover chain tip first — currently `docs/HANDOVER_2026-09-30.md`.
+Session entry: read the handover chain tip first — currently `docs/HANDOVER_2026-10-01.md`.
 
 Feasibility experiment: can Apache Airflow 3.3.x (company baseline 3.3.0; here 3.3.2 + main for source study)
 orchestrate 100k "partitions" keyed by firm account, for a shared balance-sheet / revenue platform that must run on

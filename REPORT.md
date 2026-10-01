@@ -18,9 +18,11 @@ upstream changes.** Every number below was measured on Airflow 3.3.2 with Postgr
 3. **Native partitions scale linearly in storage — the "n² growth" claim is wrong for storage — but quadratically in write
    time**, because `asset_partition_dag_run (target_dag_id, partition_key)` has no index and the table is never pruned. Measured:
    500-key registration 3.6 s → 7.0 s as the table grew to 60k rows, back to 3.4 s the moment an index existed (§4.2, §4.3).
-   Within one request the cost is ~5 ms/key of round trips under an asset row lock, which, against the SDK's 5 s client timeout,
-   caps a single emitting task at ~900 keys as shipped.
-4. **At 100k keys the scheduler creates runs fast enough (~80/s) but finishes them at 3–10/s** on one scheduler; a plain
+   Within one request the cost is ~5–7 ms/key of round trips under an asset row lock, so against the SDK's 5 s client timeout
+   one emitter on an empty table reaches the limit at about 700–950 keys as shipped, and at 60k rows even 500 keys do not fit.
+4. **At 100k keys the scheduler creates runs fast enough (~80/s) but, on one scheduler, falls behind finishing them**: after
+   26 min only 3,698 runs were marked finished although 80,900 of their tasks had succeeded, because it looks at never-examined
+   runs first while new runs keep arriving. With indexes and a second scheduler all 100k finished in 31 min (§4.2a); a plain
    run-per-account shape without the asset machinery reaches ~26–42 runs/s (§4.7). Either way, 100k account-level runs per cycle
    is an hour-scale scheduler cost before any business work.
 5. **Two of the fixes were tried here.** Backporting upstream's expansion change (Patch A) gives 1.6–1.8× at every N (100k:
@@ -74,7 +76,7 @@ rows in APDR   request duration (500 keys)          | 5 s = client timeout
 A  flat expand, 100k TIs (scheduler-only)     ███   5.5 min 
 C  batched 100 x 1000 (real tasks)            ▏   0.6 min 
 D  100 child runs x 1000 (scheduler-only)     ██████████  20.4 min 
-F  native partitions, create 100k runs        █████████████  25.4 min (finishing them ~3 h more)
+F  native partitions, create 100k runs        █████████████  25.4 min (stopped; 3,698 finished)
 E  run per account (10k measured x 10)        ███████████████████████████████  62.9 min (linear extrapolation)
 ```
 
@@ -172,7 +174,7 @@ Producer emits N keys via `add_partitions`; consumer has `PartitionedAssetTimeta
 |---|---|---|---|---|---|
 | 1,000 (1) | 12 s | 22 s | 41 s | 116 MB | none |
 | 10,000 (1) | 76 s | 219 s | 426 s | 158 MB | none |
-| 100,000 (200 × 500, serialized) | 1,505 s (25 min) | 1,524 s | stopped: 3.7k done after 26 min, ~3–10 runs/s | 155 MB | none |
+| 100,000 (200 × 500, serialized) | 1,505 s (25 min) | 1,524 s | stopped after 26 min: 3,698 done, 80,900 tasks succeeded | 155 MB | none |
 
 Two things the 10k run exposed:
 
@@ -180,8 +182,9 @@ Two things the 10k run exposed:
    **53 s (≈5.3 ms per key)**. The SDK client timeout (`[workers] execution_api_timeout`) defaults to **5 s**, so the client retried
    five times; all six requests queued on the asset row lock and completed within the same 12 ms. The task process was then killed
    ("Server indicated the task shouldn't be running anymore"), although the TI ended as `success` and no duplicate rows were written
-   (10,000 distinct events / APDR / PAKL rows). Practical consequence: **at default settings a single task can emit at most ~900
-   keys**, and concurrent emitters serialize on the asset lock, so they must be run one at a time.
+   (10,000 distinct events / APDR / PAKL rows). Practical consequence: **at default settings one emitter on an empty
+   table reaches the 5 s timeout at about 700–950 keys** (extrapolating from 53 s per 10,000 keys here and 3.6 s per 500 keys
+   in item 3; fewer as the table grows), and concurrent emitters serialize on the asset lock, so they must be run one at a time.
 2. **Run creation is capped at 500 per scheduler tick** (`MAX_PARTITION_DAG_RUNS_PER_LOOP`, hard-coded). Measured steady state:
    ~80 runs/s. 100k keys ⇒ ~21 minutes of run creation per cycle, single-threaded, before any work runs.
 
@@ -199,13 +202,18 @@ The 100k run (200 emitters × 500 keys, serialized with `max_active_tis_per_dagr
    that window: 3,698 runs had finished at 00:36:13 and none finished in the next six minutes, because the scheduler loop was
    busy creating runs (item 4). Because the table is only pruned by `dag_run` cascade deletes and the scheduler's
    stale-fingerprint cleanup, without the index this cost keeps growing across days, not just within a cycle.
-4. **Run creation keeps up; run completion does not.** All 100k `dag_run` rows existed 3 s after the last emitter finished
-   (creation is bounded by emission, not by the 500/tick cap, once emitters are serialized). But the runs then finish at only
-   3–10 per second: the scheduler examines `max_dagruns_per_loop_to_schedule` runs per loop (default 20, we used 200), each
-   run needs at least two examinations (one to schedule the task, one to notice it finished), and the loop is pure Python.
-   We stopped the run after 26 minutes with 3,698 runs finished and 96k queued/running; completing 100k trivial runs would
-   have taken about three hours on one scheduler, with `max_active_runs` set to 100000. At the default `max_active_runs=16`
-   it would take far longer.
+4. **Run creation keeps up; run completion does not while creation is still going.** All 100k `dag_run` rows existed 3 s
+   after the last emitter finished (creation is bounded by emission, not by the 500/tick cap, once emitters are serialized).
+   Finishing them is where one scheduler falls behind: it examines `max_dagruns_per_loop_to_schedule` runs per loop (default
+   20, we used 200), each run needs at least two examinations (one to schedule the task, one to notice it finished), and the
+   loop is pure Python. It also examines never-examined runs first (`get_running_dag_runs_to_examine` orders by
+   `last_scheduling_decision` with nulls first), so while new runs kept arriving it did not get back to mark finished runs
+   done: from 00:22 to 00:32 the finished count stayed at 1,499 while succeeded tasks rose from 16,500 to 54,000.
+   We stopped the run after 26 minutes, just after the last run was created,
+   with 3,698 runs finished, 77,202 running (their only task had already succeeded) and 19,100 queued. The completion rate in
+   this run was starved by run creation and is not a per-run cost, so this run gives no completion time for 100k on one scheduler
+   (§4.2b measures completion after creation at 10k). `max_active_runs` was set to 100000; at the default
+   `max_active_runs=16` it would take far longer.
 5. **Scheduler memory stayed flat** (155 MB peak) — unlike dynamic task mapping, the partition path never holds 100k ORM
    objects at once.
 
@@ -224,16 +232,19 @@ pending set (bounded by the number of pending rows rather than the table).
 |---|---|---|
 | all 100k keys registered | 1,505 s (emitter requests 3.6 → 7.0 s, retries) | **1,184 s** (5.9 s per 500 keys, no retries) |
 | all 100k runs created | 1,524 s | 1,184 s (creation keeps pace with emission) |
-| all 100k runs **finished** | stopped after 26 min with 3,698 done (≈3 h projected) | **1,860 s = 31 min**, 100,000/100,000 |
-| completion rate once creation stopped | 3–10 runs/s | ~110 runs/s |
+| all 100k runs **finished** | stopped after 26 min with 3,698 done (80,900 tasks had succeeded) | **1,860 s = 31 min**, 100,000/100,000 |
+| completion rate once creation stopped | not measured (the run was stopped as creation ended) | ~110 runs/s |
 | scheduler peak RSS | 155 MB | 310 MB (per scheduler) |
 
 Milestones (created → finished): 25k at 283 s → 784 s; 50k at 620 s → 1,419 s; 75k at 886 s → 1,664 s; 100k at 1,184 s →
-1,860 s. All seven partition tables again grew by exactly 100,000 rows. The unindexed `asset_partition_dag_run` scans were
-the dominant per-loop cost of the *scheduler* as well as of the write path; with them gone, an account-grain cycle of 100k
-partition runs is a half-hour job on a laptop rather than a multi-hour one, and it splits across schedulers. This is the
-"limit with the upstream index PR merged" number; the remaining ceiling is the emission rate (≤ ~900 keys per task, serialized)
-and per-run scheduler work (~110 runs/s on two schedulers here).
+1,860 s. All seven partition tables again grew by exactly 100,000 rows. This run changed two things at once, the indexes
+and a second scheduler, so it does not show how much of the gain is the index's own. The index fixes the write path (no
+retries). For the scheduler, the unindexed pending scan cost 14 ms per loop on the 100k database
+(`bench/results/part_100k_e200/explain_apdr_queries.txt`), small next to a loop that examines 200 runs, while a second
+scheduler alone roughly halved completion time at 10k (§4.2b: 207 s → 93 s). With both, an account-grain cycle of 100k
+partition runs is a half-hour job on a laptop, and it splits across schedulers. This is the "limit with the upstream index PR
+merged, on two schedulers" number; the remaining ceiling is the emission rate (emitters serialized, each inside the 5 s client
+timeout: about 700–950 keys on an empty table) and per-run scheduler work (~110 runs/s on two schedulers here).
 
 ### 4.2b Two schedulers (HA) — does adding schedulers help?
 
@@ -340,9 +351,9 @@ this isolates the scheduler's per-run cost — the same shape native partitions 
 | 10,000 | 61.5 s (163 runs/s, p99 561 ms, 32 concurrent clients) | ~57 runs/s | 377 s | ~26 runs/s average, ~42 runs/s once finishing started | 160–180 MB |
 
 Per-run scheduler cost is therefore ~25–40 ms on one scheduler when the runs already exist. Scaled linearly, 100k
-account-level runs need ~1 hour of scheduler time per cycle just to be started and finished, before any real work; the
-native-partition path measured 3–10 runs/s (§4.2) because creation (500 per tick) and completion compete inside the same
-loop. Creating the runs is cheap by comparison: 163 runs/s through the API here, but MWAA throttles its REST endpoint at
+account-level runs need ~1 hour of scheduler time per cycle just to be started and finished, before any real work; in the
+native-partition run (§4.2) only 3,698 of 100,000 runs were marked finished after 26 minutes, because creation and completion
+compete inside the same loop and the scheduler looks at never-examined runs first. Creating the runs is cheap by comparison: 163 runs/s through the API here, but MWAA throttles its REST endpoint at
 10 requests/s, i.e. ~2.8 hours to create 100k runs there.
 ### 4.8 Before/after with two upstream-style patches (`patches/`)
 
@@ -403,8 +414,9 @@ can carry.** Two workable shapes, depending on what the platform allows:
 
 - *Shape 1 — account-level runs (100k partition runs per cycle).* Correct semantics out of the box (`dag_run.partition_key` =
   account, `clearPartitions`, `GET /dagRuns?partition_key_pattern=`). Requires all of: the APDR index (needs DB access →
-  self-hosted only), emitters serialized and ≤ ~900 keys each (or `[workers] execution_api_timeout` raised), `max_active_runs`
-  raised far above 16, several schedulers, and acceptance that completion throughput is ~10 runs/s/scheduler today (§4.2).
+  self-hosted only), emitters serialized and each inside the 5 s client timeout (about 700–950 keys on an empty table, §4.2;
+  or `[workers] execution_api_timeout` raised), `max_active_runs` raised far above 16, several schedulers, and acceptance that
+  per-run scheduler work is the ceiling (~110 runs/s on two schedulers once creation stopped, §4.2a).
   Not viable on MWAA as shipped.
 - *Shape 2 — shard-level runs (e.g. 1,000 shards × 100 accounts), account-level state.* Partition key = shard id (hash bucket,
   book, region); inside the shard run, fan out over its accounts with a bounded `expand()` (≤ 1024, the default
@@ -432,7 +444,7 @@ freeze is 2026-10-12, so realistically these land in 3.4.x/3.5 and reach MWAA a 
 
 | # | Change | Evidence | Size |
 |---|---|---|---|
-| 1 | **Indexes on `asset_partition_dag_run`**: `(target_dag_id, partition_key, id)` for the write path and `(created_dag_run_id, created_at, id)` for the scheduler's pending scan — branch `caoterry/airflow:apdr-indexes-and-cleanup` | §4.2/§4.2a: 7.0 s → 3.4 s per 500 keys, retries gone; 100k runs finished in 31 min instead of ~3 h | migration, tiny |
+| 1 | **Indexes on `asset_partition_dag_run`**: `(target_dag_id, partition_key, id)` for the write path and `(created_dag_run_id, created_at, id)` for the scheduler's pending scan — branch `caoterry/airflow:apdr-indexes-and-cleanup` | §4.2/§4.2a: 7.0 s → 3.4 s per 500 keys, retries gone; with a second scheduler as well, 100k runs finished in 31 min (as shipped on one scheduler: 3,698 after 26 min) | migration, tiny |
 | 2 | **Bulk-create mapped task instances** (`TaskMap.expand_mapped_task`): ship #69565 in a 3.3.x patch release (Patch A: 1.6–1.8×), then go further — bulk INSERT without per-instance ORM objects and a hoisted `MappedTaskUpstreamDep` check | §4.1/§4.8: 315 s → 173 s at 100k with #69565 alone | backport + medium PR |
 | 3 | **Batch the partition write path per request**: one lock, bulk INSERT of `asset_event`/APDR/PAKL, `INSERT … ON CONFLICT` on a partial unique index instead of get-or-create per key; or move fan-out to the scheduler (level-triggered) | §4.8: memoisation alone changes nothing; ~8 statements per key | medium |
 | 4 | **Make `MAX_PARTITION_DAG_RUNS_PER_LOOP` configurable** and bulk-insert the created `dag_run`/`task_instance` rows (the time-based path already uses `bulk_insert_mappings`) | §4.2: ~80 runs/s creation ceiling | small |
@@ -470,7 +482,8 @@ Everything above gets harder on MWAA, and every fix arrives later (sources: MWAA
   no dynamic task mapping.
 
 Self-hosted Airflow on Kubernetes removes the first two bullets entirely and gives control over the third. If MWAA is mandatory,
-the design has to stay inside what 3.3.1 does well out of the box: ≤ ~900 keys per emitting task, a few thousand partition
+the design has to stay inside what 3.3.1 does well out of the box: emitting tasks well inside the 5 s client timeout (one
+emitter on an empty table reaches it at about 700–950 keys, fewer as the unindexed APDR table grows), a few thousand partition
 runs per cycle, batching inside runs. The recommended Shape 2 (§6) already does: it needs none of the fixes in §7, so the
 platform choice only decides how soon Shape 1 becomes available (see the platform-options table under Q5 in
 `docs/answers-to-mwaa-discussion.md`).

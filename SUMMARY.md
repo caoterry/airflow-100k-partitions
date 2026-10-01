@@ -4,7 +4,7 @@
 
 - **Asked:** can Airflow (MWAA 3.3.1 or self-hosted) orchestrate revenue for 10k–100k firm accounts per business date, with late-input reruns, batching to engine capacity and per-account status.
 - **Done:** two days of measured experiments on Airflow 3.3.2 (six DAG shapes at 1k–100k, four of them run at 100k, semantics experiments E1–E6, a batching simulator, source traces, the six evaluation questions answered); everything in this repo re-runs.
-- **Breaks:** 100k task instances in one DagRun (5-minute scheduler stall) and one run per account at 100k (hours on one scheduler; 31 min only with indexes MWAA does not let us add).
+- **Breaks:** 100k task instances in one DagRun (5-minute scheduler stall) and one run per account at 100k (as shipped on one scheduler, stopped after 26 min with 3,698 of 100,000 runs finished; 31 min only with indexes MWAA does not let us add plus a second scheduler).
 - **Works on MWAA as shipped:** account-grain events into a leaky bucket (a small journal table we own) drained in capacity-sized batches, and an OR trigger plus a version gate for balance-sheet reruns; no upstream change needed, and as long as no Dag subscribes to the keyed events per partition it writes no rows to `asset_partition_dag_run`, the unindexed table the open index PR targets.
 - **Upstream:** one PR open for the missing indexes (apache/airflow#73983); it matters only if account-grain runs are ever wanted.
 
@@ -41,10 +41,11 @@ per-partition concurrency and batching, per-account status for end users, and it
 |---|---|---|
 | 100k mapped tasks inside one DagRun is disqualified, not merely slow | the expansion stalls the scheduler for about 5 minutes (317 s; health threshold 30 s); every mapped task downloads the whole input, O(N²) bytes, ~150 GB per run | REPORT §4.1, §4.4 |
 | Batching the same 100k accounts | 100 batches × 1,000 finish in 38 s | REPORT §4.5 |
-| Native partitions, write path | registering 500 keys took 3.6 s on an empty table and 7.0 s at 64k rows (sequential scan on `asset_partition_dag_run`); ~5 ms per key under a row lock, so at most ~900 keys per task against the 5 s SDK timeout | REPORT §4.2, §4.3 |
-| Native partitions, one run per account, 100k, as shipped | 3.7k runs finished after 26 min, about 3 h projected | REPORT §4.2 |
-| Same, with the index from #73983 and two schedulers | all 100k runs created and finished in 31 min (laptop, trivial tasks; self-hosted only until the index ships in an MWAA image) | REPORT §4.2a |
-| Capacity-aware batcher at 100k accounts (K = 10 engine slots) | 84k accounts published in 36 min; limited by the one-minute cadence, not capacity; the floor is ~8 min of key registration | dynamic-batching §5a |
+| Native partitions, write path | registering 500 keys took 3.6 s on an empty table and 7.0 s at 64k rows (sequential scan on `asset_partition_dag_run`); ~5 ms per key under a row lock, so one emitter on an empty table reaches the 5 s SDK timeout at about 700 to 950 keys, and at 64k rows even 500 keys do not fit | REPORT §4.2, §4.3 |
+| Native partitions, one run per account, 100k, as shipped | stopped after 26 min: all 100,000 runs created and 80,900 of their tasks succeeded, but only 3,698 runs marked finished; the scheduler looks at never-examined runs first, so while new runs kept arriving it did not get back to mark finished runs done | REPORT §4.2 |
+| Same, with hand-made indexes like those in #73983 and two schedulers | all 100k runs created and finished in 31 min, about 110 runs/s once run creation stopped (laptop, trivial tasks; self-hosted only until the index ships in an MWAA image); indexes and scheduler count changed together, so the index's own share was not measured | REPORT §4.2a |
+| Capacity-aware batcher at 100k accounts (K = 10 engine slots; each job a sleep of 15 s plus 0.02 s per account standing in for the engine) | 84k of 100,040 accounts published when the 40-minute window closed: none in the first 13 min after the input burst while `claim` ingested it, then about 2,800 a minute against about 13,000 a minute of slot capacity; per-account latency p50 27 min, p95 37 min over the 84k published (the 16,040 not yet published would raise both); limited by slow `claim` ticks during ingestion and the one-minute cadence, not engine slots | dynamic-batching §5a |
+| Keyed events with no per-partition consumer (the proposed shape), 100k | no `asset_partition_dag_run` rows and no asset row lock, but each key is still written inside the producer's task-success request: with up to 12 producers registering 500 keys at once, 195 of 200 requests passed the 5 s timeout (median 11.5 s, worst 38.5 s) and 3 producer processes were killed, though every task ended success and all 100,040 events landed; the 600-key publish requests took 2.4 to 12.1 s; a safe number of keys per task with concurrent producers was not measured | two-grains §4 |
 | Batching policy (simulator, warm Spark, 2-min SLA) | SLA-driven batching meets the SLA at 4.9 job-hours; latency-optimal batching also meets it but at 11.6 job-hours | dynamic-batching §2 |
 | Reruns on a late v2 input | an OR trigger plus a version-aware gate does it with no core change; the balance-sheet gate (all reference inputs and any root input, per business date) runs stateless | answers Q1; E2, E6 |
 | End-user tracking through the REST API | not advisable: 10 requests/s throttle on MWAA, on the same server that runs the task execution API | answers Q4 |
@@ -53,7 +54,7 @@ per-partition concurrency and batching, per-account status for end users, and it
 ## What is proposed
 
 **Trigger at account granularity, execute at batch granularity, and put a leaky bucket between the two.** Native Airflow runs
-work at the grain it is triggered at, and one run per account at 100k a day costs hours of scheduler time; separating the two
+work at the grain it is triggered at, and one run per account at 100k a day costs about an hour of scheduler time a day as a lower bound; separating the two
 grains is what makes the account grain affordable. The full explanation, including a comparison with doing the same on Kafka,
 is in [docs/design-core.md](docs/design-core.md); the in-depth version with real table rows, the overlap scenario row by
 row and diagrams is [docs/two-grains-one-bucket.md](docs/two-grains-one-bucket.md).
@@ -68,8 +69,9 @@ row and diagrams is [docs/two-grains-one-bucket.md](docs/two-grains-one-bucket.m
   100,000 accounts.
 - Balance sheet aggregates across accounts, so it uses no bucket: an OR trigger plus a gate that recomputes the whole business
   date with the latest version of each input once all reference inputs and at least one root input are in.
-- End-user status is meant to be a view on the journal; it is not built yet and needs a failed state with timestamps. The
-  Airflow UI stays for operators.
+- End-user status is meant to be a view on the journal; it is not built yet and needs a failed state with the error and a
+  timestamp, which an account leaves only when a newer version arrives or an operator re-queues it (today the prototype claims
+  a failing account again on every tick, with no limit). The Airflow UI stays for operators.
 
 This shape needs nothing beyond what MWAA 3.3.1 ships and does not depend on any upstream change; it has been exercised locally,
 not yet on MWAA. Its one stateful piece is the batcher's ledger (pending / in-flight / processed), which has to live in a locked

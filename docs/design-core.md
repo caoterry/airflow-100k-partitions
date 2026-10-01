@@ -33,10 +33,13 @@ scheduler time ≈ runs × (longest chain of tasks + 1) × cost of one look at a
 - A one-task run, which needs two looks, measured 25–40 ms of scheduler time in total, so roughly 12–20 ms per look
   (REPORT §4.7). 100,000 one-task runs therefore need about 0.7–1.1 hours of scheduler time per day as a lower bound; REPORT
   scales it to about 1 hour.
-- Measured on Airflow 3.3.2 as shipped with native partitions: the 100k run was stopped after 26 minutes with 3,698 of
-  100,000 runs finished, completing at 3–10 runs per second; at the upper rate 100,000 runs would take about 3 hours
-  (REPORT §4.2). With three hand-created indexes (two on `asset_partition_dag_run`, one on `dag_run`), which MWAA's managed
-  metadata database does not let us add, and two schedulers: 31 minutes (REPORT §4.2a).
+- Measured on Airflow 3.3.2 as shipped with native partitions and one scheduler: the 100k run was stopped after 26 minutes.
+  All 100,000 runs had been created and 80,900 of their tasks had succeeded, but only 3,698 runs were marked finished: the
+  scheduler looks at never-examined runs first, so while new runs kept arriving it did not get back to mark finished runs
+  done (REPORT §4.2). With three hand-created indexes (two on `asset_partition_dag_run`, one on `dag_run`), which MWAA's
+  managed metadata database does not let us add, and two schedulers: all 100,000 finished in 31 minutes, about 110 runs/s
+  once run creation stopped (REPORT §4.2a). That run added the indexes and the second scheduler at once, so the index's own
+  share of the gain was not measured.
 - Storage grows linearly, not as n² (REPORT §4.3): 100,000 `dag_run` rows and one `task_instance` row per task per run per day,
   roughly 65 GB of metadata a year unless runs are cleaned with `airflow db clean`.
 
@@ -66,9 +69,13 @@ The scheduler no longer sees 100,000 account runs. It sees about 170 batch jobs 
 600-account batch cap), run as mapped tasks inside one batcher run per cadence tick, which is about 1,440 batcher runs a day on
 a one-minute cron.
 
-**What Airflow still does:** triggering, retries, waits on the engine (deferrable in production; the prototype simulates the job
-with a sleeping task), back-pressure through the pool, a task-instance record and logs for every batch, the UI, lineage through
-keyed events, and clear/rerun.
+**What Airflow still does:** triggering, task retries while a batch is still in flight, waits on the engine (deferrable in
+production; the prototype simulates the job with a sleeping task), back-pressure through the pool, a task-instance record and
+logs for every batch, the UI, and lineage through keyed events. Clearing a batch task in the UI is not a safe rerun: it goes
+around `claim` and replays the account list stored in XCom, even if those accounts are now in flight in another batch, and in
+the prototype `publish` then marks them done whatever batch holds them. To recompute accounts, return them to pending in the
+journal. The fix, not built yet, passes the batch id to `spark` and `publish` so both act only on rows still in flight under
+that id.
 
 **What we write:** the bucket itself, a journal table and the `claim`/`publish` logic, a few hundred lines with an owner. The
 rule that keeps it from becoming a second scheduler: **no timing, dependency or retry logic inside the journal.** It only
@@ -76,8 +83,8 @@ records which accounts have an unprocessed version and which are in flight.
 
 **One rule for the account grain:** keyed events must not be subscribed to per partition. A Dag with
 `PartitionedAssetTimetable` on the output asset turns every account back into its own DagRun and writes rows to
-`asset_partition_dag_run`, the unindexed table the open index PR targets. In the first 100k batcher run such a test consumer was
-switched on and created 54,000 runs (docs/dynamic-batching.md §5a).
+`asset_partition_dag_run`, the unindexed table the open index PR targets. In the first 100k batcher run such a test consumer,
+left on as a lineage check, created 54,000 runs, one per published account (docs/dynamic-batching.md §5a).
 
 ## 3. This is a leaky bucket
 
@@ -95,18 +102,28 @@ burst and is meant to drain at the engine's capacity. It differs from a textbook
   shapes batches in a trickle; in a burst, batch size is set by backlog ÷ free slots and the cap
   (`bench/dags/exp_e5_dynamic_batcher.py`, `plan_batches`).
 
-Where it stands: in the 100k test the prototype published 84,000 of 100,040 accounts by the time the driver's 40-minute wait
-ended (6,000 more were in flight and 10,040 pending). Ingestion took the first 13 minutes, with `claim` ticks of 36–388 s while
-producers were still registering keys. After that it ran at about 2,800 accounts a minute against roughly 13,000 a minute of
-slot capacity, limited by its one-minute cadence: each run sees only the slots free at its own claim time. A continuously
-running dispatcher that claims as slots free up is the next step, not yet built (docs/dynamic-batching.md §5a).
+Where it stands: in the 100k test the prototype published 84,000 of 100,040 accounts by the time the driver's 40-minute window
+closed (6,000 more were in flight and 10,040 pending). No account was published until 20:15, 13 minutes after the burst began,
+while `claim` ticks took 36–388 s as producers were still registering keys. From then until the window closed at 20:45 it ran
+at about 2,800 accounts a minute. The engine was a stand-in, a sleep of 15 s plus 0.02 s per account in each of K = 10 slots,
+which could take roughly 13,000 a minute, and the slots were never the limit (pool queue wait p50 0 s, max 7 s). The limit was
+the one-minute cadence: each run sees only the slots free at its own claim time. Per-account latency, from input event to
+published event, was p50 27 min and p95 37 min over the 84,000 published; the 16,040 not yet published, including all 40
+trickle accounts, would raise both. A continuously running dispatcher that claims as slots free up is the next step, not yet
+built (docs/dynamic-batching.md §5a).
 
-The floor is key registration for lineage: about 5 ms per key when one request registers keys alone (REPORT §4.2), so at least
-8–9 minutes of serialized API-server work per 100,000 accounts. With ten publishes contending in the 100k run, each 600-key
-publish request took 4–12 s and they summed to 984 s for 84,000 keys (docs/dynamic-batching.md §5a).
+The floor is key registration for lineage: each key is one `asset_event` insert inside the `publish` task-success request, so
+that request grows with the batch. One request registering keys alone for a per-partition consumer measured about 5 ms per key
+(REPORT §4.2), which would be 8–9 minutes of API-server work per 100,000 accounts. This design has no per-partition consumer and
+takes no asset row lock, so publishes are not serialized. In the 100k run they overlapped: each 600-key publish request took
+2.4–12.1 s and 102 of 140 passed the 5 s timeout (api-server log of that run;
+docs/dynamic-batching.md §5a).
 
 End-user status is meant to be a view on the journal (pending / in flight / done, with the version done). It is not built yet,
-and it needs a failed state with timestamps: in the prototype, `release` returns a failed batch to pending.
+and it needs a failed state with the error and a timestamp. In the prototype, `release` returns every batch of a failed run to
+pending, and the next `claim` takes the failed accounts again with no limit, so an account that always fails is retried on
+every tick. In the design only the failed batch's accounts move to failed, and a failed account goes back to pending only when
+a newer version arrives or an operator re-queues it. Retries stay with Airflow task retries, so the journal holds no retry logic.
 
 **Balance sheet is the exception.** Its results aggregate across accounts, so a late input means recomputing the whole business
 date. It uses no bucket: an OR trigger over its inputs plus a gate that checks "all reference inputs and at least one root
@@ -119,7 +136,7 @@ A Kafka-based design has the same shape. The pieces map closely, with the differ
 | Kafka | This design |
 |---|---|
 | Keyed messages on a topic | Keyed asset events (`asset_event.partition_key`) |
-| Consumer offset | Journal watermark: the timestamp of the last event read, re-read with a 5-second overlap and advanced at `claim`, when events are merged into the journal |
+| Consumer offset | Journal watermark: the timestamp of the last event read, re-read with a 5-second overlap and advanced at `claim`, when events are merged into the journal. Unlike an offset it can skip an event: a row becomes visible only when its producer's request commits, up to 38 s after its timestamp in the 100k test, and an event that commits after a claim has moved the watermark more than 5 s past its timestamp is never read. None was missed in that test, but the test could not show it. Not fixed yet |
 | Kafka Streams KTable (latest value per key; log compaction alone is lazy and a live consumer still sees every version) | Journal row per account with the latest version, coalesced on write |
 | Consumer poll and batch | `claim` and batch sizing |
 | Consumer pull pace (`max.poll.records`, `pause()`/`resume()`), parallelism bounded by partition count | Pool of K slots |
@@ -131,21 +148,24 @@ The difference is which half comes for free:
 |---|---|---|
 | Native | Orchestration: triggering, retries, waiting on Spark or Glue, back-pressure, run history, UI, lineage; the same platform as balance sheet; offered as MWAA | The bucket: offsets, consumer groups, millisecond delivery, and per-key coalescing through Kafka Streams state |
 | Written by us | The bucket: journal plus `claim`/`publish` | The orchestration: launching and retrying engine jobs, recording what each batch ran, a UI, lineage |
-| Latency floor | About a minute in the prototype: the one-minute dispatcher cadence plus task scheduling (measured trickle p95 77 s including a 15–20 s job), with lineage adding ~5 ms per key in the batch (3–4 s per 600-account publish) | Milliseconds of delivery |
+| Latency floor | About a minute in a 60-account trickle run with K = 3: the one-minute dispatcher cadence plus task scheduling (p95 77 s, each job a 15–20 s sleep standing in for the engine), plus lineage registration in `publish`, which grows with the batch (a 600-account publish took 2.4–12.1 s in the 100k run). At 100k the one-minute dispatcher set the pace: p95 37 min | Milliseconds of delivery |
 
 Kafka's latency advantage only pays off if the engine is fast. In the simulator (a 10,000-account burst, then 1 account/s,
 K = 20), burst latency is set by engine capacity and trickle latency by engine start-up, not by the message path. With
 Glue-class start-up of about 60 seconds, no policy brings the burst p95 under 2 minutes (best 7.2 min), and only small
 per-arrival batches reach a 2-minute trickle p95 (1.6 min, at about 4x the job-hours of fixed packing). With warm Spark at about
 10 seconds, SLA-driven batching meets 2 minutes in both phases (burst 2.0 min, trickle 0.9 min) (docs/dynamic-batching.md §2).
+The prototype did not reach this. At 100k with 15 s start-up its p95 was 37 min, because the one-minute cron dispatcher set the
+pace, not engine capacity. In every prototype run the engine was a sleep of start-up plus per-account time.
 
 A hybrid is possible in principle. Airflow 3.3 can wake a Dag from a message queue: an `AssetWatcher` whose trigger runs in the
 triggerer, using the common.messaging provider's `MessageQueueTrigger`. Released providers support Kafka, SQS, Redis pub/sub,
 Google Pub/Sub, Azure Service Bus and IBM MQ; a Kinesis scheme is merged on main but not yet released, and MWAA 3.3.1 bundles
 Amazon provider 9.34.0. Kafka or SQS would then feed the bucket and Airflow would stay the orchestrator, with two differences
 from the keyed path: a watcher's asset event carries no `partition_key`, so the account would travel in `extra["payload"]`; and
-the Kafka trigger commits each offset before Airflow records the event and handles one message per trigger run. Neither has
-been tried here, nor on MWAA.
+by default the Kafka trigger commits each offset before Airflow records the event and handles one message per trigger run. The
+Kafka provider (1.13.0 and later) accepts `commit_offset=False` through `MessageQueueTrigger`, which leaves the commit to
+downstream tasks. None of this has been tried here, nor on MWAA.
 
 **The deciding question** is what revenue users need more: every change reflected within seconds, or recomputes that are
 traceable, rerunnable and run on the same platform as balance sheet. The current reading is the second, which favours Airflow

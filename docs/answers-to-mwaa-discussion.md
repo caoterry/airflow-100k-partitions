@@ -8,7 +8,8 @@ the least-bad pattern on 3.3.x and the upstream gap are both stated.*
 netting-group partitions, 20-minute Glue calculations) and the evaluation matrix's Option B (assets) is the right basis. It
 cannot, as shipped, schedule at firm-account grain for the revenue workload (10k+ keys per business date): the partition
 machinery has no per-key concurrency control, no conflation, an unindexed and never-pruned bookkeeping table, and a per-key
-write path that times out past ~900 keys per task. The modelling answer to Q6 is therefore "yes, use a coarser scheduling
+write path that passes the 5 s task-API timeout at 500 keys per task once that table has grown or several producers register
+keys at once. The modelling answer to Q6 is therefore "yes, use a coarser scheduling
 grain" — but keep per-account lineage and status *inside* Airflow via partition keys emitted in bulk and the 3.3 asset state
 store, not off-graph. Every gap below is a contained upstream change; the benchmark harness in this repo is the evidence for them.
 
@@ -47,10 +48,13 @@ volume, and still cannot express "which version". A reconcile daemon is not need
 
 **The full balance-sheet model (E6).** Inputs split into *reference* data (rates, FX) and *root* data (positions, cashflows);
 the readiness predicate is `all(reference for as-of D present) and any(root for D present)`, first run and every run after.
-That is a gate predicate, not a schedule expression: `schedule = OR over all inputs`, gate scoped to the business date named
-by the triggering event, versions chosen as `max(version)` per input for that date, and the output event carries
-`{as_of, roots included, versions used}` so downstream can tell a partial result from a complete one. Measured sequence
-(`bench/exp_e6.py`): rates → SKIP; positions → SKIP (fx missing); fx → **RUN** (roots: positions); cashflows → **RUN**
+That is a gate predicate, not a schedule expression: `schedule = OR over all inputs`, a gate that checks each business date
+named by the run's triggering events (arrivals that land while a run is active under `max_active_runs=1` are released as one
+later run, which can carry several dates), versions chosen as `max(version)` per input for that date, and the output event
+carries `{as_of, roots included, versions used}` so downstream can tell a partial result from a complete one. Measured sequence
+(`bench/exp_e6.py`; one run per arrival, because the driver waited for each run to finish, so the merged case was not
+exercised; that run used a gate that took only the latest date, and the per-date gate now in `bench/dags/exp_e6_bs_gate.py`
+was written afterwards and has not run yet): rates → SKIP; positions → SKIP (fx missing); fx → **RUN** (roots: positions); cashflows → **RUN**
 (roots: both); rates v2 → **RUN** with rates 2 / others 1; next business date: positions → SKIP, rates → SKIP, fx → **RUN**
 for 2026-10-01 — date scoping holds, and the "v2 for the one that re-arrived, v1 for the others" rule falls out of
 `max(version)` per input with no daemon.
@@ -78,7 +82,9 @@ would put reference-data latency into every task completion.
 
 **Recommendation.** Keep mappers structural (identity, prefix/product, temporal). Resolve business mappings **in the
 producer**, which knows the data: the task that lands region data looks up the affected accounts/trials and emits those as
-partition keys (`outlet_events[asset].add_partitions(keys)`), ≤ ~900 keys per task (Q5). If the mapping must live in
+partition keys (`outlet_events[asset].add_partitions(keys)`), with few enough keys per task to stay under the 5 s task-API
+timeout (Q5: 500 keys per task already passed it on a grown table or with concurrent producers; a safe number with concurrent
+producers was not measured). If the mapping must live in
 orchestration, a tiny "router" DAG (OR-scheduled on the raw inputs) that reads the reference table and emits target keys is
 the same idea with one more hop.
 
@@ -168,10 +174,11 @@ Not within intentions at 100k; feasible with care at 10k. Measured on 3.3.2 (det
 
 | limit | where | number |
 |---|---|---|
-| keys per emitting task | `[workers] execution_api_timeout` 5 s vs ~5 ms/key registration | **~900 keys**; 10k in one task → 53 s request, 5 retries |
+| keys per emitting task, partitioned consumer | `[workers] execution_api_timeout` 5 s vs ~5 ms/key registration under the asset row lock | one emitter on an empty table reaches 5 s at **about 700–950 keys** (extrapolated from 3.6 s per 500 and 53 s per 10k); on a grown table even 500 keys do not fit (next row); 10k in one task → 53 s request, 5 retries |
+| keys per emitting task, no partitioned consumer | same timeout; one `asset_event` insert per key in the task-success request, no APDR row and no asset row lock | 100k batcher test, up to 12 concurrent 500-key producers: 195 of 200 requests over 5 s (median 11.5 s, worst 38.5 s), 395 retries, 3 producer processes killed although all 100,040 events landed; a safe number not measured |
 | registration cost growth | `asset_partition_dag_run` has no index on `(target_dag_id, partition_key)` and grows for the whole run-retention window | 3.6 s → 7.0 s per 500 keys as the table grew to 60k rows; 3.4 s with an index |
 | partition-run creation | 500 per scheduler tick, hard-coded | ~80 runs/s |
-| partition-run completion | scheduler loop, one scheduler | 3–10 runs/s (26–42 runs/s without the asset machinery) |
+| partition-run completion | scheduler loop, one scheduler; it looks at never-examined runs first, so finished runs wait while new runs keep arriving | 100k as shipped: stopped after 26 min with all runs created and 80,900 of their tasks succeeded, but only 3,698 runs marked finished (26–42 runs/s without the asset machinery) |
 | mapped task instances per `expand()` | one blocking transaction | 10k → 60 s scheduler pause, 100k → 317 s (threshold 30 s) |
 | mapped input | every mapped TI pulls the whole list | O(N²) bytes; fine at 1k, 150 GB per run at 100k |
 | metadata growth | `dag_run` ≈ 0.8 KB, `task_instance` ≈ 1 KB per row | ~65 GB/year at 100k runs/day without retention; APDR not cleanable |
@@ -179,7 +186,7 @@ Not within intentions at 100k; feasible with care at 10k. Measured on 3.3.2 (det
 | DAG count / workers / schedulers on MWAA | environment class | ≤ 4,000 DAGs (mw1.2xlarge), 2–5 schedulers, ≤ 25 (50) workers |
 | what a 2nd scheduler buys | measured with two schedulers on one box | partition-run creation and completion ≈ 2× faster (`SKIP LOCKED` splits the work); a large `expand()` gets *slower* (contention) but only blocks the scheduler that owns the run |
 
-At 10k/day with emitters serialized and ≤ 900 keys each, an APDR index (self-hosted only), `max_active_runs` raised and
+At 10k/day with emitters serialized and few enough keys each to stay under the 5 s timeout, an APDR index (self-hosted only), `max_active_runs` raised and
 retention in place, the partition path works. **With the index in place and two schedulers, 100k account-level partition runs
 were created and finished in 31 minutes on a laptop** (report §4.2a) — so 100k/day is within reach once the index/cleanup PR
 ships in a release the platform offers; until then it is a self-hosted-only option.
@@ -226,8 +233,11 @@ event, `consumed_asset_events` / `upstreamAssetEvents` = lineage, and the 3.3 as
 **schedule at account grain at 100k/day** — and the proposal's own narrative already separates the three grains: scheduling, partitioning and observability need not share a grain, as long as
 availability stays observable per account. That split is exactly what §6 recommends and E4
 demonstrates on 3.3.2: schedule by region or pack, partition and observe by account via keyed events and the state
-store. On the latency footnote: the gap between today's p95 and the target is calculation time, not orchestration; at pack grain Airflow's own
-overhead per unit is seconds, so faster engines and coarse-grained scheduling are complementary, not alternatives.
+store. On the latency footnote: faster engines and coarse-grained scheduling are complementary, not alternatives, but the orchestration
+side is not free. In the simulation, latency is set by engine start-up and capacity; in the 100k prototype run (the engine was a
+sleep) per-account p95 was 37 min, set by slow `claim` ticks during ingestion and the one-minute cron dispatcher, while engine
+slots were never the limit ([two-grains-one-bucket.md](two-grains-one-bucket.md) §8). A faster engine pays off only with a dispatcher that
+keeps up; a continuously running one is designed but not built.
 
 Where the proposal's Airflow caveat is right: AIP-73 was still maturing as of mid-2026 — the partition features are one to two
 minor releases old, the per-key concurrency, conflation, retention and index gaps in this document are real, and MWAA lags by

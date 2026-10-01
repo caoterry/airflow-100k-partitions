@@ -1,5 +1,6 @@
 {
  "label": "e5_100k_pg_isolated",
+ "correction_note": "The phase labels are wrong. exp_e5.py split phases by comparing account ids as strings (key <= 'ACC100000'), so 'burst' is ACC00001 to ACC09965 (8,396 accounts) and 'trickle' is ACC10001 to ACC99969 (75,604 accounts), all of them burst accounts. None of the 40 real trickle accounts was published, so this run has no trickle latency. Corrected, over all 84,000 published accounts, input event to published event: p50 1,600 s, p95 2,240 s, max 2,295 s. The 16,040 unpublished accounts are not counted; counting them at the window close as a lower bound gives p50 at least 1,730 s and p95 at least 2,284 s. The spark task was a sleep of startup_s + per_account_s per account standing in for the engine, and engine slots were not the limit (spark pool queue wait p50 0 s, max 7 s). The recorded latency and phases fields are left unchanged; exp_e5.py now splits on the account number.",
  "policy": {
   "mode": "adaptive_sla",
   "K": 10,

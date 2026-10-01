@@ -134,7 +134,7 @@ never sees 100k task instances; per-account parallelism lives in the engine. Per
 | batch decision | `claim` task: ready set from the event log (`inlet_events[input].after(watermark)`), in-flight set and per-account status from the **asset state store**, `plan_batches()` = the policy |
 | one job per batch, capacity-gated | `spark.expand(batch=batches)` with `pool="spark_jobs"`; in production `GlueJobOperator(deferrable=True)` / `LambdaInvoke…` so waiting does not hold a worker slot |
 | per-account lineage from a batch | `publish.expand(...)`: `outlet_events[output].add_partitions(batch)` — one event per account, `source_run_id` = the batch run |
-| failure semantics | `release` task with `trigger_rule="one_failed"` resets the claims; claims carry the batch id so a stale "running" can be detected |
+| failure semantics | `release` task with `trigger_rule="one_failed"` resets the claims. Claims carry the batch id, but in the prototype `done()` and `release()` never read it: clearing a `spark` or `publish` task in the UI reruns the account list stored in XCom, and `publish` then marks those accounts done whatever batch holds them. The fix (not built yet) passes the batch id to `spark` and `publish`, which act only on rows still inflight under that id; see §5 of [two-grains-one-bucket.md](two-grains-one-bucket.md) |
 | cadence | cron every minute (keyed events do not trigger non-partitioned DAGs); the policy's `t_max` bounds the added wait |
 
 Two implementation details learned the hard way: the state-store accessor is scoped to the task's declared
@@ -167,27 +167,33 @@ budget. The balance-sheet gate (E6) gets away with no state because it recompute
 
 200 producer runs × 500 keys, then 40 trickle accounts. The mechanics held at this scale — `claim` 1.3–3.2 s (avg 1.8 s) with
 100k events behind it, 90 batches of exactly 600, no failed tasks, 54,000 accounts published within the driver's 40-minute
-window, 40,040 still pending, 6,000 in flight — but throughput was only ~1,350 accounts/min against a slot capacity of
-~13,000/min. Two experiment-design reasons, not batcher reasons: the one-minute cron with `max_active_runs=2` serialises
+window, 40,040 still pending, 6,000 in flight — but throughput was only ~1,350 accounts/min over the window, while the
+ten slots of the stand-in engine (a sleep of 15 s plus 0.02 s per account) could take ~13,000/min. Two experiment-design
+reasons, not batcher reasons: the one-minute cron with `max_active_runs=2` serialises
 "dispatch → wait for publish to clear the ledger → dispatch" into a ~4-minute cycle, and the downstream per-account
 `rev5_pnl_consumer` was simultaneously creating 54,000 partition runs on the same scheduler (the same load as the 100k
 limit run in the report). **Rerun in isolation** (downstream consumer paused, `max_active_runs=4`, K = 10): emitting the 100k input events took 6 min
-(20:02–20:08); the batcher published 84,000 accounts in the following 30 minutes (140 batches of 600, pool queue wait p50 0 s /
-max 7 s), leaving 10,040 pending and 6,000 in flight when the driver's 40-minute window closed — ~2,800 accounts/min against a
-slot capacity of ~13,000/min. Where the time went, from the task and API logs:
+(20:02–20:08). No account was published until 20:15, while `claim` was still ingesting the burst; from 20:15 until the
+driver's 40-minute window closed at 20:45 the batcher published 84,000 accounts (140 batches of 600, pool queue wait p50 0 s /
+max 7 s), leaving 10,040 pending and 6,000 in flight — ~2,800 accounts/min over those 30 minutes, against ~13,000/min that the
+ten slots of the stand-in engine (the same sleep) could take. Per-account latency, from input event to published event, over
+the 84,000 published: p50 27 min, p95 37 min, max 38 min; the 16,040 not yet published, including all 40 trickle accounts,
+would raise these figures. Where the time went, from the task and API logs:
 
 - **During and just after ingestion (20:02–20:14) the `claim` task took 36–388 s per tick**: it was paging tens of thousands
   of newly registered events per tick and upserting them into the ledger while 200 producer tasks were registering 500 keys
-  each through the same API server. Once ingestion settled, `claim` took 1–8 s (median 2 s) for the rest of the run.
-- **Steady state was cadence-bound, not capacity-bound**: publish 3.9 s median, a batcher run 89 s median (claim → 27 s job
+  each through the same API server (195 of those 200 task-success requests took longer than the 5 s timeout; median
+  11.5 s). Once ingestion settled, `claim` took 1–8 s (median 2 s) for the rest of the run.
+- **Steady state was cadence-bound, not capacity-bound**: publish task 3.9 s median (TaskInstance duration; its task-success request runs past that, see the next bullet), a batcher run 89 s median (claim → 27 s job
   → publish → scheduling latency), one cron tick per minute and at most four runs alive, each dispatching only into the slots
   free at its own claim time. Net 4.7 batches/min where ten slots could sustain ~22/min. The fix is structural: a continuously
   looping dispatcher (one long-lived run that claims and dispatches as slots free up) or an event-driven wake-up, instead of a
   per-minute cron whose runs each see a snapshot of free capacity.
-- Per-account lineage has a real floor: every `publish` registers 600 partition keys in one task-success request at ~5 ms per
-  key, serialized on the asset row lock — 984 s of API-server time for 100k keys in this window (about 27 % of two API workers,
-  not saturation, but ~8 min of unavoidable work per 100k keys that the index PR does not change and the untried batched key
-  registration fix would). On MWAA this lands on the webserver containers.
+- Per-account lineage has a real floor: every `publish` registers 600 partition keys in one task-success request, one
+  `asset_event` insert per key. With the downstream consumer paused there was no APDR lookup and no asset row lock, yet the 140
+  publish requests took 2.4–12.1 s (median 5.8 s), 102 of them passed the 5 s `execution_api_timeout`, and clients sent 110
+  duplicate requests. This per-key work is what the index PR does not change and the untried batched key registration fix
+  would. On MWAA this lands on the webserver containers.
 
 ## 5b. Airflow prototype (E5) — burst of 60 accounts, then 1 account every 6 s; K = 3, S = 15 s, p = 0.5 s
 

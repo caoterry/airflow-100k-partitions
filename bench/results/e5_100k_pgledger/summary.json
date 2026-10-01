@@ -32,5 +32,6 @@
  ],
  "jobs": 90,
  "avg_batch": 600.0,
- "spark_tis": 130
+ "spark_tis": 130,
+ "correction_note": "The phase labels are wrong for the same reason as e5_100k_pg_isolated: exp_e5.py compared account ids as strings (key <= 'ACC100000'), so the two latency rows split the 54,000 published accounts by string order, not by burst or trickle. The recorded fields are left unchanged; exp_e5.py now splits on the account number."
 }

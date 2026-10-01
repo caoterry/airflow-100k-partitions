@@ -4,8 +4,12 @@ Airflow 3 tasks must not touch Airflow's own metadata DB; a production ledger wo
 (or DynamoDB with conditional writes). The point of this module is the concurrency contract, not the storage:
   - `merge_seen(newest)`   upsert accounts seen in the event log (pending if their version is newer than processed)
   - `claim(planner)`        SELECT ... FOR UPDATE SKIP LOCKED on ready rows, plan batches, mark them inflight — one transaction
-  - `done(batch)` / `release(batch)`   flip inflight -> done / pending
-Two batcher runs can call claim() concurrently and never pick the same account.
+  - `done(batch)`          set the listed accounts to done with done_version = seen_version. No status or batch-id check:
+                           a version that arrived while the account was in flight is marked done without being computed
+  - `release(batch)`       set the listed accounts that are still inflight back to pending. No batch-id check
+Two batcher runs can call claim() concurrently and never pick the same account. That holds only for work claim dispatches:
+tag_batches() stores a batch id, but done() and release() never read it, so a cleared spark or publish task acts on its old
+account list even if those accounts are now in flight in another batch.
 """
 from __future__ import annotations
 import os

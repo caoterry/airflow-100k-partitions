@@ -8,7 +8,8 @@ import harness as H
 
 ap = argparse.ArgumentParser(); ap.add_argument("--policy", default="adaptive_sla"); ap.add_argument("--label", required=True)
 ap.add_argument("--burst", type=int, default=60); ap.add_argument("--trickle-every", type=float, default=6.0); ap.add_argument("--trickle-n", type=int, default=30)
-ap.add_argument("--burst-runs", type=int, default=3, help="how many producer runs the burst is split into (<=~900 keys each)")
+ap.add_argument("--burst-runs", type=int, default=3, help="how many producer runs the burst is split into; each registers burst/burst-runs keys in one task-success request "
+                "(no safe size was measured: at 500 keys with up to 12 producers at once, 195 of 200 requests passed the 5 s API timeout)")
 ap.add_argument("--K", type=int, default=3); ap.add_argument("--startup", type=float, default=15.0); ap.add_argument("--per-account", type=float, default=0.5)
 ap.add_argument("--b-max", type=int, default=60); ap.add_argument("--target", type=float, default=90.0)
 ap.add_argument("--ledger", default="state_store", choices=["state_store", "postgres"])
@@ -64,11 +65,12 @@ print("\n=== per-account latency: input event -> pnl event ===")
 print("\n=== claim task durations (event-log pull + policy), seconds ===")
 cur.execute("select round(min(duration)::numeric,1), round(avg(duration)::numeric,1), round(max(duration)::numeric,1), count(*) from task_instance where dag_id='rev5_batcher' and task_id='claim' and state='success' and start_date > now() - interval '40 minutes'")
 print("   min/avg/max/n:", cur.fetchone())
+# split phases on the account number, not the string: as text 'ACC10001' > 'ACC100000', which mislabeled burst accounts as trickle
 cur.execute("""with i as (select partition_key k, min(timestamp) t0 from asset_event where asset_id=(select id from asset where name='rev5_positions') group by 1),
  o as (select partition_key k, min(timestamp) t1 from asset_event where asset_id=(select id from asset where name='rev5_pnl') group by 1)
- select case when i.k <= %s then 'burst' else 'trickle' end phase, count(*), round(percentile_cont(0.5) within group (order by extract(epoch from o.t1-i.t0))::numeric,0) p50_s,
+ select case when substring(i.k from '[0-9]+$')::int <= %s then 'burst' else 'trickle' end phase, count(*), round(percentile_cont(0.5) within group (order by extract(epoch from o.t1-i.t0))::numeric,0) p50_s,
  round(percentile_cont(0.95) within group (order by extract(epoch from o.t1-i.t0))::numeric,0) p95_s, round(max(extract(epoch from o.t1-i.t0))::numeric,0) max_s
- from i join o on o.k=i.k group by 1 order by 1""", (f"ACC{a.burst:05d}",))
+ from i join o on o.k=i.k group by 1 order by 1""", (a.burst,))
 lat = cur.fetchall(); [print("  ", r) for r in lat]
 cur.execute("select count(*), round(avg(cnt)::numeric,1) from (select source_run_id||source_map_index::text b, count(*) cnt from asset_event where asset_id=(select id from asset where name='rev5_pnl') group by 1) x")
 jobs = cur.fetchone(); print(f"   jobs (pnl-emitting batches): {jobs[0]}, avg batch {jobs[1]}")

@@ -35,7 +35,7 @@ about buses, warm-up time or parking spaces.
    100k → 150 GB (not). Flat mapping is a thousands-scale tool.
 3. **Native partitions: storage linear, write time quadratic.** APDR/PAKL/events/runs all exactly N rows at 1k/10k/100k. But
    `asset_partition_dag_run(target_dag_id, partition_key)` is unindexed and grows for the whole run-retention window: 500-key registration went
-   3.6 → 7.0 s as the table grew, back to 3.4 s with an index. SDK client timeout 5 s ⇒ ≤ ~900 keys per emitting task.
+   3.6 → 7.0 s as the table grew, back to 3.4 s with an index. SDK client timeout 5 s ⇒ one emitter on an empty table reaches it at about 700–950 keys; at 64k rows even 500 do not fit.
 4. **No per-key concurrency control, no conflation, in the partition path.** A key that re-arrives while running gets a second
    concurrent run; `max_active_runs` is DAG-wide so unrelated keys queue behind duplicates. The non-partitioned OR path
    conflates per scheduler loop (one ADRQ row per asset/DAG). Extension point: `[core] asset_manager_class`. A 30-line
@@ -59,7 +59,7 @@ about buses, warm-up time or parking spaces.
 | How do you implement re-run ("all arrived, then v2 of one dataset")? | OR schedule + `short_circuit` gate reading `inlet_events[asset]`; pick `max(extra.version)` per input, never `[-1]` (that is registration order — a burst registered v3 last). |
 | Why not bake a daily-changing region→account map into `AllowedKeyMapper`? | The mapper is serialized into the DAG (36 KB for 10k keys) and copied into every APDR row's `rollup_fingerprint` (33.6 KB/row → ~340 MB/day); a change discards all pending partition runs. Resolve the mapping in the producer. |
 | 100 IPs left, 10-worker Glue jobs, S=60 s, p=1 s, 10k-account burst: p95? IPs for a 5-min SLA? | K = 100/11 = 9; p95 ≈ 10000/9 + 60 ≈ 1170 s ≈ 19.5 min; K ≥ 10000/(300−60) = 42 jobs = 462 IPs. |
-| Four preconditions for account-grain native partitions at 10k/day; which fails on MWAA? | Serialized emitters ≤ ~900 keys; `max_active_runs` raised + accept 500/tick and 3–10 runs/s; own per-key mutex/conflation; APDR index + cleanup. The last one — no DB access on MWAA. |
+| Four preconditions for account-grain native partitions at 10k/day; which fails on MWAA? | Serialized emitters well inside the 5 s timeout (about 700–950 keys on an empty table); `max_active_runs` raised + accept 500/tick and slow completion while runs are still being created (3,698 of 100k finished after 26 min); own per-key mutex/conflation; APDR index + cleanup. The last one — no DB access on MWAA. |
 
 ## Balance-sheet readiness model (E6)
 

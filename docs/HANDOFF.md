@@ -22,8 +22,8 @@ Read this first if you are picking the work up (new session, different model, or
 - Expansion of N mapped TIs = one scheduler transaction: 60 s / 117 s / 317 s at 10k/30k/100k (health threshold 30 s). Patch A → 34/71/173 s.
 - Each mapped TI pulls the whole upstream XCom (O(N²) bytes). Nested expand is not supported.
 - Native partitions: storage linear (1k/10k/100k); write path ~5 ms/key of ~8 statements under the asset row lock, grows with the
-  unindexed `asset_partition_dag_run` table (7.0→3.4 s per 500 keys after indexing); `execution_api_timeout` 5 s ⇒ ≤ ~900 keys per task;
-  500 runs/tick creation; completion 3–10 runs/s (26–42 runs/s for plain run-per-account); no per-key mutex or conflation (E1).
+  unindexed `asset_partition_dag_run` table (7.0→3.4 s per 500 keys after indexing); `execution_api_timeout` 5 s ⇒ one emitter on an empty table reaches it at about 700–950 keys, at 64k rows even 500 do not fit;
+  500 runs/tick creation; as shipped on one scheduler only 3,698 of 100k runs finished after 26 min while runs were still being created (26–42 runs/s for plain run-per-account); no per-key mutex or conflation (E1).
 - Non-partitioned asset scheduling: queue row per (asset, dag) ⇒ conflation per loop; `max_active_runs` gates creation; AND needs a new
   event per asset (E2). `inlet_events[a]` = full history ordered by timestamp, unbounded unless `.after()/.limit()`; `[-1]` is last
   *registered*, not highest version (E2 burst). Keyed events never queue non-partitioned DAGs.

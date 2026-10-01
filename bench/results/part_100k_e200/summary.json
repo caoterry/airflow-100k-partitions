@@ -4,6 +4,7 @@
   "expected": 100000,
   "stopped_early": true,
   "note": "Stopped after all 100k runs were created; consumer completion would have taken ~3h at the observed ~8-10 runs/s. APDR index added online at 00:36:07 (see notes.txt); PATCH durations before 3.6->7.0s, after 3.4s.",
+  "correction_note": "The ~3h projection in 'note' is not valid. It extrapolated a completion rate measured while the one scheduler was still creating and starting runs. The scheduler examines never-examined runs first, so runs whose only task had succeeded waited to be marked finished: at the stop, 80,900 consumer tasks had succeeded but only 3,698 runs were marked finished and 77,202 were still running. No completion time on one scheduler was measured. For comparison, with three hand-made indexes and a second scheduler (limit_100k_idx_2sched) all 100,000 finished in 31 min, about 110 runs/s once run creation stopped; that run changed both at once, so the index's own effect was not measured.",
   "t_last_sample_s": 1539.9,
   "events_s": 1513.9,
   "runs_created_s": 1524.3,

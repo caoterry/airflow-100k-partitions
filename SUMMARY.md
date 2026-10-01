@@ -3,9 +3,9 @@
 **At a glance**
 
 - **Asked:** can Airflow (MWAA 3.3.1 or self-hosted) orchestrate revenue for 10k–100k firm accounts per business date, with late-input reruns, batching to engine capacity and per-account status.
-- **Done:** two days of measured experiments on Airflow 3.3.2 (six DAG shapes to 100k, semantics experiments E1–E6, a batching simulator, source traces, the six evaluation questions answered); everything in this repo re-runs.
-- **Breaks:** 100k task instances in one DagRun (5-minute scheduler stall) and one run per account at 100k (hours on one scheduler; 31 min only with an index MWAA cannot get today).
-- **Works on MWAA as shipped:** shard/pack-grain runs with account-grain partition keys and the asset state store, a capacity-aware batcher with its own ledger, OR-trigger + version gate for reruns; this needs no upstream change and never touches the table that breaks.
+- **Done:** two days of measured experiments on Airflow 3.3.2 (six DAG shapes at 1k–100k, four of them run at 100k, semantics experiments E1–E6, a batching simulator, source traces, the six evaluation questions answered); everything in this repo re-runs.
+- **Breaks:** 100k task instances in one DagRun (5-minute scheduler stall) and one run per account at 100k (hours on one scheduler; 31 min only with indexes MWAA does not let us add).
+- **Works on MWAA as shipped:** account-grain events into a leaky bucket (a small journal table we own) drained in capacity-sized batches, and an OR trigger plus a version gate for balance-sheet reruns; no upstream change needed, and as long as no Dag subscribes to the keyed events per partition it writes no rows to `asset_partition_dag_run`, the unindexed table the open index PR targets.
 - **Upstream:** one PR open for the missing indexes (apache/airflow#73983); it matters only if account-grain runs are ever wanted.
 
 Two days of evaluation (2026-09-29 and 2026-09-30), measured locally on Airflow 3.3.2 with `apache/airflow` main used for
@@ -52,15 +52,23 @@ per-partition concurrency and batching, per-account status for end users, and it
 
 ## What is proposed
 
-Schedule at region / pack / shard grain; partition and observe at account grain.
+**Trigger at account granularity, execute at batch granularity, and put a leaky bucket between the two.** Native Airflow runs
+work at the grain it is triggered at, and one run per account at 100k a day costs hours of scheduler time; separating the two
+grains is what makes the account grain affordable. The full explanation, including a comparison with doing the same on Kafka,
+is in [docs/design-core.md](docs/design-core.md).
 
-- Runs are per shard (or pack, or region). Firm accounts are partition keys emitted in bulk with `add_partitions`; per-account
-  outcome and watermark live in the 3.3 asset state store.
-- Compute is dispatched by a capacity-aware batcher DAG: pool size = engine capacity, batch size driven by the SLA; per-account
-  lineage is kept through keyed asset events.
-- Reruns: OR trigger with a version-aware gate. Balance-sheet readiness: a stateless gate per business date.
-- End-user status is projected out (DagRun listeners or the batcher's own state writes) into a status table; the Airflow UI
-  stays for operators.
+- Producers emit one keyed asset event per changed account (`add_partitions`), with the version in `extra`.
+- The bucket is a journal table with one row per account (pending / in flight / done, latest version only), so versions of an
+  account that arrive while it waits collapse into one recompute. (The prototype mishandles a version that arrives while the
+  account is in flight; the fix, recording the claimed version, is listed for the next iteration.)
+- A dispatcher (the batcher DAG; today a one-minute cron, with a continuously looping version as the next step) claims pending
+  accounts atomically and splits them across the free engine slots, using a size target derived from the SLA and the arrival
+  rate and a hard cap per batch; an Airflow pool caps running jobs at the engine's capacity. About 170 batch jobs of 600 carry
+  100,000 accounts.
+- Balance sheet aggregates across accounts, so it uses no bucket: an OR trigger plus a gate that recomputes the whole business
+  date with the latest version of each input once all reference inputs and at least one root input are in.
+- End-user status is meant to be a view on the journal; it is not built yet and needs a failed state with timestamps. The
+  Airflow UI stays for operators.
 
 This shape needs nothing beyond what MWAA 3.3.1 ships and does not depend on any upstream change; it has been exercised locally,
 not yet on MWAA. Its one stateful piece is the batcher's ledger (pending / in-flight / processed), which has to live in a locked
@@ -69,8 +77,8 @@ upstream fixes (index, retention, bulk expansion, batched key registration, per-
 
 The proposal's MVP (Jobs and Datasets as first-class objects, wired by trigger conditions, declared next to the business code,
 with lineage and standardised state tracking) maps closely onto the Airflow 3 asset model: DAG = Job, Asset = Dataset,
-schedule expression = Trigger Condition (conditions beyond AND/OR live in a small gate task), outlet events = data events, asset
-state store = standardised state tracking. The main thing Airflow cannot do today is schedule at account grain at 100k per day;
+schedule expression = Trigger Condition (conditions beyond AND/OR live in a small gate task), outlet events = data events, the journal
+= standardised state tracking. The main thing Airflow cannot do today is schedule at account grain at 100k per day;
 per-key concurrency control and conflation are also not native (the batcher's ledger provides them in the proposed shape). The
 proposal's own narrative already separates scheduling grain from partition and observability grain, and ties coarse grain to
 fast calculations; the batcher makes the grain a runtime variable, so that condition becomes a question about engine start-up

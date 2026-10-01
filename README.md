@@ -7,6 +7,7 @@ orchestrate 100k "partitions" keyed by firm account, for a shared balance-sheet 
 self-hosted Airflow or AWS MWAA?
 
 **One page first: [SUMMARY.md](SUMMARY.md)** — what was asked, what was done, what was found, what is proposed, and where to read more.
+The core design idea in one page: [docs/design-core.md](docs/design-core.md).
 Then **[REPORT.md](REPORT.md)** — findings, measurements, recommendation, and the upstream contribution list.
 Deep dives: `docs/analysis/` (source traces of 3.3.2 vs main), `docs/research/` (fact-checked literature/MWAA/Dagster sweep),
 `docs/superpowers/specs/` (design and assumptions). Charts in `docs/img/`.

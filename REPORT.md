@@ -247,7 +247,8 @@ pessimistic; the *ratios* are the point):
 | native partitions 10k, run completion after creation | 207 s | **93 s** | the per-run scheduling work also splits across schedulers |
 
 So for the partition path, MWAA's 2–5 schedulers are a real lever (≈2× per added scheduler here); for dynamic task mapping
-they are not. The expansion transaction has to be fixed in code (§4.8, §7).
+they are not. Note that the HA duplicate-run race on `PartitionedAssetTimetable` (apache/airflow#68045, reproduced on MWAA
+3.2.1) was fixed by #68061 (row lock on the APDR fetch) on 2026-06-10, so the 3.3.2 build measured here already carries the fix. The expansion transaction has to be fixed in code (§4.8, §7).
 
 ### 4.3 Does partition storage grow as n²? (question raised by a colleague's analysis)
 

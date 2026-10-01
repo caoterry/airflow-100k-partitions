@@ -22,3 +22,4 @@ python explain.py after plans_after.txt
 | per-key lookup | Seq Scan + Sort, 935 buffers, 6.96 ms | Index Scan Backward, 4 buffers, 0.008 ms |
 | scheduler pending scan | Seq Scan, 935 buffers (scan), 3.72 ms | Index Scan, 11 buffers (scan), 0.43 ms |
 | delete 100 `dag_run` (FK cascade trigger) | 360 ms | 0.42 ms |
+| insert 10,000 rows (write cost, median of 5) | 55 ms without the two indexes | 136 ms with them (~8 µs per row) |

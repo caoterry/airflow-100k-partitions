@@ -95,7 +95,7 @@ the same idea with one more hop.
 | end | | ACC1 ran 4 times, ACC5 once |
 
 So: T=4 ACC5 *should* start (fine-grained) but with only `max_active_runs` as the knob it does not; T=4 ACC1 *should not* queue
-a second time (conflated) but it does. #71070/#71074 (3.4) de-duplicate *pending* APDRs, not queued or running runs.
+a second time (conflated) but it does. #71070/#71074 (open against main, no milestone as of 2026-09-30) de-duplicate *pending* APDRs, not queued or running runs.
 
 **3.2 Concurrency.** (a) There is no native "one run at a time per partition key" and no per-key ordering: partition runs are
 created QUEUED without any `max_active_runs` check and released FIFO by a per-DAG running count with no partition term

@@ -50,6 +50,7 @@ Read this first if you are picking the work up (new session, different model, or
   flat expand 30k 114 → 191 s (contention; second scheduler unaffected). Second scheduler stopped afterwards.
 
 ## Upstream branch (evening 2026-09-30)
+- **RULE (2026-10-01): PR #73983 and `~/Code/airflow-fork` belong to another session — read-only from here; report issues to Terry.**
 - Fork `caoterry/airflow`, branch `apdr-indexes-and-cleanup` (indexes only, amended; on top of apache/airflow main e364ee7648),
   pushed: https://github.com/caoterry/airflow/tree/apdr-indexes-and-cleanup . Local clone: `~/Code/airflow-fork` (blobless), dev env via `uv sync`.
 - Contents: migration 0142 (renumbered on 2026-10-01 after #58543 took 0141) (`f954ddd21484`) with two indexes on `asset_partition_dag_run`; ORM `__table_args__`; `_REVISION_HEADS_MAP`;

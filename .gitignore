@@ -5,3 +5,6 @@ __pycache__/
 bench/results/profiles/logs-*/
 bench/results/profiles/*.log
 private/
+v2/recordings/*.html
+v2/recordings/*.log
+v2/recordings/run*steps*.json

@@ -72,7 +72,9 @@ def v2_batcher():
     def publish(batch: dict, *, outlet_events=None, asset_state_store=None) -> dict:
         result = js.publish(asset_state_store[POSITIONS], batch)
         if result["done"]:
-            outlet_events[PNL].extra = {"batch_id": batch["batch_id"], "versions": result["versions"]}
+            # extra is shared by every keyed event of this outlet, so keep it small: only the batch id.
+            # (Carrying the batch's whole versions dict here cost 500 MB of asset_event.extra for 10k accounts.)
+            outlet_events[PNL].extra = {"batch_id": batch["batch_id"]}
             outlet_events[PNL].add_partitions(result["done"])
         return result
 

@@ -47,13 +47,17 @@ def claim(store, wanted: dict[str, list], run_id: str, k: int, b_min: int) -> li
             todo.append((acct, dv, marker, retry))
     if not todo:
         return []
-    n_batches = max(1, min(k, math.ceil(len(todo) / b_min)))
-    size = math.ceil(len(todo) / n_batches)
+    # Accounts that are currently failed ride in their own batch (quarantine): if they fail again they fail alone.
+    quarantine = [t for t in todo if t[0] in failed]
+    healthy = [t for t in todo if t[0] not in failed]
+    k_healthy = max(1, k - 1) if quarantine else k
+    n_batches = max(1, min(k_healthy, math.ceil(len(healthy) / b_min))) if healthy else 0
+    size = math.ceil(len(healthy) / n_batches) if n_batches else 0
+    chunks = [healthy[i * size:(i + 1) * size] for i in range(n_batches)] + ([quarantine] if quarantine else [])
     batches = []
-    for i in range(n_batches):
-        chunk = todo[i * size:(i + 1) * size]
+    for i, chunk in enumerate(chunks):
         if not chunk:
-            break
+            continue
         batch_id = f"{run_id}#{i}"
         versions = {a: [dv, m] for a, dv, m, _ in chunk}
         retry = any(r for _, _, _, r in chunk)

@@ -20,7 +20,7 @@ from datetime import timedelta
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import journal_store as js
-from airflow.sdk import Asset, Param, PartitionedAtRuntime, Variable, dag, get_current_context, task
+from airflow.sdk import Asset, Param, PartitionedAtRuntime, Variable, dag, get_current_context, task, task_group
 from airflow.sdk.exceptions import AirflowSkipException
 
 POSITIONS = Asset(name="v2_positions", uri="v2://positions")              # keyed: partition_key = account; also holds the journal keys
@@ -106,10 +106,17 @@ def v2_batcher():
         if result and result.get("failed"):
             raise RuntimeError(f"{result['failed']} account(s) moved to failed; see the batch keys and the failed dict")
 
+    @task_group
+    def run_batch(batch: dict):
+        """One group instance per batch: spark[i] -> publish[i]. A mapped task group keeps the pairs independent, so a failed
+        batch does not stop the publish of the others (expanding publish over spark's output would: Airflow cannot expand
+        the downstream until every upstream instance has finished)."""
+        publish(spark(batch))
+
     batches = claim()
-    published = publish.expand(batch=spark.expand(batch=batches))
+    groups = run_batch.expand(batch=batches)
     fin = finalize(batches)
-    fin << published
+    groups >> fin
     ring_retry(fin)
     check(fin)
 

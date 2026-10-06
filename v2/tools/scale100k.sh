@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 100k accounts on variant C: 200 producer runs x 500 accounts with the batcher paused, then one bell.
+# 100k accounts: 200 producer runs x 500 accounts with the batcher paused, then one bell (variant C, then D; VERSION=n selects the dataset version).
 set -u
 cd "$(dirname "$0")/.." && source env.sh
 sed -i '' 's/^PER_ACCOUNT_S = 0.5.*/PER_ACCOUNT_S = 0.0002       # scale test: engine time per account made tiny so bookkeeping and lineage dominate/' dags/v2_dags.py
@@ -44,7 +44,7 @@ cur.execute("""SELECT task_id, map_index, state, to_char(start_date,'HH24:MI:SS'
                FROM task_instance WHERE dag_id='v2_batcher' AND run_id=%s ORDER BY start_date""", (run_id,))
 for r in cur.fetchall(): print("  ", r)
 cur.execute("SELECT length(value) FROM asset_state_store WHERE key='done'"); print("done dict bytes:", cur.fetchone()[0])
-cur.execute("SELECT count(*) FROM asset_event WHERE source_dag_id='v2_batcher' AND timestamp > now() - interval '60 minutes'"); print("v2_pnl lineage events written by this run:", cur.fetchone()[0])
+cur.execute("SELECT a.name, count(*), max(length(e.extra::text)) FROM asset_event e JOIN asset a ON a.id=e.asset_id WHERE e.source_run_id=%s GROUP BY a.name ORDER BY 1", (run_id,)); print("asset_event rows written by this run (name, rows, max extra bytes):", cur.fetchall())
 PY
 sed -i '' 's/^PER_ACCOUNT_S = 0.0002.*/PER_ACCOUNT_S = 0.5/' dags/v2_dags.py
 echo DONE

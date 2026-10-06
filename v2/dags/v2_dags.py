@@ -2,12 +2,15 @@
 the journal lives in Airflow's asset_state_store and is written by one serial ledger Dag. Correctness of overlapping runs
 comes from idempotent, version-ordered output writes (the calc writes (account, dataset_version); readers take the latest).
 
-  v2_land      the producer. ANY arrival goes through it, 3 accounts or 100,000: it emits one keyed asset event per account
-               on v2_positions (lineage) and one unkeyed event on v2_positions_landed (the bell) whose extra carries
-               {account: version}. It writes no table of ours.
+  v2_land      the producer. ANY arrival goes through it, 3 accounts or 100,000: it emits one unkeyed event on v2_positions
+               (the dataset was updated) and one on v2_positions_landed (the bell) whose extra carries {account: version}.
+               It writes no table of ours. No keyed events: per-account lineage lives in the journal and in the versioned
+               output rows, not in asset_event (decision D20; 100k keyed events cost 7 min of registration per run).
   v2_batcher   scheduled on the bell. claim -> spark (one mapped task per batch, pool v2_spark = K slots) -> publish.
                Airflow hands the run every bell since the previous run (triggering_asset_events), so there is no watermark.
   v2_requeue   operator action: ring the bell again for failed accounts.
+  v2_exceptions an EXAMPLE downstream consumer (requirement R4): scheduled on v2_pnl, it gets one event per finished batch
+               carrying the account list, so a downstream Dag chains at batch grain with no per-account runs.
 
 Rule: no Dag may put PartitionedAssetTimetable on v2_positions or v2_pnl (that would create one DagRun per account).
 """
@@ -25,11 +28,11 @@ from airflow.sdk import Asset, Param, PartitionedAtRuntime, Variable, dag, get_c
 from airflow.sdk.exceptions import AirflowSkipException
 from airflow.providers.standard.sensors.time_delta import TimeDeltaSensorAsync
 
-POSITIONS = Asset(name="v2_positions", uri="v2://positions")              # keyed: partition_key = account; also holds the journal keys
+POSITIONS = Asset(name="v2_positions", uri="v2://positions")              # unkeyed; its asset_state_store holds the journal keys
 BELL = Asset(name="v2_positions_landed", uri="v2://positions-landed")     # unkeyed: "these accounts landed, at these versions"
 DEBOUNCED = Asset(name="v2_positions_debounced", uri="v2://positions-debounced")  # unkeyed: the bell after the debounce window
 FINISHED = Asset(name="v2_batches_finished", uri="v2://batches-finished") # unkeyed: "these batch keys are final", for the ledger
-PNL = Asset(name="v2_pnl", uri="v2://pnl")                                # keyed output, lineage only
+PNL = Asset(name="v2_pnl", uri="v2://pnl")                                # unkeyed: one event per finished batch, the bell for downstream Dags
 
 K = 3                        # engine slots = the v2_spark pool size = max_active_runs of the batcher (production: 10)
 DEBOUNCE_S = 30              # idle-time accumulation window (production: about 60). Interim: Airflow has no debounce for asset-triggered Dags yet.
@@ -50,8 +53,7 @@ def v2_land():
         (snapshot feeds); when absent the dataset version is the marker (delta feeds: every listed account changed)."""
         accounts, dv = list(params["accounts"]), int(params["version"])
         markers = {a: str((params.get("markers") or {}).get(a, dv)) for a in accounts}
-        outlet_events[POSITIONS].extra = {"dataset_version": dv}
-        outlet_events[POSITIONS].add_partitions(accounts)                       # lineage: one keyed asset_event per account
+        outlet_events[POSITIONS].extra = {"dataset_version": dv, "accounts": len(accounts)}  # one event: the dataset moved
         outlet_events[BELL].extra = {"dataset_version": dv, "accounts": markers}  # the bell carries the work list
     land()
 
@@ -83,11 +85,11 @@ def v2_batcher():
     @task(inlets=[POSITIONS], outlets=[PNL])
     def publish(batch: dict, *, outlet_events=None, asset_state_store=None) -> dict:
         result = js.publish(asset_state_store[POSITIONS], batch)
-        if result["done"]:
-            # extra is shared by every keyed event of this outlet, so keep it small: only the batch id.
-            # (Carrying the batch's whole versions dict here cost 500 MB of asset_event.extra for 10k accounts.)
-            outlet_events[PNL].extra = {"batch_id": batch["batch_id"]}
-            outlet_events[PNL].add_partitions(result["done"])
+        # ONE unkeyed event per batch, same shape as the bell: {account: [dataset_version, marker]}. A downstream Dag
+        # scheduled on PNL reads it from its triggering events and runs at batch grain. (Keyed events were dropped in D20:
+        # 100k of them took 7 min to register, one api-server request, 3 SQL statements per key; nobody could consume them
+        # without a run per account.)
+        outlet_events[PNL].extra = {"batch_id": batch["batch_id"], "accounts": result["versions"]}
         return result
 
     @task(inlets=[POSITIONS], outlets=[FINISHED, DEBOUNCED], trigger_rule="all_done")
@@ -179,6 +181,23 @@ def v2_ledger():
     fold()
 
 
+@dag(dag_id="v2_exceptions", schedule=[PNL], catchup=False, max_active_runs=1, tags=["v2", "example-consumer"])
+def v2_exceptions():
+    """EXAMPLE of chaining (requirement R4). Scheduled on the PnL asset: every finished batch is one event whose extra carries
+    the accounts and their versions, so this Dag runs once per batch (or once per several batches when they coalesce while a
+    run is active) and can hand the whole account list to one job of its own. A real downstream Dag would repeat the
+    batcher's shape: claim against its own done dict, one job, publish one event."""
+    @task
+    def review(*, triggering_asset_events=None) -> dict:
+        events = triggering_asset_events[PNL] if triggering_asset_events else []
+        accounts: dict[str, list] = {}
+        for e in events:
+            accounts.update((e.extra or {}).get("accounts") or {})
+        return {"batches": [(e.extra or {}).get("batch_id") for e in events], "accounts": len(accounts),
+                "sample": dict(sorted(accounts.items())[:3])}
+    review()
+
+
 @dag(dag_id="v2_requeue", schedule=None, catchup=False, params={"accounts": Param(["ACC42"], type="array")}, tags=["v2"])
 def v2_requeue():
     @task(inlets=[POSITIONS], outlets=[DEBOUNCED], do_xcom_push=False)
@@ -196,4 +215,5 @@ v2_land()
 v2_debounce()
 v2_batcher()
 v2_ledger()
+v2_exceptions()
 v2_requeue()

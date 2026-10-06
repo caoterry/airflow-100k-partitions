@@ -1,5 +1,6 @@
-"""v2 (variant C): two grains, one bucket, with the journal inside Airflow's asset_state_store and a fixed number of
-state-store calls per run (see journal_store.py).
+"""v2 (variant D): two grains, one bucket. One Spark job per batcher run, K runs overlap (max_active_runs = K = pool size),
+the journal lives in Airflow's asset_state_store and is written by one serial ledger Dag. Correctness of overlapping runs
+comes from idempotent, version-ordered output writes (the calc writes (account, dataset_version); readers take the latest).
 
   v2_land      the producer. ANY arrival goes through it, 3 accounts or 100,000: it emits one keyed asset event per account
                on v2_positions (lineage) and one unkeyed event on v2_positions_landed (the bell) whose extra carries
@@ -25,10 +26,10 @@ from airflow.sdk.exceptions import AirflowSkipException
 
 POSITIONS = Asset(name="v2_positions", uri="v2://positions")              # keyed: partition_key = account; also holds the journal keys
 BELL = Asset(name="v2_positions_landed", uri="v2://positions-landed")     # unkeyed: "these accounts landed, at these versions"
+FINISHED = Asset(name="v2_batches_finished", uri="v2://batches-finished") # unkeyed: "these batch keys are final", for the ledger
 PNL = Asset(name="v2_pnl", uri="v2://pnl")                                # keyed output, lineage only
 
-K = 3                        # engine slots = the v2_spark pool size (production: 10)
-B_MIN = 4                    # smallest batch worth its own job (tiny on purpose; production: about 100)
+K = 3                        # engine slots = the v2_spark pool size = max_active_runs of the batcher (production: 10)
 ENGINE_STARTUP_S = 6         # the Spark job is a stand-in: sleep(startup + per-account time)
 PER_ACCOUNT_S = 0.5
 def poison() -> set[str]:    # test only: the stand-in engine fails on these accounts; Airflow Variable v2_poison, comma-separated
@@ -51,12 +52,12 @@ def v2_land():
     land()
 
 
-@dag(dag_id="v2_batcher", schedule=[BELL], catchup=False, max_active_runs=1, tags=["v2"])
+@dag(dag_id="v2_batcher", schedule=[BELL], catchup=False, max_active_runs=K, tags=["v2"])
 def v2_batcher():
     @task(inlets=[POSITIONS], retries=2, retry_delay=timedelta(seconds=5))
     def claim(run_id: str | None = None, *, triggering_asset_events=None, asset_state_store=None) -> list[dict]:
         wanted = js.candidates(triggering_asset_events[BELL] if triggering_asset_events else [])
-        return js.claim(asset_state_store[POSITIONS], wanted, run_id, K, B_MIN)
+        return js.claim(asset_state_store[POSITIONS], wanted, run_id)
 
     @task(inlets=[POSITIONS], pool="v2_spark", retries=1, retry_delay=timedelta(seconds=5))
     def spark(batch: dict, *, asset_state_store=None) -> dict:
@@ -85,9 +86,14 @@ def v2_batcher():
             outlet_events[PNL].add_partitions(result["done"])
         return result
 
-    @task(inlets=[POSITIONS], trigger_rule="all_done")
-    def finalize(batches: list[dict], *, asset_state_store=None) -> dict:
-        return js.finalize(asset_state_store[POSITIONS], batches or [])
+    @task(inlets=[POSITIONS], outlets=[FINISHED], trigger_rule="all_done")
+    def finalize(batches: list[dict], *, asset_state_store=None, outlet_events=None) -> dict:
+        """Summarise this run's batch keys (writes nothing shared) and tell the ledger which keys are final."""
+        result = js.summarize(asset_state_store[POSITIONS], batches or [])
+        if not result["batch_ids"]:
+            raise AirflowSkipException("nothing claimed, nothing to fold")      # a skipped task emits no event
+        outlet_events[FINISHED].extra = {"batch_ids": result["batch_ids"]}
+        return result
 
     @task(outlets=[BELL], trigger_rule="all_done")
     def ring_retry(result: dict, *, outlet_events=None) -> None:
@@ -121,6 +127,17 @@ def v2_batcher():
     check(fin)
 
 
+@dag(dag_id="v2_ledger", schedule=[FINISHED], catchup=False, max_active_runs=1, tags=["v2"])
+def v2_ledger():
+    """The only writer of done and failed. One run at a time; finished-batch events that arrive while it runs coalesce
+    into one queue row and are folded by the next run."""
+    @task(inlets=[POSITIONS])
+    def fold(*, triggering_asset_events=None, asset_state_store=None) -> dict:
+        ids = [bid for e in (triggering_asset_events[FINISHED] if triggering_asset_events else []) for bid in ((e.extra or {}).get("batch_ids") or [])]
+        return js.fold(asset_state_store[POSITIONS], ids)
+    fold()
+
+
 @dag(dag_id="v2_requeue", schedule=None, catchup=False, params={"accounts": Param(["ACC42"], type="array")}, tags=["v2"])
 def v2_requeue():
     @task(inlets=[POSITIONS], outlets=[BELL], do_xcom_push=False)
@@ -137,4 +154,5 @@ def v2_requeue():
 
 v2_land()
 v2_batcher()
+v2_ledger()
 v2_requeue()

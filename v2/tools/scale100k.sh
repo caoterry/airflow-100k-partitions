@@ -10,7 +10,7 @@ python - <<'PY'
 import json, subprocess
 for i in range(200):
     accts=[f"X{n:06d}" for n in range(i*500+1, i*500+501)]
-    subprocess.run(["airflow","dags","trigger","v2_land","-c",json.dumps({"accounts":accts,"version":1})],capture_output=True)
+    subprocess.run(["airflow","dags","trigger","v2_land","-c",json.dumps({"accounts":accts,"version":int(__import__("os").environ.get("VERSION","1"))})],capture_output=True)
 PY
 echo "triggered in $(( $(date +%s) - T0 ))s"
 for i in $(seq 1 240); do sleep 5; n=$(python - <<'PY'
@@ -31,14 +31,14 @@ T1=$(date +%s); echo "bell rung at $(date -u +%H:%M:%S)"
 for i in $(seq 1 600); do sleep 10; s=$(python - <<'PY'
 import psycopg2
 c=psycopg2.connect("postgresql://airflow:airflow@localhost:5433/airflow_v2"); cur=c.cursor()
-cur.execute("SELECT state FROM dag_run WHERE dag_id='v2_batcher' ORDER BY id DESC LIMIT 1"); print(cur.fetchone()[0])
+cur.execute("SELECT count(*) FROM dag_run WHERE dag_id IN ('v2_batcher','v2_debounce','v2_ledger') AND state IN ('running','queued')"); print(cur.fetchone()[0])
 PY
-); [ "$s" = "success" -o "$s" = "failed" ] && break; done
+); [ "$s" = "0" ] && [ $i -gt 6 ] && break; done
 echo "batcher run $s after $(( $(date +%s) - T1 ))s"
 python - <<'PY'
 import psycopg2, json
 c=psycopg2.connect("postgresql://airflow:airflow@localhost:5433/airflow_v2"); cur=c.cursor()
-cur.execute("SELECT id, run_id FROM dag_run WHERE dag_id='v2_batcher' ORDER BY id DESC LIMIT 1"); rid, run_id = cur.fetchone()
+cur.execute("SELECT id, run_id FROM dag_run WHERE dag_id='v2_batcher' AND run_id IN (SELECT run_id FROM task_instance WHERE dag_id='v2_batcher' AND task_id='finalize' AND state='success') ORDER BY id DESC LIMIT 1"); rid, run_id = cur.fetchone()
 cur.execute("SELECT count(*) FROM dagrun_asset_event WHERE dag_run_id=%s", (rid,)); print("bells consumed:", cur.fetchone()[0])
 cur.execute("""SELECT task_id, map_index, state, to_char(start_date,'HH24:MI:SS'), to_char(end_date,'HH24:MI:SS'), round(extract(epoch from (end_date-start_date))::numeric,1)
                FROM task_instance WHERE dag_id='v2_batcher' AND run_id=%s ORDER BY start_date""", (run_id,))

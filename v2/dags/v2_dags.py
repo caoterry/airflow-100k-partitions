@@ -23,13 +23,17 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import journal_store as js
 from airflow.sdk import Asset, Param, PartitionedAtRuntime, Variable, dag, get_current_context, task, task_group
 from airflow.sdk.exceptions import AirflowSkipException
+from airflow.providers.standard.sensors.time_delta import TimeDeltaSensorAsync
 
 POSITIONS = Asset(name="v2_positions", uri="v2://positions")              # keyed: partition_key = account; also holds the journal keys
 BELL = Asset(name="v2_positions_landed", uri="v2://positions-landed")     # unkeyed: "these accounts landed, at these versions"
+DEBOUNCED = Asset(name="v2_positions_debounced", uri="v2://positions-debounced")  # unkeyed: the bell after the debounce window
 FINISHED = Asset(name="v2_batches_finished", uri="v2://batches-finished") # unkeyed: "these batch keys are final", for the ledger
 PNL = Asset(name="v2_pnl", uri="v2://pnl")                                # keyed output, lineage only
 
 K = 3                        # engine slots = the v2_spark pool size = max_active_runs of the batcher (production: 10)
+DEBOUNCE_S = 30              # idle-time accumulation window (production: about 60). Interim: Airflow has no debounce for asset-triggered Dags yet.
+DEBOUNCE_MARGIN_S = 5        # bells stamped in the last few seconds wait for the next window (their producer may still be committing)
 ENGINE_STARTUP_S = 6         # the Spark job is a stand-in: sleep(startup + per-account time)
 PER_ACCOUNT_S = 0.5
 def poison() -> set[str]:    # test only: the stand-in engine fails on these accounts; Airflow Variable v2_poison, comma-separated
@@ -52,11 +56,11 @@ def v2_land():
     land()
 
 
-@dag(dag_id="v2_batcher", schedule=[BELL], catchup=False, max_active_runs=K, tags=["v2"])
+@dag(dag_id="v2_batcher", schedule=[DEBOUNCED], catchup=False, max_active_runs=K, tags=["v2"])
 def v2_batcher():
     @task(inlets=[POSITIONS], retries=2, retry_delay=timedelta(seconds=5))
     def claim(run_id: str | None = None, *, triggering_asset_events=None, asset_state_store=None) -> list[dict]:
-        wanted = js.candidates(triggering_asset_events[BELL] if triggering_asset_events else [])
+        wanted = js.candidates(triggering_asset_events[DEBOUNCED] if triggering_asset_events else [])
         return js.claim(asset_state_store[POSITIONS], wanted, run_id)
 
     @task(inlets=[POSITIONS], pool="v2_spark", retries=1, retry_delay=timedelta(seconds=5))
@@ -86,25 +90,26 @@ def v2_batcher():
             outlet_events[PNL].add_partitions(result["done"])
         return result
 
-    @task(inlets=[POSITIONS], outlets=[FINISHED], trigger_rule="all_done")
+    @task(inlets=[POSITIONS], outlets=[FINISHED, DEBOUNCED], trigger_rule="all_done")
     def finalize(batches: list[dict], *, asset_state_store=None, outlet_events=None) -> dict:
-        """Summarise this run's batch keys (writes nothing shared) and tell the ledger which keys are final."""
+        """Summarise this run's batch keys (writes nothing shared), tell the ledger which keys are final, and ring an empty
+        tick on the debounced bell so that forwarded bells stamped after this run's queue row are swept by the next run.
+        A run that claimed nothing skips here, so it rings no tick and the chain ends."""
         result = js.summarize(asset_state_store[POSITIONS], batches or [])
         if not result["batch_ids"]:
             raise AirflowSkipException("nothing claimed, nothing to fold")      # a skipped task emits no event
         outlet_events[FINISHED].extra = {"batch_ids": result["batch_ids"]}
+        outlet_events[DEBOUNCED].extra = {"tick": True}
         return result
 
-    @task(outlets=[BELL], trigger_rule="all_done")
+    @task(outlets=[DEBOUNCED], trigger_rule="all_done")
     def ring_retry(result: dict, *, outlet_events=None) -> None:
         """Blast-radius rule a+c: the healthy accounts of a failed batch ring the bell once more.
         A declared outlet emits an event on EVERY success, so this task SKIPS when there is nothing to retry
         (a skipped task emits nothing); otherwise every run would ring an empty bell and start the next run forever."""
         if not result or not result.get("retry"):
             raise AirflowSkipException("nothing to retry")
-        dv = max(v[0] for v in result["retry"].values())
-        outlet_events[BELL].extra = {"dataset_version": dv, "accounts": {a: m for a, (d, m) in result["retry"].items()},
-                                     "retry_of": "failed batches of this run"}
+        outlet_events[DEBOUNCED].extra = {"accounts": result["retry"], "retry_of": "failed batches of this run"}
 
     @task(trigger_rule="all_done")
     def check(result: dict) -> None:
@@ -127,6 +132,42 @@ def v2_batcher():
     check(fin)
 
 
+@dag(dag_id="v2_debounce", schedule=[BELL], catchup=False, max_active_runs=1, tags=["v2"])
+def v2_debounce():
+    """Idle-time accumulation, built from stock parts: hold the first bell for DEBOUNCE_S seconds (deferred, no worker held),
+    then forward the merged work list. Bells that ring during the hold coalesce into this Dag's next run because
+    max_active_runs=1. INTERIM: this is what a debounce window on asset-triggered Dags would do natively; it is one of the
+    upstream proposals (a count-or-age wait policy), and this Dag is deleted when that ships. Only one parameter: the window."""
+    hold = TimeDeltaSensorAsync(task_id="hold", delta=timedelta(seconds=DEBOUNCE_S))
+
+    @task(inlets=[BELL, POSITIONS], outlets=[DEBOUNCED, BELL])
+    def forward(*, inlet_events=None, asset_state_store=None, outlet_events=None) -> dict:
+        """Forward every bell of this window as ONE debounced bell.
+
+        Airflow attaches to a run only the bells stamped before its queue row, so triggering_asset_events would hold the first
+        bell of the window and leave the rest for a later run. Instead the window is read from the bell asset's event log:
+        all bells with a timestamp in (cutoff, now - margin], where cutoff is the last timestamp this Dag forwarded. The
+        cutoff lives in the state store and is written only here (max_active_runs=1), and the margin leaves room for a bell
+        whose producer committed after its timestamp. Then an EMPTY tick on the raw bell starts the next window if anything
+        was forwarded, so bells that rang after the queue row are not stranded; a window that forwards nothing rings no tick.
+        INTERIM: this is what a native debounce window on asset-triggered Dags would do; one of the upstream proposals."""
+        from datetime import datetime, timezone
+        store = asset_state_store[POSITIONS]
+        cutoff = store.get("debounce/cutoff")
+        upper = datetime.now(timezone.utc) - timedelta(seconds=DEBOUNCE_MARGIN_S)
+        events = inlet_events[BELL].after(datetime.fromisoformat(cutoff)) if cutoff else inlet_events[BELL]
+        window = [e for e in events if (not cutoff or e.timestamp.isoformat() > cutoff) and e.timestamp <= upper and (e.extra or {}).get("accounts")]
+        merged = js.candidates(window)
+        if not merged:
+            raise AirflowSkipException("no bells with accounts in this window")
+        store.set("debounce/cutoff", max(e.timestamp for e in window).isoformat())
+        outlet_events[DEBOUNCED].extra = {"accounts": {a: [dv, m] for a, (dv, m, _, _) in merged.items()}, "bells": len(window)}
+        outlet_events[BELL].extra = {"tick": True}
+        return {"accounts": len(merged), "bells": len(window)}
+
+    hold >> forward()
+
+
 @dag(dag_id="v2_ledger", schedule=[FINISHED], catchup=False, max_active_runs=1, tags=["v2"])
 def v2_ledger():
     """The only writer of done and failed. One run at a time; finished-batch events that arrive while it runs coalesce
@@ -140,19 +181,19 @@ def v2_ledger():
 
 @dag(dag_id="v2_requeue", schedule=None, catchup=False, params={"accounts": Param(["ACC42"], type="array")}, tags=["v2"])
 def v2_requeue():
-    @task(inlets=[POSITIONS], outlets=[BELL], do_xcom_push=False)
+    @task(inlets=[POSITIONS], outlets=[DEBOUNCED], do_xcom_push=False)
     def ring(params: dict | None = None, *, outlet_events=None, asset_state_store=None) -> None:
         store = asset_state_store[POSITIONS]
         failed = store.get("failed") or {}
         wanted = {a: failed[a] for a in params["accounts"] if a in failed}
         if not wanted:
             raise AirflowSkipException("none of these accounts is in failed")   # a skipped task rings no bell
-        outlet_events[BELL].extra = {"dataset_version": max(v[0] for v in wanted.values()),
-                                     "accounts": {a: m for a, (dv, m) in wanted.items()}, "requeue": True}
+        outlet_events[DEBOUNCED].extra = {"accounts": wanted, "requeue": True}
     ring()
 
 
 v2_land()
+v2_debounce()
 v2_batcher()
 v2_ledger()
 v2_requeue()

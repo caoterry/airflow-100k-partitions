@@ -4,7 +4,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 source "$HERE/env.sh"
 PIDDIR="$AIRFLOW_HOME/pids"; LOGDIR="$AIRFLOW_HOME/proc-logs"; mkdir -p "$PIDDIR" "$LOGDIR"
-COMPONENTS=(api-server dag-processor scheduler)
+COMPONENTS=(api-server dag-processor scheduler triggerer)
 start_one() {
   local name="$1"
   if [[ -f "$PIDDIR/$name.pid" ]] && kill -0 "$(cat "$PIDDIR/$name.pid")" 2>/dev/null; then echo "$name already running"; return; fi
@@ -24,8 +24,8 @@ case "${1:-}" in
     airflow db migrate
     airflow pools set v2_spark 3 "K engine slots for the v2 batcher"
     ;;
-  start)  start_one api-server; sleep 5; start_one dag-processor; start_one scheduler ;;
-  stop)   for c in scheduler dag-processor api-server; do stop_one "$c"; done ;;
+  start)  start_one api-server; sleep 5; start_one dag-processor; start_one scheduler; start_one triggerer ;;
+  stop)   for c in triggerer scheduler dag-processor api-server; do stop_one "$c"; done ;;
   status) for c in "${COMPONENTS[@]}"; do if [[ -f "$PIDDIR/$c.pid" ]] && kill -0 "$(cat "$PIDDIR/$c.pid")" 2>/dev/null; then echo "$c: up"; else echo "$c: down"; fi; done ;;
   logs)   tail -n "${3:-40}" "$LOGDIR/${2:-scheduler}.log" ;;
   *) echo "usage: $0 {init|start|stop|status|logs [component] [n]}"; exit 1 ;;

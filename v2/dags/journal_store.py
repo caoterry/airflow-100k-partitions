@@ -20,14 +20,17 @@ import math
 
 def candidates(events) -> dict[str, list]:
     """Merge the bells this run consumed: per account keep the entry with the highest dataset_version.
-    Each bell: extra = {"dataset_version": dv, "accounts": {account: marker}, "retry_of": batch_id | None, "requeue": bool}."""
+    A bell's extra is {"dataset_version": dv, "accounts": {account: marker}} (from a producer) or
+    {"accounts": {account: [dv, marker]}} (from the debounce Dag, which already merged several landings),
+    plus optional "retry_of" / "requeue" flags."""
     out: dict[str, list] = {}
     for e in events:
         x = e.extra or {}
-        dv = int(x.get("dataset_version", 0))
-        for acct, marker in (x.get("accounts") or {}).items():
+        bell_dv = int(x.get("dataset_version", 0))
+        for acct, v in (x.get("accounts") or {}).items():
+            dv, marker = (int(v[0]), str(v[1])) if isinstance(v, list) else (bell_dv, str(v))
             if acct not in out or dv > out[acct][0]:
-                out[acct] = [dv, str(marker), bool(x.get("retry_of")), bool(x.get("requeue"))]
+                out[acct] = [dv, marker, bool(x.get("retry_of")), bool(x.get("requeue"))]
     return out
 
 

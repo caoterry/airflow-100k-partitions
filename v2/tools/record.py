@@ -40,4 +40,4 @@ def main(out_path, quiet_s=6.0, max_s=600):
     print(f"recorded {len(events)} row changes over {t:.0f} s -> {out_path}")
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main(sys.argv[1], quiet_s=float(sys.argv[2]) if len(sys.argv) > 2 else 6.0)

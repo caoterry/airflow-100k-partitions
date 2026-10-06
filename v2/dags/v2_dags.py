@@ -20,7 +20,8 @@ from datetime import timedelta
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import journal_store as js
-from airflow.sdk import Asset, Param, PartitionedAtRuntime, dag, get_current_context, task
+from airflow.sdk import Asset, Param, PartitionedAtRuntime, Variable, dag, get_current_context, task
+from airflow.sdk.exceptions import AirflowSkipException
 
 POSITIONS = Asset(name="v2_positions", uri="v2://positions")              # keyed: partition_key = account; also holds the journal keys
 BELL = Asset(name="v2_positions_landed", uri="v2://positions-landed")     # unkeyed: "these accounts landed, at these versions"
@@ -30,18 +31,23 @@ K = 3                        # engine slots = the v2_spark pool size (production
 B_MIN = 4                    # smallest batch worth its own job (tiny on purpose; production: about 100)
 ENGINE_STARTUP_S = 6         # the Spark job is a stand-in: sleep(startup + per-account time)
 PER_ACCOUNT_S = 0.5
-POISON = {"ACC42"}           # test only: the stand-in engine fails on these accounts
+def poison() -> set[str]:    # test only: the stand-in engine fails on these accounts; Airflow Variable v2_poison, comma-separated
+    return {a.strip() for a in Variable.get("v2_poison", default="").split(",") if a.strip()}
 
 
 @dag(dag_id="v2_land", schedule=PartitionedAtRuntime(), catchup=False,
-     params={"accounts": Param(["ACC1"], type="array"), "version": Param(1, type="integer")}, tags=["v2"])
+     params={"accounts": Param(["ACC1"], type="array"), "version": Param(1, type="integer"),
+             "markers": Param({}, type="object")}, tags=["v2"])
 def v2_land():
     @task(outlets=[POSITIONS, BELL], do_xcom_push=False)
     def land(params: dict | None = None, *, outlet_events=None) -> None:
-        accounts, version = list(params["accounts"]), int(params["version"])
-        outlet_events[POSITIONS].extra = {"version": version}
+        """version = the dataset version of this landing (orders landings). markers = per-account row fingerprint
+        (snapshot feeds); when absent the dataset version is the marker (delta feeds: every listed account changed)."""
+        accounts, dv = list(params["accounts"]), int(params["version"])
+        markers = {a: str((params.get("markers") or {}).get(a, dv)) for a in accounts}
+        outlet_events[POSITIONS].extra = {"dataset_version": dv}
         outlet_events[POSITIONS].add_partitions(accounts)                       # lineage: one keyed asset_event per account
-        outlet_events[BELL].extra = {"accounts": {a: version for a in accounts}}  # the bell carries the work list
+        outlet_events[BELL].extra = {"dataset_version": dv, "accounts": markers}  # the bell carries the work list
     land()
 
 
@@ -58,13 +64,14 @@ def v2_batcher():
         js.running(store, batch["batch_id"])
         try:
             time.sleep(ENGINE_STARTUP_S + PER_ACCOUNT_S * len(batch["accounts"]))
-            bad = sorted(POISON & set(batch["accounts"]))
+            bad = sorted(poison() & set(batch["accounts"]))
             if bad:
                 raise ValueError(f"engine failed on {bad}")
         except Exception as exc:
             ctx = get_current_context()
             if ctx["ti"].try_number > ctx["task"].retries:      # this was the last attempt Airflow will make
-                js.fail(store, batch, str(exc))
+                culprits = [a for a in batch["accounts"] if a in str(exc)]   # the engine named them (stand-in: "engine failed on [...]")
+                js.fail(store, batch, str(exc), culprits)
             raise
         return batch
 
@@ -82,9 +89,29 @@ def v2_batcher():
     def finalize(batches: list[dict], *, asset_state_store=None) -> dict:
         return js.finalize(asset_state_store[POSITIONS], batches or [])
 
+    @task(outlets=[BELL], trigger_rule="all_done")
+    def ring_retry(result: dict, *, outlet_events=None) -> None:
+        """Blast-radius rule a+c: the healthy accounts of a failed batch ring the bell once more.
+        A declared outlet emits an event on EVERY success, so this task SKIPS when there is nothing to retry
+        (a skipped task emits nothing); otherwise every run would ring an empty bell and start the next run forever."""
+        if not result or not result.get("retry"):
+            raise AirflowSkipException("nothing to retry")
+        dv = max(v[0] for v in result["retry"].values())
+        outlet_events[BELL].extra = {"dataset_version": dv, "accounts": {a: m for a, (d, m) in result["retry"].items()},
+                                     "retry_of": "failed batches of this run"}
+
+    @task(trigger_rule="all_done")
+    def check(result: dict) -> None:
+        """Colours the run: the bookkeeping is done by now; this task fails only so the run shows red when a batch failed."""
+        if result and result.get("failed"):
+            raise RuntimeError(f"{result['failed']} account(s) moved to failed; see the batch keys and the failed dict")
+
     batches = claim()
     published = publish.expand(batch=spark.expand(batch=batches))
-    finalize(batches) << published
+    fin = finalize(batches)
+    fin << published
+    ring_retry(fin)
+    check(fin)
 
 
 @dag(dag_id="v2_requeue", schedule=None, catchup=False, params={"accounts": Param(["ACC42"], type="array")}, tags=["v2"])
@@ -93,8 +120,11 @@ def v2_requeue():
     def ring(params: dict | None = None, *, outlet_events=None, asset_state_store=None) -> None:
         store = asset_state_store[POSITIONS]
         failed = store.get("failed") or {}
-        again = {a: int(failed.get(a, 1)) for a in params["accounts"]}
-        outlet_events[BELL].extra = {"accounts": again, "requeue": True}
+        wanted = {a: failed[a] for a in params["accounts"] if a in failed}
+        if not wanted:
+            raise AirflowSkipException("none of these accounts is in failed")   # a skipped task rings no bell
+        outlet_events[BELL].extra = {"dataset_version": max(v[0] for v in wanted.values()),
+                                     "accounts": {a: m for a, (dv, m) in wanted.items()}, "requeue": True}
     ring()
 
 

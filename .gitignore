@@ -8,3 +8,4 @@ private/
 v2/recordings/*.html
 v2/recordings/*.log
 v2/recordings/run*steps*.json
+v2/recordings/kata_steps*

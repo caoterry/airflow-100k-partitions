@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# v2 environment. Usage: ctl.sh {init|start|stop|status|logs [component] [n]}
+# v2 environment. Usage: ctl.sh {init|reset|start|stop|status|logs [component] [n]}
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 source "$HERE/env.sh"
@@ -24,9 +24,22 @@ case "${1:-}" in
     airflow db migrate
     airflow pools set v2_spark 3 "K engine slots for the v2 batcher"
     ;;
+  reset)                                      # a clean metadata DB (kata recordings, demos): stop, drop airflow_v2, init, start
+    "$0" stop
+    python - <<'PY'
+import psycopg2
+c = psycopg2.connect("postgresql://airflow:airflow@localhost:5433/postgres"); c.autocommit = True
+with c.cursor() as cur:
+    cur.execute("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='airflow_v2' AND pid <> pg_backend_pid()")
+    cur.execute('DROP DATABASE IF EXISTS "airflow_v2"'); print("dropped airflow_v2")
+PY
+    rm -rf "$AIRFLOW_HOME/logs"/dag_id=* "$AIRFLOW_HOME/snaps"
+    "$0" init
+    "$0" start
+    ;;
   start)  start_one api-server; sleep 5; start_one dag-processor; start_one scheduler; start_one triggerer ;;
   stop)   for c in triggerer scheduler dag-processor api-server; do stop_one "$c"; done ;;
   status) for c in "${COMPONENTS[@]}"; do if [[ -f "$PIDDIR/$c.pid" ]] && kill -0 "$(cat "$PIDDIR/$c.pid")" 2>/dev/null; then echo "$c: up"; else echo "$c: down"; fi; done ;;
   logs)   tail -n "${3:-40}" "$LOGDIR/${2:-scheduler}.log" ;;
-  *) echo "usage: $0 {init|start|stop|status|logs [component] [n]}"; exit 1 ;;
+  *) echo "usage: $0 {init|reset|start|stop|status|logs [component] [n]}"; exit 1 ;;
 esac

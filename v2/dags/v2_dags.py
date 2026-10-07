@@ -99,7 +99,8 @@ def v2_debounce():
         """When does this window close: the first bell after the published cutoff + DEBOUNCE_S (ISO). Skips when nothing is pending."""
         cutoff = _latest_window_end(inlet_events) or _iso(datetime.now(timezone.utc) - timedelta(days=1))
         cutoff_dt = datetime.fromisoformat(cutoff)
-        pending = [e for e in inlet_events[BELL].after(cutoff) if e.timestamp > cutoff_dt and (e.extra or {}).get("partitions")]
+        # only the oldest pending bell is needed: an indexed range read on (asset_id, timestamp), a few rows, not the whole window
+        pending = [e for e in inlet_events[BELL].after(cutoff).limit(5) if e.timestamp > cutoff_dt and (e.extra or {}).get("partitions")]
         if not pending:
             raise AirflowSkipException("nothing pending: the previous window already forwarded these bells")
         return _iso(min(e.timestamp for e in pending) + timedelta(seconds=DEBOUNCE_S))
@@ -135,7 +136,8 @@ def v2_debounce():
         a task of its own that skips."""
         cutoff = _latest_window_end(inlet_events) or _iso(datetime.now(timezone.utc) - timedelta(days=1))
         cutoff_dt = datetime.fromisoformat(cutoff)
-        pending = [e for e in inlet_events[BELL].after(cutoff) if e.timestamp > cutoff_dt and (e.extra or {}).get("partitions")]
+        # oldest first: if even the oldest pending bell is newer than this run's start, nothing is stranded (a few rows read)
+        pending = [e for e in inlet_events[BELL].after(cutoff).limit(5) if e.timestamp > cutoff_dt and (e.extra or {}).get("partitions")]
         # Only bells stamped before this run started can be stranded: they coalesced into the queue row this run consumed. A bell
         # stamped later made a new queue row, so a next run is coming for it anyway; ticking for it would only push that run's
         # deadline back (run_after = the newest queue row).

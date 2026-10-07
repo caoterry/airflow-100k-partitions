@@ -37,6 +37,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import journal_store as js
 from airflow.sdk import Asset, Param, Variable, dag, get_current_context, task, task_group
 from airflow.sdk.exceptions import AirflowSkipException
+from airflow.providers.standard.sensors.date_time import DateTimeSensorAsync
 from airflow.providers.standard.sensors.time_delta import TimeDeltaSensor
 
 BELL = Asset(name="v2_inputs_landed", uri="v2://inputs-landed")           # producers ring it: {dataset, version, partitions: {p: marker}}
@@ -86,12 +87,24 @@ def v2_land():
 def v2_debounce():
     """Idle-time accumulation from stock parts: hold the first bell for DEBOUNCE_S seconds (deferred, no worker held), then forward
     the merged window. Bells that land during a run coalesce into one queue row (max_active_runs=1) and start exactly one next
-    run, which reads its window from the event log. The hold's deadline is the run's run_after (the first land of the window) +
-    DEBOUNCE_S, so a run created late does not wait twice. One gap remains and `sweep` closes it: a bell that lands while the next
-    run is still queued has no queue row of its own, and if it falls inside the margin that run leaves it, so sweep rings the
-    private tick when bells are left past the cutoff (D24). INTERIM for a native debounce / count-or-age wait policy on
+    run, which reads its window from the event log. The window opens at the FIRST LAND NOT YET FORWARDED and closes DEBOUNCE_S
+    later (`plan` + deferred `hold`), not at the run's run_after: a queue row can carry the timestamp of a land the previous
+    window already took, and anchoring to it made short windows under a steady stream (D25). A run with nothing pending skips.
+    `sweep` closes the margin hole: a bell that landed before this run started has no queue row of its own, so if the window
+    left it inside the margin, sweep rings the private tick (D24). INTERIM for a native debounce / count-or-age wait policy on
     asset-triggered Dags (upstream proposal); this Dag is deleted when that ships."""
-    hold = TimeDeltaSensor(task_id="hold", delta=timedelta(seconds=DEBOUNCE_S), deferrable=True)
+
+    @task(inlets=[BELL, DEBOUNCED], multiple_outputs=False)
+    def plan(*, inlet_events=None) -> str:
+        """When does this window close: the first bell after the published cutoff + DEBOUNCE_S (ISO). Skips when nothing is pending."""
+        cutoff = _latest_window_end(inlet_events) or _iso(datetime.now(timezone.utc) - timedelta(days=1))
+        cutoff_dt = datetime.fromisoformat(cutoff)
+        pending = [e for e in inlet_events[BELL].after(cutoff) if e.timestamp > cutoff_dt and (e.extra or {}).get("partitions")]
+        if not pending:
+            raise AirflowSkipException("nothing pending: the previous window already forwarded these bells")
+        return _iso(min(e.timestamp for e in pending) + timedelta(seconds=DEBOUNCE_S))
+
+    hold = DateTimeSensorAsync(task_id="hold", target_time="{{ ti.xcom_pull(task_ids='plan') }}")   # deferred; fires at once if past
 
     @task(inlets=[BELL, DEBOUNCED, PNL], outlets=[DEBOUNCED], multiple_outputs=False)
     def forward(*, inlet_events=None, asset_state_store=None, outlet_events=None) -> dict:
@@ -123,11 +136,16 @@ def v2_debounce():
         cutoff = _latest_window_end(inlet_events) or _iso(datetime.now(timezone.utc) - timedelta(days=1))
         cutoff_dt = datetime.fromisoformat(cutoff)
         pending = [e for e in inlet_events[BELL].after(cutoff) if e.timestamp > cutoff_dt and (e.extra or {}).get("partitions")]
-        if not pending:
-            raise AirflowSkipException("no bells left after the window")
-        outlet_events[DEBOUNCE_TICK].extra = {"tick": True, "pending_bells": len(pending)}
+        # Only bells stamped before this run started can be stranded: they coalesced into the queue row this run consumed. A bell
+        # stamped later made a new queue row, so a next run is coming for it anyway; ticking for it would only push that run's
+        # deadline back (run_after = the newest queue row).
+        started = get_current_context()["dag_run"].start_date
+        stranded = [e for e in pending if started is None or e.timestamp <= started]
+        if not stranded:
+            raise AirflowSkipException("no stranded bells")
+        outlet_events[DEBOUNCE_TICK].extra = {"tick": True, "stranded_bells": len(stranded)}
 
-    hold >> forward() >> sweep()
+    plan() >> hold >> forward() >> sweep()
 
 
 @dag(dag_id="v2_batcher", schedule=(DEBOUNCED | BATCHER_TICK), catchup=False, max_active_runs=K, tags=["v2"])
@@ -235,14 +253,18 @@ def v2_ledger():
         result = js.fold(store, ids) if ids else {"done": 0, "failed": 0, "partitions_tracked": None}
         if events:
             store.set("ledger/cutoff", _iso(max(e.timestamp for e in events)))
-        return {**result, "finished_events": len(events), "pending": len(after) - len(events)}
+        started = get_current_context()["dag_run"].start_date
+        left = [e for e in after if e.timestamp > upper]
+        stranded = [e for e in left if started is None or e.timestamp <= started]   # later ones made a new queue row
+        return {**result, "finished_events": len(events), "pending": len(left), "stranded": len(stranded)}
 
     @task(outlets=[LEDGER_TICK], trigger_rule="all_done")
     def sweep(result: dict, *, outlet_events=None) -> None:
-        """Ring the ledger's private tick only when FINISHED events were left inside the margin; skips otherwise."""
-        if not result or not result.get("pending"):
-            raise AirflowSkipException("nothing left inside the margin")
-        outlet_events[LEDGER_TICK].extra = {"tick": True, "pending": result["pending"]}
+        """Ring the ledger's private tick only when FINISHED events stamped before this run started were left inside the margin
+        (no queue row will start a run for them); skips otherwise."""
+        if not result or not result.get("stranded"):
+            raise AirflowSkipException("nothing stranded")
+        outlet_events[LEDGER_TICK].extra = {"tick": True, "stranded": result["stranded"]}
 
     folded = fold()
     settle >> folded

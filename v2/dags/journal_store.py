@@ -16,8 +16,8 @@ writes only its own batch keys. Correctness of overlapping runs comes from idemp
 
 Two version spaces per dataset (decision D13): version orders landings (a late, older landing never overwrites a newer result);
 marker says whether the partition's input changed (row fingerprint, lake_in_id, or the version itself for delta feeds), compared
-for equality only. A partition is due when ANY input dataset has a newer version with a different marker (requirement R1: recompute
-with the new version of that input and the latest version of everything else).
+for equality only. A partition is due when ANY input dataset has a newer version with a different marker; the job then uses
+that input's new version together with the latest known version of every other input.
 """
 from __future__ import annotations
 

@@ -18,7 +18,7 @@ producer of any of them rings the SAME bell. The journal records, per partition,
                  attached to the next run (LESSON 3; the batcher must use triggering events because K runs share no cutoff).
   v2_ledger      the only writer of done and failed: reads the FINISHED window from the event log after its own cutoff, folds, one
                  run at a time. Window read, so it needs no tick.
-  v2_exceptions  an EXAMPLE downstream consumer (R4): chained on v2_pnl at batch grain; folds by max version; ticks its own asset.
+  v2_exceptions  an EXAMPLE downstream consumer: chained on v2_pnl at batch grain; folds by max version; ticks its own asset.
   v2_requeue     operator action: ring the bell again for failed partitions.
 
 Rule: no Dag may put PartitionedAssetTimetable on these assets, and nothing emits keyed events (D20): above ~10k keys per landing
@@ -211,7 +211,7 @@ def v2_ledger():
 
 @dag(dag_id="v2_exceptions", schedule=(PNL | EXC_TICK), catchup=False, max_active_runs=1, tags=["v2", "example-consumer"])
 def v2_exceptions():
-    """EXAMPLE of chaining (requirement R4), the shape every downstream Dag repeats. Scheduled on the PnL asset: a finished batch is
+    """EXAMPLE of downstream chaining, the shape every downstream Dag repeats. Scheduled on the PnL asset: a finished batch is
     one event pointing at its batch key, so this Dag runs at batch grain and can hand the whole partition list to one job of its
     own. Two rules for a consumer that uses triggering events: fold with js.candidates (max version per partition and dataset;
     Airflow does not order triggering_asset_events) and ring an empty tick on your OWN asset when you did work (LESSON 3/5; a

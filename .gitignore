@@ -10,3 +10,5 @@ v2/recordings/*.log
 v2/recordings/run*steps*.json
 v2/recordings/kata_steps*
 v2/recordings/kata_flow*
+v2/recordings/kata_i18n*
+.DS_Store

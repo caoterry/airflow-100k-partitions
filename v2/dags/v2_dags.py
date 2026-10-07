@@ -9,15 +9,16 @@ producer of any of them rings the SAME bell. The journal records, per partition,
 
   v2_land        a producer. ANY arrival goes through it, 3 partitions or 100,000: ONE unkeyed event on the bell asset whose extra
                  is {dataset, version, partitions: {partition: marker}}. It writes no table of ours. No keyed events (D20).
-  v2_debounce    scheduled on the bell, max_active_runs=1: a deferred hold of DEBOUNCE_S, then `forward` reads the whole window from
-                 the bell asset's event log and writes it to ONE state-store key, and emits ONE debounced event that points at it
-                 (D21). The window's lower edge is the newest debounced event's window_end, so cutoff and event are one transaction.
+  v2_debounce    scheduled on the bell, max_active_runs=1: a deferred hold until the window's first land + DEBOUNCE_S, then `forward`
+                 reads the whole window from the bell asset's event log, writes it to ONE state-store key and emits ONE debounced
+                 event that points at it (D21). The window's lower edge is the newest debounced event's window_end, so cutoff and
+                 event are one transaction. `sweep` ticks a private asset only when bells are left past the window (D24).
   v2_batcher     scheduled on the debounced event (and its own tick), max_active_runs = K: claim -> one job (spark, pool v2_spark)
                  -> publish -> finalize. publish emits ONE event on v2_pnl pointing at the batch key. finalize emits FINISHED for the
                  ledger; `tick` rings the batcher's private tick asset so debounced events stamped after this run's queue row are
                  attached to the next run (LESSON 3; the batcher must use triggering events because K runs share no cutoff).
-  v2_ledger      the only writer of done and failed: reads the FINISHED window from the event log after its own cutoff, folds, one
-                 run at a time. Window read, so it needs no tick.
+  v2_ledger      the only writer of done and failed: reads the FINISHED window (cutoff, now - margin] from the event log, folds, one
+                 run at a time; `sweep` ticks a private asset only when events were left inside the margin (D24).
   v2_exceptions  an EXAMPLE downstream consumer: chained on v2_pnl at batch grain; folds by max version; ticks its own asset.
   v2_requeue     operator action: ring the bell again for failed partitions.
 
@@ -36,7 +37,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import journal_store as js
 from airflow.sdk import Asset, Param, Variable, dag, get_current_context, task, task_group
 from airflow.sdk.exceptions import AirflowSkipException
-from airflow.providers.standard.sensors.time_delta import TimeDeltaSensorAsync
+from airflow.providers.standard.sensors.time_delta import TimeDeltaSensor
 
 BELL = Asset(name="v2_inputs_landed", uri="v2://inputs-landed")           # producers ring it: {dataset, version, partitions: {p: marker}}
 DEBOUNCED = Asset(name="v2_inputs_debounced", uri="v2://inputs-debounced") # forward: {"window": key, "window_end", "n_partitions", "bells"}
@@ -44,10 +45,13 @@ BATCHER_TICK = Asset(name="v2_batcher_tick", uri="v2://batcher-tick")       # em
 PNL = Asset(name="v2_pnl", uri="v2://pnl")                                  # one event per finished batch: {"batch": key, ...}; holds the journal
 FINISHED = Asset(name="v2_batches_finished", uri="v2://batches-finished")   # finalize -> ledger: {"batch_ids": [...]}
 EXC_TICK = Asset(name="v2_exceptions_tick", uri="v2://exceptions-tick")     # the example consumer's private tick
+DEBOUNCE_TICK = Asset(name="v2_debounce_tick", uri="v2://debounce-tick")    # debounce's private tick: bells left past the window (margin hole)
+LEDGER_TICK = Asset(name="v2_ledger_tick", uri="v2://ledger-tick")          # ledger's private tick: FINISHED events left inside the margin
 
 K = 3                        # engine slots = the v2_spark pool size = max_active_runs of the batcher (production: 10)
 DEBOUNCE_S = 10              # kata recordings: 10 s window (production about 60; the design value was 30). Interim: Airflow has no debounce for asset-triggered Dags yet.
 DEBOUNCE_MARGIN_S = 5        # bells stamped in the last few seconds wait for the next window (their producer may still be committing)
+LEDGER_MARGIN_S = 5          # same for FINISHED events: K finalizes commit concurrently, so timestamp order is not commit order
 ENGINE_STARTUP_S = 6         # the Spark job is a stand-in: sleep(startup + per-partition time)
 PER_PARTITION_S = 0.5
 def poison() -> set[str]:    # test only: the stand-in engine fails on these partitions; Airflow Variable v2_poison, comma-separated
@@ -55,6 +59,13 @@ def poison() -> set[str]:    # test only: the stand-in engine fails on these par
 
 def _iso(dt: datetime) -> str:
     return dt.astimezone(timezone.utc).isoformat()
+
+def _latest_window_end(inlet_events) -> str | None:
+    """The newest debounced event's window_end (payload events from ring_retry / requeue carry none and are skipped)."""
+    for e in inlet_events[DEBOUNCED].ascending(False).limit(20):
+        if (e.extra or {}).get("window_end"):
+            return e.extra["window_end"]
+    return None
 
 
 @dag(dag_id="v2_land", schedule=None, catchup=False,      # schedule=None: a run partition_key would make the events keyed again (D20)
@@ -71,13 +82,16 @@ def v2_land():
     land()
 
 
-@dag(dag_id="v2_debounce", schedule=[BELL], catchup=False, max_active_runs=1, tags=["v2"])
+@dag(dag_id="v2_debounce", schedule=(BELL | DEBOUNCE_TICK), catchup=False, max_active_runs=1, tags=["v2"])
 def v2_debounce():
     """Idle-time accumulation from stock parts: hold the first bell for DEBOUNCE_S seconds (deferred, no worker held), then forward
-    the merged window. Bells that ring during the hold start this Dag's next run (max_active_runs=1 keeps one queue row); that run
-    reads its window from the event log, so nothing strands and no tick is needed. INTERIM for a native debounce / count-or-age
-    wait policy on asset-triggered Dags (upstream proposal); this Dag is deleted when that ships."""
-    hold = TimeDeltaSensorAsync(task_id="hold", delta=timedelta(seconds=DEBOUNCE_S))
+    the merged window. Bells that land during a run coalesce into one queue row (max_active_runs=1) and start exactly one next
+    run, which reads its window from the event log. The hold's deadline is the run's run_after (the first land of the window) +
+    DEBOUNCE_S, so a run created late does not wait twice. One gap remains and `sweep` closes it: a bell that lands while the next
+    run is still queued has no queue row of its own, and if it falls inside the margin that run leaves it, so sweep rings the
+    private tick when bells are left past the cutoff (D24). INTERIM for a native debounce / count-or-age wait policy on
+    asset-triggered Dags (upstream proposal); this Dag is deleted when that ships."""
+    hold = TimeDeltaSensor(task_id="hold", delta=timedelta(seconds=DEBOUNCE_S), deferrable=True)
 
     @task(inlets=[BELL, DEBOUNCED, PNL], outlets=[DEBOUNCED], multiple_outputs=False)
     def forward(*, inlet_events=None, asset_state_store=None, outlet_events=None) -> dict:
@@ -85,10 +99,7 @@ def v2_debounce():
         so the cutoff advances in the same transaction that publishes the event: a crash can never lose a window); upper edge =
         now - margin. The window's partitions go to a state-store key; the event carries a pointer (D21)."""
         store = asset_state_store[PNL]
-        cutoff = None
-        for e in inlet_events[DEBOUNCED].ascending(False).limit(20):       # skip payload events (ring_retry, requeue) without window_end
-            if (e.extra or {}).get("window_end"):
-                cutoff = e.extra["window_end"]; break
+        cutoff = _latest_window_end(inlet_events)
         now = datetime.now(timezone.utc)
         if cutoff is None:
             cutoff = _iso(now - timedelta(days=1))                          # first window ever: do not read the whole history
@@ -104,7 +115,19 @@ def v2_debounce():
         outlet_events[DEBOUNCED].extra = {"window": key, "window_end": window_end, "n_partitions": len(merged), "bells": len(window)}
         return {"window": key, "n_partitions": len(merged), "bells": len(window)}
 
-    hold >> forward()
+    @task(inlets=[BELL, DEBOUNCED], outlets=[DEBOUNCE_TICK], trigger_rule="all_done")
+    def sweep(*, inlet_events=None, outlet_events=None) -> None:
+        """Ring the private tick only when bells with partitions are left after the cutoff forward just published (inside the margin,
+        or forward failed). Skips in the usual case, so the chain ends. A declared outlet emits on every success (LESSON 1), hence
+        a task of its own that skips."""
+        cutoff = _latest_window_end(inlet_events) or _iso(datetime.now(timezone.utc) - timedelta(days=1))
+        cutoff_dt = datetime.fromisoformat(cutoff)
+        pending = [e for e in inlet_events[BELL].after(cutoff) if e.timestamp > cutoff_dt and (e.extra or {}).get("partitions")]
+        if not pending:
+            raise AirflowSkipException("no bells left after the window")
+        outlet_events[DEBOUNCE_TICK].extra = {"tick": True, "pending_bells": len(pending)}
+
+    hold >> forward() >> sweep()
 
 
 @dag(dag_id="v2_batcher", schedule=(DEBOUNCED | BATCHER_TICK), catchup=False, max_active_runs=K, tags=["v2"])
@@ -190,23 +213,40 @@ def v2_batcher():
     check(fin)
 
 
-@dag(dag_id="v2_ledger", schedule=[FINISHED], catchup=False, max_active_runs=1, tags=["v2"])
+@dag(dag_id="v2_ledger", schedule=(FINISHED | LEDGER_TICK), catchup=False, max_active_runs=1, tags=["v2"])
 def v2_ledger():
-    """The only writer of done and failed. One run at a time; it reads every FINISHED event stamped after its own cutoff from the
-    event log (not only the events attached to the run), so finished batches that arrive while it folds are picked up by the next
-    run and nothing strands (LESSON 5). done/failed are written before the cutoff: a crash between them re-folds, which is idempotent."""
-    @task(inlets=[FINISHED, PNL], multiple_outputs=False)
+    """The only writer of done and failed. One run at a time; it reads the FINISHED events in (ledger/cutoff, now - margin] from the
+    event log (not only the events attached to the run). The margin matters because K finalizes commit concurrently: an event
+    can become visible after a later-stamped one, and a cutoff past it would skip it forever. Events left inside the margin are
+    swept by the private tick (D24). `settle` first waits (deferred) until the triggering event is older than the margin, so the
+    usual run folds everything in one pass and the tick stays rare. done/failed are written before the cutoff: a crash between
+    them re-folds, which is idempotent."""
+    settle = TimeDeltaSensor(task_id="settle", delta=timedelta(seconds=LEDGER_MARGIN_S), deferrable=True)
+
+    @task(inlets=[FINISHED, PNL], retries=2, retry_delay=timedelta(seconds=5), multiple_outputs=False)
     def fold(*, inlet_events=None, asset_state_store=None) -> dict:
         store = asset_state_store[PNL]
         cutoff = store.get("ledger/cutoff") or _iso(datetime.now(timezone.utc) - timedelta(days=1))
         cutoff_dt = datetime.fromisoformat(cutoff)
-        events = [e for e in inlet_events[FINISHED].after(cutoff) if e.timestamp > cutoff_dt]
+        upper = datetime.now(timezone.utc) - timedelta(seconds=LEDGER_MARGIN_S)
+        after = [e for e in inlet_events[FINISHED].after(cutoff) if e.timestamp > cutoff_dt]
+        events = [e for e in after if e.timestamp <= upper]
         ids = [bid for e in events for bid in ((e.extra or {}).get("batch_ids") or [])]
         result = js.fold(store, ids) if ids else {"done": 0, "failed": 0, "partitions_tracked": None}
         if events:
             store.set("ledger/cutoff", _iso(max(e.timestamp for e in events)))
-        return {**result, "finished_events": len(events)}
-    fold()
+        return {**result, "finished_events": len(events), "pending": len(after) - len(events)}
+
+    @task(outlets=[LEDGER_TICK], trigger_rule="all_done")
+    def sweep(result: dict, *, outlet_events=None) -> None:
+        """Ring the ledger's private tick only when FINISHED events were left inside the margin; skips otherwise."""
+        if not result or not result.get("pending"):
+            raise AirflowSkipException("nothing left inside the margin")
+        outlet_events[LEDGER_TICK].extra = {"tick": True, "pending": result["pending"]}
+
+    folded = fold()
+    settle >> folded
+    sweep(folded)
 
 
 @dag(dag_id="v2_exceptions", schedule=(PNL | EXC_TICK), catchup=False, max_active_runs=1, tags=["v2", "example-consumer"])

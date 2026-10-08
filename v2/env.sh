@@ -5,7 +5,7 @@
 export V2_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 export REPO_ROOT="$(cd "$V2_ROOT/.." && pwd)"
 export AIRFLOW_HOME="$V2_ROOT/airflow_home"
-export AIRFLOW__DATABASE__SQL_ALCHEMY_CONN="postgresql+psycopg2://airflow:airflow@localhost:5433/airflow_v2"
+export AIRFLOW__DATABASE__SQL_ALCHEMY_CONN="postgresql+psycopg2://airflow:airflow@localhost:5433/${V2_DB:-airflow_v2}"   # V2_DB=<name>: a second metadata DB (kata recordings) without touching airflow_v2
 export V2_JOURNAL_DSN="postgresql://airflow:airflow@localhost:5433/v2_journal"
 export AIRFLOW__CORE__EXECUTOR=LocalExecutor
 export AIRFLOW__CORE__PARALLELISM=16

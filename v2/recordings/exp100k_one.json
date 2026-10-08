@@ -1,0 +1,407 @@
+{
+ "scenario": "one",
+ "version": 1,
+ "per_partition_s": 0.0002,
+ "debounce_s": 10,
+ "load_avg_start": [
+  2.83984375,
+  6.23779296875,
+  8.8984375
+ ],
+ "posts": {
+  "posts": 1,
+  "ok": 1,
+  "avg_s": 0.616,
+  "max_s": 0.616,
+  "max_body_bytes": 2400080,
+  "first_sent": "2026-10-08T01:16:36.896448+00:00",
+  "last_sent": "2026-10-08T01:16:36.896448+00:00"
+ },
+ "wait_s": 97.0,
+ "slept": 0.0,
+ "metrics": {
+  "asset_events": [
+   {
+    "asset": "v2_batcher_tick",
+    "rows": 1,
+    "max_extra_bytes": 14
+   },
+   {
+    "asset": "v2_batches_finished",
+    "rows": 1,
+    "max_extra_bytes": 79
+   },
+   {
+    "asset": "v2_exceptions_tick",
+    "rows": 1,
+    "max_extra_bytes": 14
+   },
+   {
+    "asset": "v2_inputs_debounced",
+    "rows": 1,
+    "max_extra_bytes": 139
+   },
+   {
+    "asset": "v2_inputs_landed",
+    "rows": 1,
+    "max_extra_bytes": 2400077
+   },
+   {
+    "asset": "v2_pnl",
+    "rows": 1,
+    "max_extra_bytes": 130
+   }
+  ],
+  "dag_runs": [
+   {
+    "dag": "v2_batcher",
+    "state": "success",
+    "n": 2
+   },
+   {
+    "dag": "v2_debounce",
+    "state": "success",
+    "n": 1
+   },
+   {
+    "dag": "v2_exceptions",
+    "state": "success",
+    "n": 2
+   },
+   {
+    "dag": "v2_ledger",
+    "state": "success",
+    "n": 1
+   }
+  ],
+  "tasks": [
+   {
+    "dag": "v2_batcher",
+    "task": "check",
+    "state": "success",
+    "n": 2,
+    "avg_s": 1.2,
+    "max_s": 1.4,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "claim",
+    "state": "success",
+    "n": 2,
+    "avg_s": 4.9,
+    "max_s": 8.8,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "finalize",
+    "state": "skipped",
+    "n": 1,
+    "avg_s": 0.8,
+    "max_s": 0.8,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "finalize",
+    "state": "success",
+    "n": 1,
+    "avg_s": 8.2,
+    "max_s": 8.2,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "ring_retry",
+    "state": "skipped",
+    "n": 2,
+    "avg_s": 1.2,
+    "max_s": 1.4,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "run_batch.publish",
+    "state": "skipped",
+    "n": 1,
+    "avg_s": 0.0,
+    "max_s": 0.0,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "run_batch.publish",
+    "state": "success",
+    "n": 1,
+    "avg_s": 8.6,
+    "max_s": 8.6,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "run_batch.spark",
+    "state": "success",
+    "n": 1,
+    "avg_s": 37.0,
+    "max_s": 37.0,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "tick",
+    "state": "skipped",
+    "n": 1,
+    "avg_s": 1.1,
+    "max_s": 1.1,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "tick",
+    "state": "success",
+    "n": 1,
+    "avg_s": 1.4,
+    "max_s": 1.4,
+    "retries": 0
+   },
+   {
+    "dag": "v2_debounce",
+    "task": "forward",
+    "state": "success",
+    "n": 1,
+    "avg_s": 3.6,
+    "max_s": 3.6,
+    "retries": 0
+   },
+   {
+    "dag": "v2_debounce",
+    "task": "hold",
+    "state": "success",
+    "n": 1,
+    "avg_s": 7.8,
+    "max_s": 7.8,
+    "retries": 0
+   },
+   {
+    "dag": "v2_debounce",
+    "task": "plan",
+    "state": "success",
+    "n": 1,
+    "avg_s": 2.6,
+    "max_s": 2.6,
+    "retries": 0
+   },
+   {
+    "dag": "v2_debounce",
+    "task": "sweep",
+    "state": "skipped",
+    "n": 1,
+    "avg_s": 2.7,
+    "max_s": 2.7,
+    "retries": 0
+   },
+   {
+    "dag": "v2_exceptions",
+    "task": "review",
+    "state": "success",
+    "n": 2,
+    "avg_s": 2.9,
+    "max_s": 4.6,
+    "retries": 0
+   },
+   {
+    "dag": "v2_exceptions",
+    "task": "sweep",
+    "state": "skipped",
+    "n": 1,
+    "avg_s": 1.2,
+    "max_s": 1.2,
+    "retries": 0
+   },
+   {
+    "dag": "v2_exceptions",
+    "task": "sweep",
+    "state": "success",
+    "n": 1,
+    "avg_s": 1.0,
+    "max_s": 1.0,
+    "retries": 0
+   },
+   {
+    "dag": "v2_ledger",
+    "task": "fold",
+    "state": "success",
+    "n": 1,
+    "avg_s": 4.9,
+    "max_s": 4.9,
+    "retries": 0
+   },
+   {
+    "dag": "v2_ledger",
+    "task": "settle",
+    "state": "success",
+    "n": 1,
+    "avg_s": 7.0,
+    "max_s": 7.0,
+    "retries": 0
+   },
+   {
+    "dag": "v2_ledger",
+    "task": "sweep",
+    "state": "skipped",
+    "n": 1,
+    "avg_s": 0.8,
+    "max_s": 0.8,
+    "retries": 0
+   }
+  ],
+  "bad_tasks": [],
+  "windows": [
+   {
+    "ts": "2026-10-08T01:16:53.181341+00:00",
+    "bells": 1,
+    "n_partitions": 100000,
+    "kind": "window"
+   }
+  ],
+  "batcher_runs": [
+   {
+    "run_id": "asset_triggered__2026-10-08T01:16:53.183185+00:00_fm0OhahX",
+    "state": "success",
+    "start": "2026-10-08T01:16:53.734219+00:00",
+    "secs": 65.7,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     100000
+    ],
+    "tasks": {
+     "claim": [
+      8.8,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      37.0,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      8.6,
+      "success"
+     ],
+     "finalize": [
+      8.2,
+      "success"
+     ],
+     "ring_retry": [
+      1.4,
+      "skipped"
+     ],
+     "tick": [
+      1.4,
+      "success"
+     ],
+     "check": [
+      1.4,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:17:59.335247+00:00_4bRgNcmS",
+    "state": "success",
+    "start": "2026-10-08T01:17:59.412100+00:00",
+    "secs": 5.2,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      0.9,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      0.8,
+      "skipped"
+     ],
+     "tick": [
+      1.1,
+      "skipped"
+     ],
+     "check": [
+      1.0,
+      "success"
+     ],
+     "ring_retry": [
+      1.0,
+      "skipped"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   }
+  ],
+  "batcher_runs_working": 1,
+  "jobs_total": 1,
+  "max_concurrent_batcher_runs": 2,
+  "max_concurrent_spark": 1,
+  "timeline": {
+   "first_landing": "2026-10-08T01:16:37.196033+00:00",
+   "last_landing": "2026-10-08T01:16:37.196033+00:00",
+   "first_forward": "2026-10-08T01:16:53.181341+00:00",
+   "last_forward": "2026-10-08T01:16:53.181341+00:00",
+   "first_publish": "2026-10-08T01:17:49.231072+00:00",
+   "last_publish": "2026-10-08T01:17:49.231072+00:00",
+   "first_finalize": "2026-10-08T01:17:57.559962+00:00",
+   "last_finalize": "2026-10-08T01:17:57.559962+00:00",
+   "last_fold_end": "2026-10-08T01:18:10.144039+00:00"
+  },
+  "state_store": [
+   {
+    "key": "batch",
+    "n": 1,
+    "max_bytes": 4400078
+   },
+   {
+    "key": "done",
+    "n": 1,
+    "max_bytes": 4400000
+   },
+   {
+    "key": "failed",
+    "n": 1,
+    "max_bytes": 2
+   },
+   {
+    "key": "ledger",
+    "n": 1,
+    "max_bytes": 34
+   },
+   {
+    "key": "window",
+    "n": 1,
+    "max_bytes": 4400078
+   }
+  ]
+ },
+ "derived": {
+  "first_landing_to_last_fold_s": 92.9,
+  "last_landing_to_last_fold_s": 92.9,
+  "first_landing_to_first_forward_s": 16.0,
+  "windows": 1,
+  "jobs": 1,
+  "working_batcher_runs": 1,
+  "failed_or_retried_tasks": 0
+ },
+ "load_avg_end": [
+  4.87548828125,
+  5.96142578125,
+  8.4912109375
+ ]
+}

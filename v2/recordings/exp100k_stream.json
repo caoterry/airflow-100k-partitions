@@ -1,0 +1,2326 @@
+{
+ "scenario": "stream",
+ "version": 3,
+ "per_partition_s": 0.0002,
+ "debounce_s": 10,
+ "load_avg_start": [
+  3.47998046875,
+  4.18798828125,
+  6.5439453125
+ ],
+ "posts": {
+  "posts": 200,
+  "ok": 200,
+  "avg_s": 0.249,
+  "max_s": 2.218,
+  "max_body_bytes": 12080,
+  "first_sent": "2026-10-08T01:25:27.756337+00:00",
+  "last_sent": "2026-10-08T01:30:29.509808+00:00"
+ },
+ "wait_s": 38.0,
+ "slept": 0.0,
+ "metrics": {
+  "asset_events": [
+   {
+    "asset": "v2_batcher_tick",
+    "rows": 23,
+    "max_extra_bytes": 14
+   },
+   {
+    "asset": "v2_batches_finished",
+    "rows": 23,
+    "max_extra_bytes": 79
+   },
+   {
+    "asset": "v2_exceptions_tick",
+    "rows": 23,
+    "max_extra_bytes": 14
+   },
+   {
+    "asset": "v2_inputs_debounced",
+    "rows": 23,
+    "max_extra_bytes": 138
+   },
+   {
+    "asset": "v2_inputs_landed",
+    "rows": 200,
+    "max_extra_bytes": 12077
+   },
+   {
+    "asset": "v2_pnl",
+    "rows": 23,
+    "max_extra_bytes": 128
+   }
+  ],
+  "dag_runs": [
+   {
+    "dag": "v2_batcher",
+    "state": "success",
+    "n": 46
+   },
+   {
+    "dag": "v2_debounce",
+    "state": "success",
+    "n": 24
+   },
+   {
+    "dag": "v2_exceptions",
+    "state": "success",
+    "n": 46
+   },
+   {
+    "dag": "v2_ledger",
+    "state": "success",
+    "n": 23
+   }
+  ],
+  "tasks": [
+   {
+    "dag": "v2_batcher",
+    "task": "check",
+    "state": "success",
+    "n": 46,
+    "avg_s": 1.6,
+    "max_s": 3.1,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "claim",
+    "state": "success",
+    "n": 46,
+    "avg_s": 3.0,
+    "max_s": 7.6,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "finalize",
+    "state": "skipped",
+    "n": 23,
+    "avg_s": 1.1,
+    "max_s": 2.1,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "finalize",
+    "state": "success",
+    "n": 23,
+    "avg_s": 2.3,
+    "max_s": 3.4,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "ring_retry",
+    "state": "skipped",
+    "n": 46,
+    "avg_s": 1.6,
+    "max_s": 3.2,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "run_batch.publish",
+    "state": "skipped",
+    "n": 23,
+    "avg_s": 0.0,
+    "max_s": 0.0,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "run_batch.publish",
+    "state": "success",
+    "n": 23,
+    "avg_s": 2.3,
+    "max_s": 3.9,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "run_batch.spark",
+    "state": "success",
+    "n": 23,
+    "avg_s": 9.6,
+    "max_s": 12.1,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "tick",
+    "state": "skipped",
+    "n": 23,
+    "avg_s": 1.7,
+    "max_s": 3.1,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "tick",
+    "state": "success",
+    "n": 23,
+    "avg_s": 1.5,
+    "max_s": 2.5,
+    "retries": 0
+   },
+   {
+    "dag": "v2_debounce",
+    "task": "forward",
+    "state": "skipped",
+    "n": 1,
+    "avg_s": 0.0,
+    "max_s": 0.0,
+    "retries": 0
+   },
+   {
+    "dag": "v2_debounce",
+    "task": "forward",
+    "state": "success",
+    "n": 23,
+    "avg_s": 1.2,
+    "max_s": 1.7,
+    "retries": 0
+   },
+   {
+    "dag": "v2_debounce",
+    "task": "hold",
+    "state": "skipped",
+    "n": 1,
+    "avg_s": 0.0,
+    "max_s": 0.0,
+    "retries": 0
+   },
+   {
+    "dag": "v2_debounce",
+    "task": "hold",
+    "state": "success",
+    "n": 23,
+    "avg_s": 5.8,
+    "max_s": 10.4,
+    "retries": 0
+   },
+   {
+    "dag": "v2_debounce",
+    "task": "plan",
+    "state": "skipped",
+    "n": 1,
+    "avg_s": 3.1,
+    "max_s": 3.1,
+    "retries": 0
+   },
+   {
+    "dag": "v2_debounce",
+    "task": "plan",
+    "state": "success",
+    "n": 23,
+    "avg_s": 1.8,
+    "max_s": 3.3,
+    "retries": 0
+   },
+   {
+    "dag": "v2_debounce",
+    "task": "sweep",
+    "state": "skipped",
+    "n": 24,
+    "avg_s": 2.3,
+    "max_s": 3.6,
+    "retries": 0
+   },
+   {
+    "dag": "v2_exceptions",
+    "task": "review",
+    "state": "success",
+    "n": 46,
+    "avg_s": 1.5,
+    "max_s": 3.1,
+    "retries": 0
+   },
+   {
+    "dag": "v2_exceptions",
+    "task": "sweep",
+    "state": "skipped",
+    "n": 23,
+    "avg_s": 1.0,
+    "max_s": 1.4,
+    "retries": 0
+   },
+   {
+    "dag": "v2_exceptions",
+    "task": "sweep",
+    "state": "success",
+    "n": 23,
+    "avg_s": 1.6,
+    "max_s": 2.8,
+    "retries": 0
+   },
+   {
+    "dag": "v2_ledger",
+    "task": "fold",
+    "state": "success",
+    "n": 23,
+    "avg_s": 6.8,
+    "max_s": 8.9,
+    "retries": 0
+   },
+   {
+    "dag": "v2_ledger",
+    "task": "settle",
+    "state": "success",
+    "n": 23,
+    "avg_s": 3.9,
+    "max_s": 8.7,
+    "retries": 0
+   },
+   {
+    "dag": "v2_ledger",
+    "task": "sweep",
+    "state": "skipped",
+    "n": 23,
+    "avg_s": 1.2,
+    "max_s": 1.7,
+    "retries": 0
+   }
+  ],
+  "bad_tasks": [],
+  "windows": [
+   {
+    "ts": "2026-10-08T01:25:41.036085+00:00",
+    "bells": 6,
+    "n_partitions": 3000,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:25:51.667713+00:00",
+    "bells": 7,
+    "n_partitions": 3500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:26:02.103240+00:00",
+    "bells": 7,
+    "n_partitions": 3500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:26:16.219157+00:00",
+    "bells": 9,
+    "n_partitions": 4500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:26:27.904562+00:00",
+    "bells": 8,
+    "n_partitions": 4000,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:26:41.546241+00:00",
+    "bells": 9,
+    "n_partitions": 4500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:26:58.168453+00:00",
+    "bells": 11,
+    "n_partitions": 5500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:27:13.413361+00:00",
+    "bells": 9,
+    "n_partitions": 4500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:27:24.100544+00:00",
+    "bells": 8,
+    "n_partitions": 4000,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:27:38.180350+00:00",
+    "bells": 9,
+    "n_partitions": 4500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:27:50.859347+00:00",
+    "bells": 8,
+    "n_partitions": 4000,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:28:02.272869+00:00",
+    "bells": 7,
+    "n_partitions": 3500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:28:17.629057+00:00",
+    "bells": 10,
+    "n_partitions": 5000,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:28:32.557446+00:00",
+    "bells": 10,
+    "n_partitions": 5000,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:28:46.440529+00:00",
+    "bells": 10,
+    "n_partitions": 5000,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:28:59.271291+00:00",
+    "bells": 8,
+    "n_partitions": 4000,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:29:11.374501+00:00",
+    "bells": 8,
+    "n_partitions": 4000,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:29:25.194687+00:00",
+    "bells": 9,
+    "n_partitions": 4500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:29:39.186817+00:00",
+    "bells": 9,
+    "n_partitions": 4500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:29:55.247350+00:00",
+    "bells": 11,
+    "n_partitions": 5500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:30:08.683284+00:00",
+    "bells": 9,
+    "n_partitions": 4500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:30:22.490820+00:00",
+    "bells": 9,
+    "n_partitions": 4500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:30:37.246871+00:00",
+    "bells": 9,
+    "n_partitions": 4500,
+    "kind": "window"
+   }
+  ],
+  "batcher_runs": [
+   {
+    "run_id": "asset_triggered__2026-10-08T01:25:41.038549+00:00_VH2T51JN",
+    "state": "success",
+    "start": "2026-10-08T01:25:41.162047+00:00",
+    "secs": 18.1,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     3000
+    ],
+    "tasks": {
+     "claim": [
+      3.1,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      7.8,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      2.1,
+      "success"
+     ],
+     "finalize": [
+      1.3,
+      "success"
+     ],
+     "ring_retry": [
+      1.3,
+      "skipped"
+     ],
+     "check": [
+      1.3,
+      "success"
+     ],
+     "tick": [
+      1.3,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:25:51.669987+00:00_9PeQHzmq",
+    "state": "success",
+    "start": "2026-10-08T01:25:51.937847+00:00",
+    "secs": 20.3,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     3500
+    ],
+    "tasks": {
+     "claim": [
+      3.5,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      9.5,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      1.7,
+      "success"
+     ],
+     "finalize": [
+      2.2,
+      "success"
+     ],
+     "check": [
+      1.3,
+      "success"
+     ],
+     "ring_retry": [
+      1.3,
+      "skipped"
+     ],
+     "tick": [
+      1.3,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:25:58.476656+00:00_kX4ilzdz",
+    "state": "success",
+    "start": "2026-10-08T01:25:59.088343+00:00",
+    "secs": 6.7,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      1.1,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      1.0,
+      "skipped"
+     ],
+     "check": [
+      1.9,
+      "success"
+     ],
+     "ring_retry": [
+      1.9,
+      "skipped"
+     ],
+     "tick": [
+      1.9,
+      "skipped"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:26:02.105071+00:00_BCDh6vG4",
+    "state": "success",
+    "start": "2026-10-08T01:26:02.360294+00:00",
+    "secs": 22.9,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     3500
+    ],
+    "tasks": {
+     "claim": [
+      4.7,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      9.6,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      3.9,
+      "success"
+     ],
+     "finalize": [
+      2.1,
+      "success"
+     ],
+     "check": [
+      1.4,
+      "success"
+     ],
+     "ring_retry": [
+      1.4,
+      "skipped"
+     ],
+     "tick": [
+      1.4,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:26:11.849106+00:00_tx5kVsxo",
+    "state": "success",
+    "start": "2026-10-08T01:26:12.105642+00:00",
+    "secs": 5.1,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      1.0,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      0.8,
+      "skipped"
+     ],
+     "ring_retry": [
+      1.3,
+      "skipped"
+     ],
+     "check": [
+      1.2,
+      "success"
+     ],
+     "tick": [
+      1.3,
+      "skipped"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:26:16.224108+00:00_oruegWBU",
+    "state": "success",
+    "start": "2026-10-08T01:26:16.702554+00:00",
+    "secs": 22.0,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     4500
+    ],
+    "tasks": {
+     "claim": [
+      4.2,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      10.0,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      1.6,
+      "success"
+     ],
+     "finalize": [
+      2.2,
+      "success"
+     ],
+     "ring_retry": [
+      2.1,
+      "skipped"
+     ],
+     "check": [
+      2.1,
+      "success"
+     ],
+     "tick": [
+      2.1,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:26:25.115715+00:00_4F9fqdHZ",
+    "state": "success",
+    "start": "2026-10-08T01:26:25.250456+00:00",
+    "secs": 5.0,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      1.0,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      1.0,
+      "skipped"
+     ],
+     "ring_retry": [
+      1.3,
+      "skipped"
+     ],
+     "tick": [
+      1.2,
+      "skipped"
+     ],
+     "check": [
+      1.2,
+      "success"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:26:27.906834+00:00_9vTZyQeG",
+    "state": "success",
+    "start": "2026-10-08T01:26:28.428193+00:00",
+    "secs": 23.9,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     4000
+    ],
+    "tasks": {
+     "claim": [
+      3.9,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      9.9,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      3.2,
+      "success"
+     ],
+     "finalize": [
+      3.0,
+      "success"
+     ],
+     "check": [
+      1.3,
+      "success"
+     ],
+     "ring_retry": [
+      1.3,
+      "skipped"
+     ],
+     "tick": [
+      1.3,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:26:38.509016+00:00_hKXYxg7q",
+    "state": "success",
+    "start": "2026-10-08T01:26:38.704244+00:00",
+    "secs": 7.1,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      1.0,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      0.9,
+      "skipped"
+     ],
+     "ring_retry": [
+      3.2,
+      "skipped"
+     ],
+     "check": [
+      1.7,
+      "success"
+     ],
+     "tick": [
+      1.8,
+      "skipped"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:26:41.548076+00:00_bNwxb457",
+    "state": "success",
+    "start": "2026-10-08T01:26:41.942676+00:00",
+    "secs": 24.3,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     4500
+    ],
+    "tasks": {
+     "claim": [
+      4.8,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      10.0,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      1.4,
+      "success"
+     ],
+     "finalize": [
+      3.4,
+      "success"
+     ],
+     "ring_retry": [
+      2.5,
+      "skipped"
+     ],
+     "check": [
+      2.5,
+      "success"
+     ],
+     "tick": [
+      2.5,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:26:51.905510+00:00_XZIL1P8G",
+    "state": "success",
+    "start": "2026-10-08T01:26:52.199857+00:00",
+    "secs": 5.4,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      0.9,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      0.8,
+      "skipped"
+     ],
+     "check": [
+      1.1,
+      "success"
+     ],
+     "ring_retry": [
+      1.1,
+      "skipped"
+     ],
+     "tick": [
+      1.1,
+      "skipped"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:26:58.170615+00:00_HfFHvcLG",
+    "state": "success",
+    "start": "2026-10-08T01:26:58.261720+00:00",
+    "secs": 24.5,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     5500
+    ],
+    "tasks": {
+     "claim": [
+      7.6,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      10.0,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      1.4,
+      "success"
+     ],
+     "finalize": [
+      1.6,
+      "success"
+     ],
+     "check": [
+      1.4,
+      "success"
+     ],
+     "tick": [
+      1.4,
+      "success"
+     ],
+     "ring_retry": [
+      1.4,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:27:05.885456+00:00_Y0poyLaP",
+    "state": "success",
+    "start": "2026-10-08T01:27:06.191847+00:00",
+    "secs": 4.8,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      1.5,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      0.9,
+      "skipped"
+     ],
+     "check": [
+      1.2,
+      "success"
+     ],
+     "ring_retry": [
+      1.3,
+      "skipped"
+     ],
+     "tick": [
+      1.2,
+      "skipped"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:27:13.415644+00:00_kUwsdrML",
+    "state": "success",
+    "start": "2026-10-08T01:27:13.554140+00:00",
+    "secs": 20.8,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     4500
+    ],
+    "tasks": {
+     "claim": [
+      4.2,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      8.9,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      2.1,
+      "success"
+     ],
+     "finalize": [
+      2.1,
+      "success"
+     ],
+     "ring_retry": [
+      1.5,
+      "skipped"
+     ],
+     "check": [
+      1.4,
+      "success"
+     ],
+     "tick": [
+      1.5,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:27:22.126934+00:00_vklnD4r4",
+    "state": "success",
+    "start": "2026-10-08T01:27:22.679302+00:00",
+    "secs": 6.9,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      0.9,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      1.9,
+      "skipped"
+     ],
+     "tick": [
+      1.9,
+      "skipped"
+     ],
+     "check": [
+      1.8,
+      "success"
+     ],
+     "ring_retry": [
+      1.8,
+      "skipped"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:27:24.103232+00:00_vgDSMU8a",
+    "state": "success",
+    "start": "2026-10-08T01:27:24.376992+00:00",
+    "secs": 24.2,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     4000
+    ],
+    "tasks": {
+     "claim": [
+      4.4,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      10.3,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      3.7,
+      "success"
+     ],
+     "finalize": [
+      2.8,
+      "success"
+     ],
+     "tick": [
+      1.1,
+      "success"
+     ],
+     "check": [
+      1.1,
+      "success"
+     ],
+     "ring_retry": [
+      1.1,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:27:34.089421+00:00_kXKvlKPK",
+    "state": "success",
+    "start": "2026-10-08T01:27:34.276429+00:00",
+    "secs": 7.7,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      1.7,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      0.9,
+      "skipped"
+     ],
+     "ring_retry": [
+      3.1,
+      "skipped"
+     ],
+     "tick": [
+      3.1,
+      "skipped"
+     ],
+     "check": [
+      3.1,
+      "success"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:27:38.183354+00:00_FQKRlYXe",
+    "state": "success",
+    "start": "2026-10-08T01:27:38.479064+00:00",
+    "secs": 21.9,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     4500
+    ],
+    "tasks": {
+     "claim": [
+      5.1,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      10.0,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      1.4,
+      "success"
+     ],
+     "finalize": [
+      2.0,
+      "success"
+     ],
+     "ring_retry": [
+      1.5,
+      "skipped"
+     ],
+     "tick": [
+      1.5,
+      "success"
+     ],
+     "check": [
+      1.4,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:27:48.522357+00:00_PZpSvIwF",
+    "state": "success",
+    "start": "2026-10-08T01:27:48.588280+00:00",
+    "secs": 6.1,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      1.0,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      1.1,
+      "skipped"
+     ],
+     "tick": [
+      1.6,
+      "skipped"
+     ],
+     "ring_retry": [
+      1.6,
+      "skipped"
+     ],
+     "check": [
+      1.6,
+      "success"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:27:50.861702+00:00_qPo5Utco",
+    "state": "success",
+    "start": "2026-10-08T01:27:50.995197+00:00",
+    "secs": 23.8,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     4000
+    ],
+    "tasks": {
+     "claim": [
+      4.1,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      11.0,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      2.6,
+      "success"
+     ],
+     "finalize": [
+      2.7,
+      "success"
+     ],
+     "ring_retry": [
+      1.2,
+      "skipped"
+     ],
+     "check": [
+      1.2,
+      "success"
+     ],
+     "tick": [
+      1.2,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:27:59.841264+00:00_otM0TSNH",
+    "state": "success",
+    "start": "2026-10-08T01:28:00.298611+00:00",
+    "secs": 6.7,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      1.5,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      1.1,
+      "skipped"
+     ],
+     "check": [
+      2.2,
+      "success"
+     ],
+     "tick": [
+      2.2,
+      "skipped"
+     ],
+     "ring_retry": [
+      2.2,
+      "skipped"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:28:02.274938+00:00_WANeGJkc",
+    "state": "success",
+    "start": "2026-10-08T01:28:02.824953+00:00",
+    "secs": 22.1,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     3500
+    ],
+    "tasks": {
+     "claim": [
+      4.5,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      8.6,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      1.6,
+      "success"
+     ],
+     "finalize": [
+      2.6,
+      "success"
+     ],
+     "tick": [
+      1.9,
+      "success"
+     ],
+     "ring_retry": [
+      1.9,
+      "skipped"
+     ],
+     "check": [
+      1.8,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:28:14.253441+00:00_T3KWk7sj",
+    "state": "success",
+    "start": "2026-10-08T01:28:14.621218+00:00",
+    "secs": 7.2,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      1.0,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      1.4,
+      "skipped"
+     ],
+     "tick": [
+      2.7,
+      "skipped"
+     ],
+     "ring_retry": [
+      2.7,
+      "skipped"
+     ],
+     "check": [
+      2.6,
+      "success"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:28:17.631231+00:00_qTizLpgU",
+    "state": "success",
+    "start": "2026-10-08T01:28:18.056494+00:00",
+    "secs": 24.8,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     5000
+    ],
+    "tasks": {
+     "claim": [
+      4.9,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      10.1,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      2.9,
+      "success"
+     ],
+     "finalize": [
+      3.4,
+      "success"
+     ],
+     "tick": [
+      1.2,
+      "success"
+     ],
+     "check": [
+      1.2,
+      "success"
+     ],
+     "ring_retry": [
+      1.2,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:28:24.401637+00:00_tahrBrGm",
+    "state": "success",
+    "start": "2026-10-08T01:28:24.826112+00:00",
+    "secs": 5.9,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      1.2,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      1.7,
+      "skipped"
+     ],
+     "tick": [
+      1.2,
+      "skipped"
+     ],
+     "ring_retry": [
+      1.2,
+      "skipped"
+     ],
+     "check": [
+      1.2,
+      "success"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:28:32.560113+00:00_xLrU9P9o",
+    "state": "success",
+    "start": "2026-10-08T01:28:32.593898+00:00",
+    "secs": 22.0,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     5000
+    ],
+    "tasks": {
+     "claim": [
+      5.3,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      9.7,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      1.5,
+      "success"
+     ],
+     "finalize": [
+      2.2,
+      "success"
+     ],
+     "ring_retry": [
+      1.6,
+      "skipped"
+     ],
+     "tick": [
+      1.6,
+      "success"
+     ],
+     "check": [
+      1.6,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:28:42.154058+00:00_s3QXE0HB",
+    "state": "success",
+    "start": "2026-10-08T01:28:42.724472+00:00",
+    "secs": 6.0,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      1.0,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      0.9,
+      "skipped"
+     ],
+     "check": [
+      1.3,
+      "success"
+     ],
+     "ring_retry": [
+      1.4,
+      "skipped"
+     ],
+     "tick": [
+      1.4,
+      "skipped"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:28:46.443530+00:00_1rRKqAsv",
+    "state": "success",
+    "start": "2026-10-08T01:28:46.657480+00:00",
+    "secs": 23.4,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     5000
+    ],
+    "tasks": {
+     "claim": [
+      5.6,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      9.8,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      1.5,
+      "success"
+     ],
+     "finalize": [
+      2.1,
+      "success"
+     ],
+     "ring_retry": [
+      1.5,
+      "skipped"
+     ],
+     "tick": [
+      1.5,
+      "success"
+     ],
+     "check": [
+      1.5,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:28:54.574627+00:00_VNorPpCu",
+    "state": "success",
+    "start": "2026-10-08T01:28:55.213946+00:00",
+    "secs": 5.1,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      1.4,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      1.0,
+      "skipped"
+     ],
+     "tick": [
+      1.2,
+      "skipped"
+     ],
+     "check": [
+      1.2,
+      "success"
+     ],
+     "ring_retry": [
+      1.2,
+      "skipped"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:28:59.279872+00:00_DWtIclNS",
+    "state": "success",
+    "start": "2026-10-08T01:28:59.537095+00:00",
+    "secs": 22.0,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     4000
+    ],
+    "tasks": {
+     "claim": [
+      4.3,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      8.3,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      2.3,
+      "success"
+     ],
+     "finalize": [
+      3.2,
+      "success"
+     ],
+     "ring_retry": [
+      1.2,
+      "skipped"
+     ],
+     "tick": [
+      1.2,
+      "success"
+     ],
+     "check": [
+      1.2,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:29:09.706796+00:00_BnuzrsGp",
+    "state": "success",
+    "start": "2026-10-08T01:29:09.927767+00:00",
+    "secs": 6.4,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      1.1,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      2.1,
+      "skipped"
+     ],
+     "tick": [
+      1.5,
+      "skipped"
+     ],
+     "ring_retry": [
+      1.5,
+      "skipped"
+     ],
+     "check": [
+      1.5,
+      "success"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:29:11.376815+00:00_eakYD8fg",
+    "state": "success",
+    "start": "2026-10-08T01:29:11.744360+00:00",
+    "secs": 24.1,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     4000
+    ],
+    "tasks": {
+     "claim": [
+      4.2,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      10.4,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      3.8,
+      "success"
+     ],
+     "finalize": [
+      1.6,
+      "success"
+     ],
+     "ring_retry": [
+      1.9,
+      "skipped"
+     ],
+     "check": [
+      1.9,
+      "success"
+     ],
+     "tick": [
+      1.9,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:29:21.007473+00:00_RdspBzb7",
+    "state": "success",
+    "start": "2026-10-08T01:29:22.201032+00:00",
+    "secs": 7.3,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      1.2,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      0.9,
+      "skipped"
+     ],
+     "tick": [
+      2.9,
+      "skipped"
+     ],
+     "ring_retry": [
+      2.9,
+      "skipped"
+     ],
+     "check": [
+      2.9,
+      "success"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:29:25.196684+00:00_3RFAR8Zg",
+    "state": "success",
+    "start": "2026-10-08T01:29:25.614439+00:00",
+    "secs": 24.2,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     4500
+    ],
+    "tasks": {
+     "claim": [
+      5.3,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      9.4,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      3.3,
+      "success"
+     ],
+     "finalize": [
+      1.6,
+      "success"
+     ],
+     "ring_retry": [
+      1.8,
+      "skipped"
+     ],
+     "tick": [
+      1.7,
+      "success"
+     ],
+     "check": [
+      1.6,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:29:35.296951+00:00_G4fJeksP",
+    "state": "success",
+    "start": "2026-10-08T01:29:35.727355+00:00",
+    "secs": 7.1,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      1.1,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      1.3,
+      "skipped"
+     ],
+     "ring_retry": [
+      1.6,
+      "skipped"
+     ],
+     "check": [
+      2.9,
+      "success"
+     ],
+     "tick": [
+      1.6,
+      "skipped"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:29:39.188446+00:00_uewcVqfV",
+    "state": "success",
+    "start": "2026-10-08T01:29:39.641394+00:00",
+    "secs": 26.0,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     4500
+    ],
+    "tasks": {
+     "claim": [
+      6.9,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      9.0,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      3.5,
+      "success"
+     ],
+     "finalize": [
+      2.0,
+      "success"
+     ],
+     "tick": [
+      1.5,
+      "success"
+     ],
+     "check": [
+      1.5,
+      "success"
+     ],
+     "ring_retry": [
+      1.5,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:29:49.100407+00:00_PeB5WEYQ",
+    "state": "success",
+    "start": "2026-10-08T01:29:49.707497+00:00",
+    "secs": 5.5,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      1.0,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      0.9,
+      "skipped"
+     ],
+     "tick": [
+      1.5,
+      "skipped"
+     ],
+     "check": [
+      1.4,
+      "success"
+     ],
+     "ring_retry": [
+      1.5,
+      "skipped"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:29:55.249042+00:00_0sx1ExAc",
+    "state": "success",
+    "start": "2026-10-08T01:29:55.838448+00:00",
+    "secs": 25.3,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     5500
+    ],
+    "tasks": {
+     "claim": [
+      6.9,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      9.4,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      2.1,
+      "success"
+     ],
+     "finalize": [
+      2.5,
+      "success"
+     ],
+     "ring_retry": [
+      1.5,
+      "skipped"
+     ],
+     "tick": [
+      1.5,
+      "success"
+     ],
+     "check": [
+      1.5,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:30:05.334048+00:00_2ax5tS6g",
+    "state": "success",
+    "start": "2026-10-08T01:30:05.607929+00:00",
+    "secs": 5.5,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      1.0,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      1.1,
+      "skipped"
+     ],
+     "ring_retry": [
+      1.5,
+      "skipped"
+     ],
+     "tick": [
+      1.5,
+      "skipped"
+     ],
+     "check": [
+      1.5,
+      "success"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:30:08.685194+00:00_1PCf88Xr",
+    "state": "success",
+    "start": "2026-10-08T01:30:08.904289+00:00",
+    "secs": 23.1,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     4500
+    ],
+    "tasks": {
+     "claim": [
+      4.1,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      8.6,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      2.7,
+      "success"
+     ],
+     "finalize": [
+      2.5,
+      "success"
+     ],
+     "ring_retry": [
+      2.4,
+      "skipped"
+     ],
+     "check": [
+      2.4,
+      "success"
+     ],
+     "tick": [
+      2.4,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:30:20.530274+00:00_CNXlTcne",
+    "state": "success",
+    "start": "2026-10-08T01:30:21.007250+00:00",
+    "secs": 8.1,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      1.1,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      1.5,
+      "skipped"
+     ],
+     "tick": [
+      2.4,
+      "skipped"
+     ],
+     "check": [
+      2.0,
+      "success"
+     ],
+     "ring_retry": [
+      2.0,
+      "skipped"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:30:22.492299+00:00_zyyAr4Te",
+    "state": "success",
+    "start": "2026-10-08T01:30:22.906178+00:00",
+    "secs": 24.2,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     4500
+    ],
+    "tasks": {
+     "claim": [
+      4.5,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      12.1,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      1.9,
+      "success"
+     ],
+     "finalize": [
+      2.0,
+      "success"
+     ],
+     "check": [
+      1.2,
+      "success"
+     ],
+     "tick": [
+      1.2,
+      "success"
+     ],
+     "ring_retry": [
+      1.2,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:30:31.673058+00:00_x2KL7ioN",
+    "state": "success",
+    "start": "2026-10-08T01:30:31.959308+00:00",
+    "secs": 5.0,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      1.0,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      1.0,
+      "skipped"
+     ],
+     "check": [
+      1.1,
+      "success"
+     ],
+     "ring_retry": [
+      1.1,
+      "skipped"
+     ],
+     "tick": [
+      1.1,
+      "skipped"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:30:37.248859+00:00_lEMBFmiF",
+    "state": "success",
+    "start": "2026-10-08T01:30:37.556145+00:00",
+    "secs": 20.3,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     4500
+    ],
+    "tasks": {
+     "claim": [
+      4.9,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      9.0,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      1.4,
+      "success"
+     ],
+     "finalize": [
+      2.3,
+      "success"
+     ],
+     "tick": [
+      1.3,
+      "success"
+     ],
+     "ring_retry": [
+      1.3,
+      "skipped"
+     ],
+     "check": [
+      1.3,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:30:46.701889+00:00_kWSLmEXK",
+    "state": "success",
+    "start": "2026-10-08T01:30:47.040718+00:00",
+    "secs": 4.4,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      1.0,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      0.9,
+      "skipped"
+     ],
+     "tick": [
+      1.0,
+      "skipped"
+     ],
+     "check": [
+      1.0,
+      "success"
+     ],
+     "ring_retry": [
+      1.0,
+      "skipped"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:30:57.726106+00:00_1PntEVf3",
+    "state": "success",
+    "start": "2026-10-08T01:30:57.807220+00:00",
+    "secs": 5.0,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      1.6,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      0.8,
+      "skipped"
+     ],
+     "ring_retry": [
+      1.1,
+      "skipped"
+     ],
+     "check": [
+      1.0,
+      "success"
+     ],
+     "tick": [
+      1.1,
+      "skipped"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   }
+  ],
+  "batcher_runs_working": 23,
+  "jobs_total": 23,
+  "max_concurrent_batcher_runs": 3,
+  "max_concurrent_spark": 1,
+  "timeline": {
+   "first_landing": "2026-10-08T01:25:27.792132+00:00",
+   "last_landing": "2026-10-08T01:30:29.843419+00:00",
+   "first_forward": "2026-10-08T01:25:41.036085+00:00",
+   "last_forward": "2026-10-08T01:30:37.246871+00:00",
+   "first_publish": "2026-10-08T01:25:54.924026+00:00",
+   "last_publish": "2026-10-08T01:30:53.617996+00:00",
+   "first_finalize": "2026-10-08T01:25:56.891975+00:00",
+   "last_finalize": "2026-10-08T01:30:56.097584+00:00",
+   "last_fold_end": "2026-10-08T01:31:07.591960+00:00"
+  },
+  "state_store": [
+   {
+    "key": "batch",
+    "n": 25,
+    "max_bytes": 4400078
+   },
+   {
+    "key": "done",
+    "n": 1,
+    "max_bytes": 4400000
+   },
+   {
+    "key": "failed",
+    "n": 1,
+    "max_bytes": 2
+   },
+   {
+    "key": "ledger",
+    "n": 1,
+    "max_bytes": 34
+   },
+   {
+    "key": "window",
+    "n": 57,
+    "max_bytes": 4400078
+   }
+  ]
+ },
+ "derived": {
+  "first_landing_to_last_fold_s": 339.8,
+  "last_landing_to_last_fold_s": 37.7,
+  "first_landing_to_first_forward_s": 13.2,
+  "windows": 23,
+  "jobs": 23,
+  "working_batcher_runs": 23,
+  "failed_or_retried_tasks": 0
+ },
+ "load_avg_end": [
+  6.541015625,
+  6.28857421875,
+  6.810546875
+ ]
+}

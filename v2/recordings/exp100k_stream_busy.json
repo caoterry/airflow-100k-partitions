@@ -1,0 +1,1125 @@
+{
+ "scenario": "stream",
+ "version": 4,
+ "per_partition_s": 0.01,
+ "debounce_s": 10,
+ "load_avg_start": [
+  6.541015625,
+  6.28857421875,
+  6.810546875
+ ],
+ "posts": {
+  "posts": 200,
+  "ok": 200,
+  "avg_s": 0.113,
+  "max_s": 1.26,
+  "max_body_bytes": 12080,
+  "first_sent": "2026-10-08T01:31:11.327920+00:00",
+  "last_sent": "2026-10-08T01:36:11.190141+00:00"
+ },
+ "wait_s": 309.7,
+ "slept": 0.0,
+ "metrics": {
+  "asset_events": [
+   {
+    "asset": "v2_batcher_tick",
+    "rows": 12,
+    "max_extra_bytes": 14
+   },
+   {
+    "asset": "v2_batches_finished",
+    "rows": 12,
+    "max_extra_bytes": 79
+   },
+   {
+    "asset": "v2_exceptions_tick",
+    "rows": 12,
+    "max_extra_bytes": 14
+   },
+   {
+    "asset": "v2_inputs_debounced",
+    "rows": 28,
+    "max_extra_bytes": 137
+   },
+   {
+    "asset": "v2_inputs_landed",
+    "rows": 200,
+    "max_extra_bytes": 12077
+   },
+   {
+    "asset": "v2_pnl",
+    "rows": 12,
+    "max_extra_bytes": 129
+   }
+  ],
+  "dag_runs": [
+   {
+    "dag": "v2_batcher",
+    "state": "success",
+    "n": 15
+   },
+   {
+    "dag": "v2_debounce",
+    "state": "success",
+    "n": 29
+   },
+   {
+    "dag": "v2_exceptions",
+    "state": "success",
+    "n": 24
+   },
+   {
+    "dag": "v2_ledger",
+    "state": "success",
+    "n": 12
+   }
+  ],
+  "tasks": [
+   {
+    "dag": "v2_batcher",
+    "task": "check",
+    "state": "success",
+    "n": 15,
+    "avg_s": 1.5,
+    "max_s": 2.1,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "claim",
+    "state": "success",
+    "n": 15,
+    "avg_s": 3.2,
+    "max_s": 4.6,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "finalize",
+    "state": "skipped",
+    "n": 3,
+    "avg_s": 1.0,
+    "max_s": 1.2,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "finalize",
+    "state": "success",
+    "n": 12,
+    "avg_s": 1.6,
+    "max_s": 2.7,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "ring_retry",
+    "state": "skipped",
+    "n": 15,
+    "avg_s": 1.5,
+    "max_s": 2.1,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "run_batch.publish",
+    "state": "skipped",
+    "n": 3,
+    "avg_s": 0.0,
+    "max_s": 0.0,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "run_batch.publish",
+    "state": "success",
+    "n": 12,
+    "avg_s": 1.8,
+    "max_s": 2.9,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "run_batch.spark",
+    "state": "success",
+    "n": 12,
+    "avg_s": 91.6,
+    "max_s": 251.1,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "tick",
+    "state": "skipped",
+    "n": 3,
+    "avg_s": 1.3,
+    "max_s": 1.7,
+    "retries": 0
+   },
+   {
+    "dag": "v2_batcher",
+    "task": "tick",
+    "state": "success",
+    "n": 12,
+    "avg_s": 1.5,
+    "max_s": 2.1,
+    "retries": 0
+   },
+   {
+    "dag": "v2_debounce",
+    "task": "forward",
+    "state": "skipped",
+    "n": 1,
+    "avg_s": 0.0,
+    "max_s": 0.0,
+    "retries": 0
+   },
+   {
+    "dag": "v2_debounce",
+    "task": "forward",
+    "state": "success",
+    "n": 28,
+    "avg_s": 1.3,
+    "max_s": 2.6,
+    "retries": 0
+   },
+   {
+    "dag": "v2_debounce",
+    "task": "hold",
+    "state": "skipped",
+    "n": 1,
+    "avg_s": 0.0,
+    "max_s": 0.0,
+    "retries": 0
+   },
+   {
+    "dag": "v2_debounce",
+    "task": "hold",
+    "state": "success",
+    "n": 28,
+    "avg_s": 5.1,
+    "max_s": 9.9,
+    "retries": 0
+   },
+   {
+    "dag": "v2_debounce",
+    "task": "plan",
+    "state": "skipped",
+    "n": 1,
+    "avg_s": 0.9,
+    "max_s": 0.9,
+    "retries": 0
+   },
+   {
+    "dag": "v2_debounce",
+    "task": "plan",
+    "state": "success",
+    "n": 28,
+    "avg_s": 1.0,
+    "max_s": 1.7,
+    "retries": 0
+   },
+   {
+    "dag": "v2_debounce",
+    "task": "sweep",
+    "state": "skipped",
+    "n": 29,
+    "avg_s": 1.0,
+    "max_s": 1.3,
+    "retries": 0
+   },
+   {
+    "dag": "v2_exceptions",
+    "task": "review",
+    "state": "success",
+    "n": 24,
+    "avg_s": 1.2,
+    "max_s": 2.3,
+    "retries": 0
+   },
+   {
+    "dag": "v2_exceptions",
+    "task": "sweep",
+    "state": "skipped",
+    "n": 12,
+    "avg_s": 1.3,
+    "max_s": 1.6,
+    "retries": 0
+   },
+   {
+    "dag": "v2_exceptions",
+    "task": "sweep",
+    "state": "success",
+    "n": 12,
+    "avg_s": 1.5,
+    "max_s": 2.1,
+    "retries": 0
+   },
+   {
+    "dag": "v2_ledger",
+    "task": "fold",
+    "state": "success",
+    "n": 12,
+    "avg_s": 5.7,
+    "max_s": 6.8,
+    "retries": 0
+   },
+   {
+    "dag": "v2_ledger",
+    "task": "settle",
+    "state": "success",
+    "n": 12,
+    "avg_s": 6.0,
+    "max_s": 7.8,
+    "retries": 0
+   },
+   {
+    "dag": "v2_ledger",
+    "task": "sweep",
+    "state": "skipped",
+    "n": 12,
+    "avg_s": 1.0,
+    "max_s": 1.1,
+    "retries": 0
+   }
+  ],
+  "bad_tasks": [],
+  "windows": [
+   {
+    "ts": "2026-10-08T01:31:24.350241+00:00",
+    "bells": 6,
+    "n_partitions": 3000,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:31:34.034888+00:00",
+    "bells": 6,
+    "n_partitions": 3000,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:31:45.156849+00:00",
+    "bells": 8,
+    "n_partitions": 4000,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:31:55.281841+00:00",
+    "bells": 6,
+    "n_partitions": 3000,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:32:05.183513+00:00",
+    "bells": 7,
+    "n_partitions": 3500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:32:18.016767+00:00",
+    "bells": 7,
+    "n_partitions": 3500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:32:29.641791+00:00",
+    "bells": 9,
+    "n_partitions": 4500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:32:39.656604+00:00",
+    "bells": 7,
+    "n_partitions": 3500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:32:53.663520+00:00",
+    "bells": 8,
+    "n_partitions": 4000,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:33:04.100826+00:00",
+    "bells": 8,
+    "n_partitions": 4000,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:33:15.101429+00:00",
+    "bells": 7,
+    "n_partitions": 3500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:33:26.361590+00:00",
+    "bells": 8,
+    "n_partitions": 4000,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:33:37.236333+00:00",
+    "bells": 7,
+    "n_partitions": 3500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:33:48.538765+00:00",
+    "bells": 7,
+    "n_partitions": 3500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:33:58.997952+00:00",
+    "bells": 7,
+    "n_partitions": 3500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:34:10.090076+00:00",
+    "bells": 8,
+    "n_partitions": 4000,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:34:20.916739+00:00",
+    "bells": 7,
+    "n_partitions": 3500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:34:31.493241+00:00",
+    "bells": 7,
+    "n_partitions": 3500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:34:42.397676+00:00",
+    "bells": 7,
+    "n_partitions": 3500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:34:54.168487+00:00",
+    "bells": 8,
+    "n_partitions": 4000,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:35:05.164793+00:00",
+    "bells": 7,
+    "n_partitions": 3500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:35:18.231303+00:00",
+    "bells": 8,
+    "n_partitions": 4000,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:35:28.282220+00:00",
+    "bells": 8,
+    "n_partitions": 4000,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:35:38.417348+00:00",
+    "bells": 6,
+    "n_partitions": 3000,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:35:48.562632+00:00",
+    "bells": 7,
+    "n_partitions": 3500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:35:58.352499+00:00",
+    "bells": 7,
+    "n_partitions": 3500,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:36:08.738753+00:00",
+    "bells": 6,
+    "n_partitions": 3000,
+    "kind": "window"
+   },
+   {
+    "ts": "2026-10-08T01:36:18.696021+00:00",
+    "bells": 6,
+    "n_partitions": 3000,
+    "kind": "window"
+   }
+  ],
+  "batcher_runs": [
+   {
+    "run_id": "asset_triggered__2026-10-08T01:31:24.352765+00:00_T9lMWc8M",
+    "state": "success",
+    "start": "2026-10-08T01:31:24.501090+00:00",
+    "secs": 46.3,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     3000
+    ],
+    "tasks": {
+     "claim": [
+      3.1,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      37.4,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      1.1,
+      "success"
+     ],
+     "finalize": [
+      1.1,
+      "success"
+     ],
+     "ring_retry": [
+      1.5,
+      "skipped"
+     ],
+     "check": [
+      1.5,
+      "success"
+     ],
+     "tick": [
+      1.5,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:31:34.037605+00:00_srnTT0KN",
+    "state": "success",
+    "start": "2026-10-08T01:31:34.638735+00:00",
+    "secs": 47.8,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     3000
+    ],
+    "tasks": {
+     "claim": [
+      3.1,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      37.1,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      2.7,
+      "success"
+     ],
+     "finalize": [
+      1.4,
+      "success"
+     ],
+     "ring_retry": [
+      2.0,
+      "skipped"
+     ],
+     "tick": [
+      2.0,
+      "success"
+     ],
+     "check": [
+      2.0,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:31:45.158530+00:00_ebKrRDvx",
+    "state": "success",
+    "start": "2026-10-08T01:31:45.361892+00:00",
+    "secs": 57.5,
+    "events_attached": 1,
+    "jobs": 1,
+    "partitions_per_job": [
+     4000
+    ],
+    "tasks": {
+     "claim": [
+      3.3,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      47.2,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      1.4,
+      "success"
+     ],
+     "finalize": [
+      1.2,
+      "success"
+     ],
+     "tick": [
+      1.4,
+      "success"
+     ],
+     "ring_retry": [
+      1.4,
+      "skipped"
+     ],
+     "check": [
+      1.4,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:32:10.343767+00:00_7q4yAEQL",
+    "state": "success",
+    "start": "2026-10-08T01:32:11.398165+00:00",
+    "secs": 84.7,
+    "events_attached": 3,
+    "jobs": 1,
+    "partitions_per_job": [
+     6500
+    ],
+    "tasks": {
+     "claim": [
+      4.0,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      73.7,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      1.3,
+      "success"
+     ],
+     "finalize": [
+      1.3,
+      "success"
+     ],
+     "tick": [
+      1.5,
+      "success"
+     ],
+     "ring_retry": [
+      1.4,
+      "skipped"
+     ],
+     "check": [
+      1.5,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:32:22.238359+00:00_BXVZI2DD",
+    "state": "success",
+    "start": "2026-10-08T01:32:22.507668+00:00",
+    "secs": 52.5,
+    "events_attached": 2,
+    "jobs": 1,
+    "partitions_per_job": [
+     3500
+    ],
+    "tasks": {
+     "claim": [
+      3.5,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      42.9,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      1.3,
+      "success"
+     ],
+     "finalize": [
+      1.2,
+      "success"
+     ],
+     "ring_retry": [
+      2.1,
+      "skipped"
+     ],
+     "tick": [
+      2.1,
+      "success"
+     ],
+     "check": [
+      2.1,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:32:42.503077+00:00_bBwjfVIs",
+    "state": "success",
+    "start": "2026-10-08T01:32:42.977757+00:00",
+    "secs": 97.7,
+    "events_attached": 3,
+    "jobs": 1,
+    "partitions_per_job": [
+     8000
+    ],
+    "tasks": {
+     "claim": [
+      3.9,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      87.5,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      1.6,
+      "success"
+     ],
+     "finalize": [
+      1.7,
+      "success"
+     ],
+     "tick": [
+      1.4,
+      "success"
+     ],
+     "ring_retry": [
+      1.3,
+      "skipped"
+     ],
+     "check": [
+      1.3,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:33:14.969671+00:00_v56RoEpX",
+    "state": "success",
+    "start": "2026-10-08T01:33:15.643098+00:00",
+    "secs": 98.3,
+    "events_attached": 3,
+    "jobs": 1,
+    "partitions_per_job": [
+     8000
+    ],
+    "tasks": {
+     "claim": [
+      4.0,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      87.8,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      1.4,
+      "success"
+     ],
+     "finalize": [
+      1.3,
+      "success"
+     ],
+     "check": [
+      1.5,
+      "success"
+     ],
+     "ring_retry": [
+      1.5,
+      "skipped"
+     ],
+     "tick": [
+      1.4,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:33:35.478778+00:00_gAg3Z093",
+    "state": "success",
+    "start": "2026-10-08T01:33:36.221915+00:00",
+    "secs": 93.1,
+    "events_attached": 3,
+    "jobs": 1,
+    "partitions_per_job": [
+     7500
+    ],
+    "tasks": {
+     "claim": [
+      3.4,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      82.9,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      2.2,
+      "success"
+     ],
+     "finalize": [
+      1.4,
+      "success"
+     ],
+     "tick": [
+      1.4,
+      "success"
+     ],
+     "ring_retry": [
+      1.4,
+      "skipped"
+     ],
+     "check": [
+      1.4,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:34:20.111462+00:00_u0Nb7y4q",
+    "state": "success",
+    "start": "2026-10-08T01:34:21.304415+00:00",
+    "secs": 167.1,
+    "events_attached": 5,
+    "jobs": 1,
+    "partitions_per_job": [
+     14500
+    ],
+    "tasks": {
+     "claim": [
+      4.4,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      154.3,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      1.9,
+      "success"
+     ],
+     "finalize": [
+      2.7,
+      "success"
+     ],
+     "tick": [
+      2.0,
+      "success"
+     ],
+     "check": [
+      2.0,
+      "success"
+     ],
+     "ring_retry": [
+      2.0,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:34:53.325544+00:00_YIKhl7MM",
+    "state": "success",
+    "start": "2026-10-08T01:34:54.538801+00:00",
+    "secs": 124.9,
+    "events_attached": 4,
+    "jobs": 1,
+    "partitions_per_job": [
+     10500
+    ],
+    "tasks": {
+     "claim": [
+      3.8,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      114.2,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      2.5,
+      "success"
+     ],
+     "finalize": [
+      1.5,
+      "success"
+     ],
+     "tick": [
+      1.3,
+      "success"
+     ],
+     "ring_retry": [
+      1.3,
+      "skipped"
+     ],
+     "check": [
+      1.2,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:35:08.713988+00:00_2jXTIko9",
+    "state": "success",
+    "start": "2026-10-08T01:35:09.917334+00:00",
+    "secs": 93.7,
+    "events_attached": 3,
+    "jobs": 1,
+    "partitions_per_job": [
+     7500
+    ],
+    "tasks": {
+     "claim": [
+      3.5,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      83.1,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      1.7,
+      "success"
+     ],
+     "finalize": [
+      1.5,
+      "success"
+     ],
+     "check": [
+      1.1,
+      "success"
+     ],
+     "ring_retry": [
+      1.1,
+      "skipped"
+     ],
+     "tick": [
+      1.1,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:36:43.091768+00:00_e1FILFyp",
+    "state": "success",
+    "start": "2026-10-08T01:36:43.724938+00:00",
+    "secs": 264.4,
+    "events_attached": 8,
+    "jobs": 1,
+    "partitions_per_job": [
+     24000
+    ],
+    "tasks": {
+     "claim": [
+      4.6,
+      "success"
+     ],
+     "run_batch.spark[0]": [
+      251.1,
+      "success"
+     ],
+     "run_batch.publish[0]": [
+      2.9,
+      "success"
+     ],
+     "finalize": [
+      2.5,
+      "success"
+     ],
+     "ring_retry": [
+      1.2,
+      "skipped"
+     ],
+     "check": [
+      1.1,
+      "success"
+     ],
+     "tick": [
+      1.2,
+      "success"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:36:58.874967+00:00_xSniedSy",
+    "state": "success",
+    "start": "2026-10-08T01:37:00.210535+00:00",
+    "secs": 5.9,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      1.0,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      0.9,
+      "skipped"
+     ],
+     "ring_retry": [
+      1.7,
+      "skipped"
+     ],
+     "tick": [
+      1.7,
+      "skipped"
+     ],
+     "check": [
+      1.7,
+      "success"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:37:08.204396+00:00_MfPwggyy",
+    "state": "success",
+    "start": "2026-10-08T01:37:08.301242+00:00",
+    "secs": 4.8,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      1.1,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      1.2,
+      "skipped"
+     ],
+     "check": [
+      1.1,
+      "success"
+     ],
+     "ring_retry": [
+      1.1,
+      "skipped"
+     ],
+     "tick": [
+      1.1,
+      "skipped"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   },
+   {
+    "run_id": "asset_triggered__2026-10-08T01:41:07.909180+00:00_PpZwROEy",
+    "state": "success",
+    "start": "2026-10-08T01:41:08.089977+00:00",
+    "secs": 5.0,
+    "events_attached": 1,
+    "jobs": 0,
+    "partitions_per_job": [],
+    "tasks": {
+     "claim": [
+      0.9,
+      "success"
+     ],
+     "run_batch.publish": [
+      0.0,
+      "skipped"
+     ],
+     "finalize": [
+      0.8,
+      "skipped"
+     ],
+     "tick": [
+      1.0,
+      "skipped"
+     ],
+     "check": [
+      1.0,
+      "success"
+     ],
+     "ring_retry": [
+      1.0,
+      "skipped"
+     ],
+     "run_batch.spark": [
+      null,
+      "skipped"
+     ]
+    }
+   }
+  ],
+  "batcher_runs_working": 12,
+  "jobs_total": 12,
+  "max_concurrent_batcher_runs": 3,
+  "max_concurrent_spark": 3,
+  "timeline": {
+   "first_landing": "2026-10-08T01:31:11.371727+00:00",
+   "last_landing": "2026-10-08T01:36:11.215810+00:00",
+   "first_forward": "2026-10-08T01:31:24.350241+00:00",
+   "last_forward": "2026-10-08T01:36:18.696021+00:00",
+   "first_publish": "2026-10-08T01:32:06.855683+00:00",
+   "last_publish": "2026-10-08T01:41:03.355035+00:00",
+   "first_finalize": "2026-10-08T01:32:08.259455+00:00",
+   "last_finalize": "2026-10-08T01:41:06.058122+00:00",
+   "last_fold_end": "2026-10-08T01:41:19.353167+00:00"
+  },
+  "state_store": [
+   {
+    "key": "batch",
+    "n": 37,
+    "max_bytes": 4400078
+   },
+   {
+    "key": "done",
+    "n": 1,
+    "max_bytes": 4400000
+   },
+   {
+    "key": "failed",
+    "n": 1,
+    "max_bytes": 2
+   },
+   {
+    "key": "ledger",
+    "n": 1,
+    "max_bytes": 34
+   },
+   {
+    "key": "window",
+    "n": 85,
+    "max_bytes": 4400078
+   }
+  ]
+ },
+ "derived": {
+  "first_landing_to_last_fold_s": 608.0,
+  "last_landing_to_last_fold_s": 308.1,
+  "first_landing_to_first_forward_s": 13.0,
+  "windows": 28,
+  "jobs": 12,
+  "working_batcher_runs": 12,
+  "failed_or_retried_tasks": 0
+ },
+ "load_avg_end": [
+  3.52880859375,
+  4.55908203125,
+  5.7412109375
+ ]
+}

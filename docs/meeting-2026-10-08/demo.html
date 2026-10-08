@@ -1,0 +1,966 @@
+<title>100k Partitions Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;600;700;800&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: a technical field report on light paper, read top to bottom in five chapters (the order of the talk); a quiet chapter rail on wide screens, a strip on phones. One deliberate light look in every viewer theme. */
+:root{
+  color-scheme:light;
+  --paper:#F3F4F1; --sheet:#FFFFFF; --ink:#14171F; --quiet:#565D69; --faint:#959BA5; --rule:#E1E4DF;
+  --accent:#2744C4; --accent-soft:#E9EDFB;
+  --wait:#D5A043; --engine:#9AABEA; --work:#2C313C; --gap:#D9DCD6;
+  --bad:#B4443A; --ok:#2F7A4F;
+  --shadow:0 1px 2px rgba(20,23,31,.04),0 6px 24px -14px rgba(20,23,31,.18);
+  --display:"Schibsted Grotesk","Geist",system-ui,sans-serif;
+  --body:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.62 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1200px;margin:0 auto;padding-inline:24px;padding-block:44px 80px;display:grid;grid-template-columns:190px minmax(0,1fr);gap:56px}
+nav.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 24px);align-self:start;display:flex;flex-direction:column;gap:4px;font-size:14px}
+nav.rail .k{font:600 11px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:10px}
+nav.rail a{display:grid;grid-template-columns:22px 1fr;gap:6px;color:var(--quiet);text-decoration:none;padding:6px 8px;border-radius:6px}
+nav.rail a b{font:600 13px/1.5 var(--mono);color:var(--faint)}
+nav.rail a:hover,nav.rail a.on{background:var(--sheet);color:var(--ink);box-shadow:var(--shadow)}
+nav.rail a.on b{color:var(--accent)}
+nav.rail a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{min-width:0;display:flex;flex-direction:column;gap:84px}
+header.hero{display:flex;flex-direction:column;gap:12px;padding-top:8px}
+.eyebrow{font:500 12px/1.4 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--quiet)}
+h1{font:700 clamp(38px,5.4vw,64px)/1.02 var(--display);margin:0;letter-spacing:-.025em;text-wrap:balance}
+h2{font:700 clamp(27px,3.3vw,38px)/1.1 var(--display);margin:0;letter-spacing:-.018em;text-wrap:balance}
+h3{font:600 18px/1.3 var(--display);margin:0;letter-spacing:-.005em}
+p{margin:0;max-width:68ch}
+.lead{font-size:18.5px;line-height:1.6;color:var(--quiet);max-width:62ch}
+section.ch{display:flex;flex-direction:column;gap:20px;scroll-margin-top:24px}
+.chno{display:flex;align-items:center;gap:12px;font:500 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.chno::after{content:"";flex:1;height:1px;background:var(--rule)}
+.sheet{display:flex;flex-direction:column;gap:14px;background:var(--sheet);border:1px solid var(--rule);border-radius:14px;padding:24px 26px;min-width:0;box-shadow:var(--shadow)}
+.steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.step{display:flex;flex-direction:column;gap:6px;padding:16px;border:1px solid var(--rule);border-top:2px solid var(--ink);background:var(--sheet);border-radius:2px 2px 10px 10px;min-width:0}
+.step .n{font:600 12px/1 var(--mono);color:var(--accent)}
+.step h3{font-size:17px}
+.step p{font-size:14px;color:var(--quiet)}
+.formula{font:500 clamp(15px,2vw,19px)/1.5 var(--mono);padding:16px 18px;border-left:3px solid var(--accent);background:var(--sheet);border-radius:0 8px 8px 0;overflow-x:auto;white-space:nowrap}
+.formula .mid{color:var(--work);font-weight:600}
+.note{font-size:14px;color:var(--quiet)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.chart{overflow-x:auto}
+.chart svg{display:block;width:100%;min-width:620px;height:auto}
+svg text{font-family:var(--mono);font-size:11.5px;fill:var(--quiet)}
+svg .lbl{fill:var(--ink);font-family:var(--body);font-size:13px;font-weight:500}
+svg .big{fill:var(--ink);font-size:14px;font-weight:600}
+svg .axis{stroke:var(--rule);stroke-width:1}
+svg .grid{stroke:var(--rule);stroke-width:1;stroke-dasharray:2 4}
+.c-wait{fill:var(--wait)} .c-engine{fill:var(--engine)} .c-work{fill:var(--work)} .c-gap{fill:var(--gap)}
+.c-accent{fill:var(--accent)} .c-soft{fill:var(--accent-soft)} .c-bad{fill:var(--bad)} .c-faint{fill:var(--faint)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--quiet)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.split{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.split div{display:flex;flex-direction:column;gap:4px;padding:14px 16px;background:var(--paper);border-radius:10px}
+.split .v{font:600 26px/1.1 var(--display);letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.split .t{font-size:13px;color:var(--quiet)}
+.ideas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.idea{display:flex;flex-direction:column;gap:8px;padding:20px;background:var(--sheet);border:1px solid var(--rule);border-radius:14px}
+.idea h3{font-size:20px}
+.idea p{color:var(--quiet);font-size:15px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{font:500 14px/1 var(--body);padding:9px 14px;border-radius:999px;border:1px solid var(--rule);background:var(--sheet);color:var(--quiet);cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.facts{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:14px;color:var(--quiet)}
+.facts b{font:600 15px var(--mono);color:var(--ink)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:15px;min-width:560px}
+th{text-align:left;font:600 12px/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--faint);padding:8px 10px;border-bottom:1px solid var(--rule)}
+td{padding:10px;border-bottom:1px solid var(--rule);vertical-align:top}
+td code{font:500 13px var(--mono);background:var(--paper);padding:1px 5px;border-radius:4px}
+.pill{display:inline-block;font:600 11px/1 var(--mono);letter-spacing:.05em;text-transform:uppercase;padding:5px 8px;border-radius:999px;white-space:nowrap}
+.pill.stock{background:var(--accent-soft);color:var(--accent)}
+.pill.ours{background:#F6ECD6;color:#7A5410}
+.live{display:flex;flex-direction:column;gap:14px;border:1px solid var(--rule);border-top:3px solid var(--accent);border-radius:14px;padding:24px 26px;background:var(--sheet);box-shadow:var(--shadow)}
+.cmd{display:flex;gap:8px;align-items:stretch;min-width:0}
+.cmd pre{flex:1;min-width:0;margin:0;overflow-x:auto;font:500 13px/1.5 var(--mono);background:var(--paper);border:1px solid var(--rule);border-radius:6px;padding:10px 12px}
+.cmd button{font:600 13px var(--body);border:1px solid var(--rule);background:var(--paper);color:var(--ink);border-radius:6px;padding:0 12px;cursor:pointer}
+ol.watch{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;color:var(--quiet);font-size:15px}
+.gaps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.gap{display:flex;flex-direction:column;gap:6px;padding:18px 20px;background:var(--sheet);border:1px solid var(--rule);border-top:2px solid var(--bad);border-radius:2px 2px 12px 12px}
+.gap p{font-size:15px;color:var(--quiet)}
+.asks{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:6px;font-size:17px}
+.player{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.player button{font:600 14px var(--body);padding:9px 16px;border-radius:999px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer;min-width:72px}
+.player #speed{background:var(--sheet);color:var(--ink);border-color:var(--rule);min-width:52px}
+.player input[type=range]{flex:1;min-width:160px;accent-color:var(--accent)}
+.clock{font-size:15px;min-width:64px;text-align:right}
+.say{font-size:16px;color:var(--ink);min-height:3.2em;border-left:3px solid var(--accent);padding-left:12px}
+.tables{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.tcard{background:var(--paper);border-radius:10px;padding:14px 16px;min-width:0}
+.tcard h4{margin:0 0 8px;font:600 12px/1.2 var(--mono);letter-spacing:.06em;color:var(--faint)}
+.tcard ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.tcard li{display:flex;flex-direction:column;gap:2px;padding-bottom:6px;border-bottom:1px dashed var(--rule);min-width:0;overflow-wrap:anywhere}
+.tcard li b{font:600 12.5px var(--mono);color:var(--ink)}
+.tcard li span{color:var(--quiet)}
+.tcard li.new b{color:var(--accent)}
+.tcard .none{color:var(--faint);font-style:italic}
+.st{font:600 10.5px/1 var(--mono);text-transform:uppercase;letter-spacing:.05em;padding:3px 6px;border-radius:999px;align-self:flex-start}
+.st.running{background:var(--accent-soft);color:var(--accent)}
+.st.queued{background:#F6ECD6;color:#7A5410}
+.st.success{background:var(--paper);color:var(--quiet);border:1px solid var(--rule)}
+@media (max-width:900px){ .tables{grid-template-columns:minmax(0,1fr)} }
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.side{display:flex;flex-direction:column;gap:12px;padding:22px 24px;background:var(--sheet);border:1px solid var(--rule);border-radius:14px;min-width:0;box-shadow:var(--shadow)}
+.side .tag{font:600 11.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.side h3{font-size:20px}
+ul.why{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px;font-size:15px;color:var(--quiet)}
+ul.why b{color:var(--ink);font-weight:600}
+.sub{font-size:12.5px;color:var(--faint)}
+tr.ours td{background:var(--accent-soft)}
+tr.ours td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+.flow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:22px;position:relative}
+.flow .node{position:relative;display:flex;flex-direction:column;gap:4px;padding:16px;background:var(--sheet);border:1px solid var(--rule);border-radius:12px;min-width:0;box-shadow:var(--shadow)}
+.flow .node b{font:600 15px/1.25 var(--display)}
+.flow .node span{font-size:13px;color:var(--quiet)}
+.flow .node.strong{border-color:var(--accent);background:var(--accent-soft)}
+.flow .node:not(:last-child)::after{content:"\2192";position:absolute;right:-18px;top:50%;transform:translateY(-50%);color:var(--faint);font:600 16px var(--mono)}
+@media (max-width:900px){ .two{grid-template-columns:minmax(0,1fr)} .flow{grid-template-columns:minmax(0,1fr);gap:18px} .flow .node:not(:last-child)::after{content:"\2193";right:auto;left:50%;top:auto;bottom:-18px;transform:translateX(-50%)} }
+.grain{min-width:520px}
+.pill.g{background:var(--paper);color:var(--quiet);border:1px solid var(--rule)}
+.pill.p{background:var(--accent);color:#fff}
+tr.pp td:first-child{box-shadow:inset 3px 0 0 var(--accent);font-weight:600}
+.grain td:first-child{width:20%}
+.jobs td{font-size:14.5px}
+.jobs th.acc{background:var(--accent-soft)}
+.jobs th.acc{color:var(--accent)}
+.jobs td:first-child{width:19%;color:var(--ink)}
+.jobs th .sub,.jobs td .sub{font:400 12px/1.4 var(--body);text-transform:none;letter-spacing:0;color:var(--faint)}
+.shapes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.shapes.one{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}
+.shape{display:flex;flex-direction:column;gap:8px;padding:16px 18px;border-radius:12px;background:var(--paper);min-width:0}
+.shape h4{margin:0;font:700 19px/1.2 var(--display);letter-spacing:-.01em}
+.shape .sub{font-size:12.5px;color:var(--faint)}
+.shape svg{width:100%;max-width:280px;height:auto;align-self:center}
+.shape .key{font:500 11.5px/1.3 var(--mono);color:var(--faint);text-align:center}
+.shape .big{font:700 32px/1 var(--display);letter-spacing:-.02em;color:var(--bad);font-variant-numeric:tabular-nums}
+.shape.good .big{color:var(--accent)}
+.shape.mid .big{color:var(--ink)}
+.shape p{font-size:14px;color:var(--quiet)}
+.shape-text{display:flex;flex-direction:column;justify-content:center;gap:10px;padding:8px 6px;min-width:0}
+.shape-text .row{display:flex;flex-wrap:wrap;gap:6px 22px;font-size:14px;color:var(--quiet)}
+.shape-text .row b{font:700 26px/1 var(--display);color:var(--ink);margin-right:6px}
+.terms{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px}
+.terms div{display:flex;flex-direction:column;gap:3px;padding:11px 13px;border:1px solid var(--rule);border-radius:10px;background:var(--sheet)}
+.terms b{font:600 14px/1.2 var(--display);color:var(--accent)}
+.terms span{font-size:13px;line-height:1.45;color:var(--quiet)}
+@media (max-width:900px){ .shapes,.shapes.one{grid-template-columns:minmax(0,1fr)} }
+.stepper{gap:12px}
+.steps-bar{display:flex;flex-wrap:wrap;gap:6px}
+.steps-bar button{font:500 13px/1 var(--body);padding:8px 12px;border-radius:999px;border:1px solid var(--rule);background:var(--sheet);color:var(--quiet);cursor:pointer}
+.steps-bar button b{font:600 12px var(--mono);margin-right:6px;color:var(--faint)}
+.steps-bar button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.steps-bar button[aria-selected="true"] b{color:#fff}
+#c-route svg,#c-jobs svg{min-width:640px}
+#c-jobs .g{transition:opacity .25s}
+#c-jobs .dim{opacity:.2}
+#c-route .g{transition:opacity .25s}
+#c-route .dim{opacity:.22}
+.stepcard{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px;padding:16px 18px;border-radius:12px;background:var(--paper);min-height:132px}
+.stepcard h3{font-size:22px;margin:2px 0 6px}
+.stepcard .n{font:500 11.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.stepcard p{font-size:15.5px;color:var(--ink);line-height:1.55}
+.stepcard .note2{font-size:13.5px;color:var(--quiet);margin-top:6px}
+.stepcard .meta{display:flex;flex-direction:column;gap:10px;font-size:13.5px;color:var(--quiet)}
+.stepcard .meta .lab{display:block;font:500 11px/1.2 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin-bottom:3px}
+.stepcard code{font:500 12.5px var(--mono);background:var(--sheet);padding:1px 5px;border-radius:4px}
+.chip{display:inline-block;font:500 12px/1 var(--body);padding:5px 8px;border-radius:6px;background:var(--sheet);border:1px solid var(--rule);color:var(--ink);margin:0 4px 4px 0}
+.stepnav{display:flex;gap:8px;justify-content:flex-end}
+.stepnav button{font:600 13px var(--body);padding:8px 14px;border-radius:8px;border:1px solid var(--rule);background:var(--sheet);color:var(--ink);cursor:pointer}
+details.more{background:var(--sheet);border:1px solid var(--rule);border-radius:12px;padding:12px 16px}
+details.more summary{cursor:pointer;font:600 14px var(--body);color:var(--accent)}
+details.more .tbl.sheet{box-shadow:none;border:0;padding:12px 0 0}
+@media (max-width:900px){ .stepcard{grid-template-columns:minmax(0,1fr)} }
+.inside{display:flex;flex-direction:column;gap:12px;border-top:1px solid var(--rule);padding-top:16px}
+#c-inside svg{min-width:640px}
+ol.why-steps{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+ol.why-steps li{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:10px;background:var(--paper);font-size:14px;color:var(--quiet);line-height:1.5}
+ol.why-steps li b{font:700 14px/1.2 var(--display);color:var(--ink)}
+ol.why-steps li .num{font:600 12px/1 var(--mono);color:var(--bad)}
+.shape.clickable{cursor:pointer;outline:1px solid transparent;transition:outline-color .2s}
+.shape.clickable:hover,.shape.clickable.sel{outline:2px solid var(--accent)}
+.shape .look{font:600 12px var(--body);color:var(--accent)}
+@media (max-width:900px){ ol.why-steps{grid-template-columns:minmax(0,1fr)} }
+.stepcard .rows{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px;border-top:1px dashed var(--rule);padding-top:12px}
+.stepcard .rows .lab{grid-column:1/-1;font:500 11px/1.2 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.rowbox{display:flex;flex-direction:column;gap:4px;min-width:0}
+.rowbox .rh{font:600 12px/1.3 var(--body);color:var(--accent)}
+.rowbox pre{margin:0;padding:10px 12px;background:var(--sheet);border:1px solid var(--rule);border-radius:8px;font:500 12px/1.5 var(--mono);color:var(--ink);overflow-x:auto;white-space:pre}
+ul.reqs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+ul.reqs li{display:grid;grid-template-columns:48px minmax(0,1fr);gap:2px 10px;font-size:15px;color:var(--ink)}
+ul.reqs .rid{font:600 12px/1.6 var(--mono);color:var(--accent);grid-row:span 2}
+ul.reqs .rtar{font-size:13px;color:var(--quiet)}
+.dd-bar{margin-bottom:4px}
+.dd{display:flex;flex-direction:column;gap:14px}
+.dd[hidden]{display:none}
+.dd .ask{font:500 17px/1.45 var(--display);color:var(--ink);border-left:3px solid var(--accent);padding-left:14px;max-width:none}
+.dd .ask span{display:block;font:500 11px/1.4 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+.dd .answer{font-size:17px;line-height:1.55;font-weight:500;max-width:none}
+.dd-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px;background:var(--sheet);border:1px solid var(--rule);border-radius:14px;padding:18px 20px;box-shadow:var(--shadow)}
+.dd-grid h4{margin:0 0 8px;font:600 12px/1.2 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.evs{display:flex;flex-direction:column;gap:12px}
+.ev{display:flex;flex-direction:column;gap:3px;min-width:0}
+.ev .t{font:600 13.5px/1.35 var(--display);color:var(--ink)}
+.ev .v{font-size:14px;line-height:1.5;color:var(--quiet)}
+.dd-foot{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;font-size:14px;color:var(--ink)}
+.dd-foot>div{background:var(--paper);border-radius:10px;padding:12px 14px}
+.dd-foot .lab.covers{display:inline;margin:0 4px 0 8px}
+.dd-foot .lab{display:block;font:500 11px/1.2 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin-bottom:4px}
+.pill.bad{background:#F6E1DE;color:var(--bad)}
+ol.flowchips{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+ol.flowchips li{display:flex;flex-direction:column;gap:6px;padding:12px 14px;border-radius:10px;background:var(--paper);font-size:14px;color:var(--ink);position:relative}
+ol.flowchips .n{font:600 12px/1 var(--mono);color:var(--accent)}
+ol.flowchips.race .n{color:var(--bad)}
+.score td:first-child{width:46%}
+.score tr.grp td{font:600 12px/1.2 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--faint);background:var(--paper)}
+.score a{color:var(--accent);font-weight:600;text-decoration:none;white-space:nowrap}
+@media (max-width:900px){ .dd-grid,.dd-foot{grid-template-columns:minmax(0,1fr)} }
+.race .tabs{margin-bottom:6px}
+#c-race svg{min-width:640px}
+.cards3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.cards3>div{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:10px;background:var(--sheet);border:1px solid var(--rule)}
+.cards3 b{font:600 14px/1.3 var(--display);color:var(--ink)}
+.cards3 span{font-size:14px;line-height:1.5;color:var(--quiet)}
+@media (max-width:900px){ .cards3{grid-template-columns:minmax(0,1fr)} }
+footer{font-size:13px;line-height:1.6;color:var(--faint);border-top:1px solid var(--rule);padding-top:18px}
+@media (max-width:900px){
+  .wrap{grid-template-columns:minmax(0,1fr);gap:20px;padding-inline:16px}
+  nav.rail{position:sticky;top:env(safe-area-inset-top,0px);z-index:2;flex-direction:row;overflow-x:auto;background:var(--paper);padding-block:8px;border-bottom:1px solid var(--rule)}
+  nav.rail .k{display:none}
+  nav.rail a{white-space:nowrap}
+  .steps{grid-template-columns:minmax(0,1fr)}
+  .split{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ideas,.gaps{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:no-preference){ .bar-in{transition:opacity .3s} }
+</style>
+
+<div class="wrap">
+<nav class="rail" aria-label="Chapters">
+  <span class="k">The talk</span>
+  <a href="#reqs"><b>1</b><span>Requirements</span></a>
+  <a href="#need"><b>2</b><span>Orchestration jobs</span></a>
+  <a href="#problems"><b>3</b><span>Why native breaks</span></a>
+  <a href="#route"><b>4</b><span>Our route</span></a>
+  <a href="#dives"><b>5</b><span>Deep dives</span></a>
+  <a href="#score"><b>6</b><span>Requirements, checked</span></a>
+</nav>
+
+<main>
+<header class="hero">
+  <span class="eyebrow">Account-grain revenue · Airflow 3.3 · one option · measured in a local environment, not MWAA · Spark is a stand-in</span>
+  <h1>Can Airflow orchestrate 100,000 partitions?</h1>
+  <p class="lead">First the jobs an orchestrator does, and how native Airflow does them. Then what happens at 100,000 partitions, split into two separate problems. Then one route, what it did at 100,000 partitions, and what is still open.</p>
+</header>
+
+<section class="ch" id="reqs">
+  <span class="chno">1 · Requirements</span>
+  <h2>What the system must do, and how well</h2>
+  <p class="lead">We sort the twelve scored requirements into what the system must do and how well, and add rerun and failure handling. The second line of each row is the target we score against in chapter 6, not a result.</p>
+  <div class="two">
+    <div class="side"><span class="tag">Functional</span><ul class="reqs"><li><span class="rid">R8</span><span class="rt">Start work when data lands: the producer sends an event; Airflow does not poll with sensors.</span><span class=rtar>Every landing reaches Airflow as an event; no Airflow sensor polls for data</span></li><li><span class="rid">R1</span><span class="rt">Recompute only the partitions whose input changed, using the new input and the latest version of every other input.</span><span class=rtar>Only changed partitions recompute, from 1 to 100,000 per landing</span></li><li><span class="rid">R3</span><span class="rt">Bundle many partitions into one Spark job, and keep a per-partition record of the input versions each used.</span><span class=rtar>One Spark job per batch, not per partition; 100,000 partitions in one job</span></li><li><span class="rid">R4</span><span class="rt">Start downstream jobs when a batch of results is ready.</span><span class=rtar>One downstream run per batch, not one per partition</span></li><li><span class="rid">Ops</span><span class="rt">Isolate a failing partition so its batch still finishes; retry it on newer input or an operator re-queue.</span><span class=rtar>One bad partition fails alone; the rest of its batch finishes in one extra run</span></li><li><span class="rid">Ops</span><span class="rt">Rerun or backfill chosen partitions on demand, including ones already done, for example after a calc fix.</span><span class=rtar>Any set of 1 to 100,000 partitions rerun by one operator action</span></li><li><span class="rid">R7</span><span class="rt">Explain itself per partition: is it current, why not, what a failure affects, and where its data came from.</span><span class=rtar>Answers for any of 100,000 partitions, for operators and tens to hundreds of end users</span></li></ul></div>
+    <div class="side"><span class="tag">Non-functional</span><ul class="reqs"><li><span class="rid">R5</span><span class="rt">Carry 10,000 to 100,000 partitions per business date and 10 to 3,000 calcs a day.</span><span class=rtar>100,000 partitions; 10 to 3,000 calcs a day</span></li><li><span class="rid">R6</span><span class="rt">Finish a small adjustment fast, even while large jobs are running.</span><span class=rtar>p95 under 2 minutes, landing to done</span></li><li><span class="rid">R2</span><span class="rt">Overlapping work on the same partition never leaves a wrong result, and no partition waits on unrelated ones.</span><span class=rtar>Zero partitions recorded with an input set no job computed, with up to K = 10 overlapping jobs (our runs used K = 3)</span></li><li><span class="rid">C1</span><span class="rt">Use Airflow as designed, not as a host for a second scheduler.</span><span class=rtar>Stock Airflow 3.3 on MWAA 3.3.1; Airflow decides when, how many and retries</span></li><li><span class="rid">R11</span><span class="rt">Track partition state in a standard place with clear platform responsibilities, not in a custom state service.</span><span class=rtar>State in Airflow's own store, within its 64 KB value default, with retention</span></li><li><span class="rid">R9</span><span class="rt">Constrain degrees of freedom: one way to wire every dataset and grain, so teams do not invent their own.</span><span class=rtar>One mechanism for every dataset and grain; no cron, watermark or second path</span></li><li><span class="rid">R10</span><span class="rt">Be testable: the rules are checked by tests, and runs can be repeated and replayed.</span><span class=rtar>Unit tests for the journal rules; repeatable 10k and 100k runs on MWAA 3.3.1</span></li></ul></div>
+  </div>
+</section>
+
+<section class="ch" id="need">
+  <span class="chno">2 · The orchestrator's jobs</span>
+  <h2>What an orchestrator does, and how Airflow does it</h2>
+  <p class="lead">Whatever grain the calculation team picks, an orchestrator does the same jobs. In Airflow each job hangs on runs, tasks and events. With native asset partitions, the partition is the unit for all of them.</p>
+  <div class="sheet stepper">
+    <div class="steps-bar" role="tablist" aria-label="Orchestration jobs" id="jobbar"></div>
+    <div class="chart" id="c-jobs"></div>
+    <div class="stepcard" id="jobcard" aria-live="polite"></div>
+    <div class="stepnav"><button type="button" id="jb-prev">Previous</button><button type="button" id="jb-next">Next</button></div>
+  </div>
+  <p>Natively, each partition is a run, with its own task instances and events. That is why retry, rerun and lineage per partition come out of the box. The next question is what that means when there are 100,000 of them.</p>
+  <details class="more">
+    <summary>The seven jobs as a table</summary>
+  <div class="tbl sheet">
+    <table class="grain jobs">
+      <thead><tr><th>Orchestration job</th><th>What it means</th><th>How native Airflow does it</th></tr></thead>
+      <tbody>
+        <tr><td><b>Trigger</b></td><td>Start the calculation when an input lands</td><td>An asset event wakes the Dag. With asset partitions, each changed partition gets its own keyed event and its own run.</td></tr>
+        <tr><td><b>Dependencies</b></td><td>Run the calculation, then chain the next ones: the DAG</td><td>Dags are chained by asset events. A partitioned downstream Dag gets a run per key.</td></tr>
+        <tr><td><b>Dispatch</b></td><td>Hand work to workers, and cap how many run at once</td><td>Task instances, queued through pools and max_active_runs.</td></tr>
+        <tr><td><b>Retry</b></td><td>Retry a failed piece of work</td><td>Task instance retries. One partition per run, so retries are per partition.</td></tr>
+        <tr><td><b>Status</b></td><td>Show what is done, failed or waiting</td><td>Run and task state in the UI. Runs can be filtered by partition key.</td></tr>
+        <tr><td><b>Rerun</b></td><td>Run a piece of work again on demand</td><td>Clear a run, or trigger a run for one key.</td></tr>
+        <tr><td><b>Lineage</b></td><td>Record which inputs produced each result</td><td>Asset events attached to each run.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  </details>
+</section>
+
+<section class="ch" id="problems">
+  <span class="chno">3 · Two separate problems</span>
+  <h2>Can Airflow track 100,000 things? And how many engine jobs run?</h2>
+  <p class="lead">These are different questions with different fixes. The first decides whether Airflow can be the orchestrator at all. The second is about the engine, and it stays open.</p>
+  <div class="two">
+    <div class="side">
+      <span class="tag">Problem 1 · Orchestration</span>
+      <h3>Airflow's cost grows with the number of objects it tracks</h3>
+      <ul class="why">
+        <li><b>Every object is rows:</b> a run, a task, an event, a queue entry.</li>
+        <li><b>One Python loop</b> in the scheduler looks at those rows, at least twice per run.</li>
+        <li><b>Some steps touch all of them at once,</b> inside one transaction.</li>
+        <li><b>So the count breaks it.</b> Data size only costs time.</li>
+      </ul>
+    </div>
+    <div class="side">
+      <span class="tag">Problem 2 · Compute</span>
+      <h3>How many engine jobs, and how big</h3>
+      <ul class="why">
+        <li><b>A Spark job pays start-up per job.</b> One job per partition pays it 100,000 times.</li>
+        <li><b>Lambda per partition might work,</b> if the fan-out stays inside one task. Not measured.</li>
+        <li><b>Whatever the engine,</b> problem 1 stays the same.</li>
+        <li><b>No real engine ran</b> in any test here.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="sheet">
+    <h3>Where the 100,000 go: three native ways to schedule them</h3>
+    <div class="shapes" id="shapes-native"></div>
+    <div class="inside">
+      <div class="steps-bar" role="tablist" aria-label="Look inside each way" id="insidebar"></div>
+      <div class="chart" id="c-inside"></div>
+      <ol class="why-steps" id="inside-why"></ol>
+      <p class="note" id="inside-fix"></p>
+    </div>
+    <p class="note">Measured in earlier runs in the same local environment, recorded in the repo report. The first way also writes 100,000 rows into each of seven tables, again at every downstream hop. MWAA can run more schedulers, but gives no database access to add the indexes.</p>
+  </div>
+  <p>That leaves one question. Can Airflow keep its object count small, like batching, and still know per partition what changed and what is done?</p>
+</section>
+
+<section class="ch" id="route">
+  <span class="chno">4 · Our route</span>
+  <h2>Airflow schedules batches; partitions travel as data</h2>
+  <p class="lead">Runs and tasks stay per batch, so Airflow triggers, chains, dispatches and retries them as usual. Per-partition status lives in a journal. Step through the parts:</p>
+  <div class="sheet stepper">
+    <div class="steps-bar" role="tablist" aria-label="Parts of the route" id="stepbar"></div>
+    <div class="chart" id="c-route"></div>
+    <div class="stepcard" id="stepcard" aria-live="polite"></div>
+    <div class="stepnav"><button type="button" id="st-prev">Previous</button><button type="button" id="st-next">Next</button></div>
+  </div>
+  <p>Our code is 323 lines of code in two files, not counting comments and docstrings. Two interim pieces touch timing, the debounce and the ticks; we intend to propose both upstream.</p>
+  <details class="more">
+    <summary>The same seven jobs as chapter 2, plus late events, as a table</summary>
+  <div class="tbl sheet">
+    <table class="grain jobs">
+      <thead><tr><th>Orchestration job</th><th class="acc">On this route<br><span class="sub">the Airflow piece</span></th><th>Whose</th></tr></thead>
+      <tbody>
+        <tr><td><b>Trigger</b></td><td>One event per landing. A debounce Dag merges a window into one event and one batcher run; when lanes are busy, several windows share a run.<br><span class="sub"><code>v2_debounce</code>: a deferred wait, then one event</span></td><td><span class="pill ours">Ours, interim</span></td></tr>
+        <tr><td><b>Dependencies</b></td><td>The next Dag gets one event per batch and reads the partition list from the batch key with our helper. It also needs its own small sweep task.<br><span class="sub">One asset event per batch, pointing at the batch key</span></td><td><span class="pill stock">Stock</span> <span class="pill ours">Pointer format ours</span></td></tr>
+        <tr><td><b>Dispatch</b></td><td>One engine task per batch, at most K at once. Batch size has no cap yet.<br><span class="sub"><code>v2_batcher</code>: <code>max_active_runs = K</code>, a pool of K slots</span></td><td><span class="pill stock">Stock</span></td></tr>
+        <tr><td><b>Retry</b></td><td>The whole batch retries. After the last try, if the engine error names bad partitions, only they go to failed and the rest run once more. Otherwise the whole batch fails.<br><span class="sub">Task retries, then our claim and ledger rules</span></td><td><span class="pill stock">Stock</span> <span class="pill ours">Failure rules ours</span></td></tr>
+        <tr><td><b>Status</b></td><td>Per batch in the UI. Per partition in the journal's done and failed maps. No status view yet.<br><span class="sub"><code>asset_state_store</code> on the output asset; done and failed are written only by <code>v2_ledger</code></span></td><td><span class="pill stock">Stock store</span> <span class="pill ours">Our schema</span></td></tr>
+        <tr><td><b>Rerun</b></td><td>Failed partitions can be re-queued. Recomputing done partitions on demand is not built.<br><span class="sub"><code>v2_requeue</code></span></td><td><span class="pill ours">Ours</span></td></tr>
+        <tr><td><b>Lineage</b></td><td>Each batch key records the input versions claimed for every partition; recording the versions a job actually read is the rule in deep dive 3, designed, not built. Deep dive 3 shows the rule for two inputs.<br><span class="sub">Batch keys and the done map</span></td><td><span class="pill ours">Ours</span></td></tr>
+        <tr><td><b>Late events</b></td><td>Events that arrive while a run is busy get picked up by a tick from a small sweep task.<br><span class="sub">Tick events</span></td><td><span class="pill ours">Ours, interim</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  </details>
+</section>
+
+<section class="ch" id="dives">
+  <span class="chno">5 · Deep dives</span>
+  <h2>Deep dives</h2>
+  <p class="lead">Each tab takes one design question: how it works on this route, what we measured, and what is still open.</p>
+  <div class="steps-bar dd-bar" role="tablist" aria-label="Deep dives" id="ddbar"><button type="button" role="tab" data-dd="scale"><b>1</b>Scale and cost</button><button type="button" role="tab" data-dd="latency"><b>2</b>Latency under load</button><button type="button" role="tab" data-dd="consistency"><b>3</b>Multi-input consistency</button><button type="button" role="tab" data-dd="observability"><b>4</b>Observability</button><button type="button" role="tab" data-dd="rerun"><b>5</b>Rerun and backfill</button><button type="button" role="tab" data-dd="failure"><b>6</b>Failure handling</button></div>
+    <div class="dd" id="dd-scale" role="tabpanel">
+      <p class="ask"><span>The question</span>What does 100,000 partitions cost Airflow on this route, and where will it break first?</p>
+      <p class="answer">Airflow objects do not grow with partitions: one landing is 6 events, 6 runs, 25 task instances, against 100,000 native runs. What grows is the size of the partition lists we store, and we plan to split those into small keys.</p>
+      <div class="dd-grid">
+        <div><h4>How it works</h4><ul class="why"><li>Partitions travel as data inside the landing event, the window key and the batch key. Airflow schedules windows and batches, never partitions.</li><li>One landing costs six runs: debounce, batcher, an empty batcher tick run, ledger, and two runs of the example downstream Dag.</li><li>What grows with partitions and inputs is JSON size. Each state-store get or set, or XCom push or pull, of 4.4 to 5.5 MB took 1.9 to 3.8 s. One run made about 15 of them in series.</li><li>The journal and the partition lists are split by partition into keys under the state store's 64 KB limit, for example 128 keys. A small batch then rewrites only the keys it touches. Planned, not built.</li></ul></div>
+        <div><h4>Measured</h4><div class="evs"><div class="ev"><span class="t">Airflow objects, one 100,000-partition landing</span><span class="v">6 asset events, 6 Dag runs and 25 task instances, counting one unexpanded Spark placeholder. In the stream run, 200 landings of 500 partitions made 315 events and 139 runs. Native asset partitions: 100,000 rows in each of seven tables per hop.</span></div><div class="ev"><span class="t">Where the 93 s went (measured once, local environment, not MWAA)</span><span class="v">15 s designed waits (10 s window, 5 s ledger margin), 26 s engine stand-in, 52 s Airflow work. About 40 s of the 52 s went on moving 4.4 to 5.5 MB JSON values. About 13 s was XCom pulls; passing keys instead would likely remove them, not tried. The scheduler never lagged more than 0.6 s. Real Spark time is not measured.</span></div><div class="ev"><span class="t">Value sizes, and the split</span><span class="v">Today the journal is one key: 4.4 MB with one input, 7.2 MB with two. Split into 128 keys, each is about 34 to 56 KB.</span></div></div></div>
+      </div>
+        <div class="sheet">
+    <h3>Where the 93 seconds of one landing went</h3>
+    <div class="split" id="split"></div>
+    <p class="note">About 40 of the 52 seconds of Airflow work was moving these multi-MB values. Passing the batch key instead of the batch would likely cut about 13 seconds of XCom; not tried yet. Real Spark replaces the 26-second stand-in.</p>
+  </div>
+
+      <div class="dd-foot"><div><span class="lab">Native Airflow</span>Natively, each hop puts 100,000 rows in each of seven tables; finishing took 31 minutes with extra indexes and two schedulers.</div><div><span class="lab">Topic status</span><span class="pill stock">Met with a condition</span> <span class="lab covers">Covers</span> <span class="chip">R5</span> <span class="chip">R11</span></div><div><span class="lab">Next step</span>Split the journal and partition lists into small keys (about 1 day), pass keys not batches in XCom (0.5 day), retention (1 day), then MWAA proof runs (3 days).</div></div>
+    </div>
+    <div class="dd" id="dd-latency" role="tabpanel" hidden>
+      <p class="ask"><span>The question</span>When big jobs hold every lane, how long does an adjustment wait, and can you keep p95 under 2 minutes?</p>
+      <p class="answer">With lanes free, every landing was done within 60 seconds; with all three lanes busy, the last 48 landings waited 308 to 378 s behind one merged job. A reserved pool for small landings would keep an adjustment off that queue: designed, not built.</p>
+      <div class="dd-grid">
+        <div><h4>How it works</h4><ul class="why"><li>A landing waits out its debounce window, then rides one v2_batcher run. Up to K = 3 runs overlap (max_active_runs) and share the 3-slot v2_spark pool.</li><li>In the prototype, with all 3 runs busy, windows queue in Airflow and the next free run takes them together. Its claim makes one Spark job per run, with no size cap. Runs also hold their lane, though not a pool slot, during claim, publish and finalize: for 73.8 s in total a window was waiting while fewer than 3 Spark tasks ran.</li><li>The design: small landings are routed before merging, through their own window, to a reserved small pool. The batcher's max_active_runs sits above the large slots, so a small run can always start. Large merged work is capped and split across free lanes. Designed, not built.</li><li>Window length trades fewer jobs for longer waits. Under load the queue merged windows anyway, so a long window buys little there. The proposed 60 s window adds up to 50 s: about 110 s worst case with lanes free; arithmetic, not measured. Real Spark would take longer than the stand-in's 7 s sleep.</li></ul></div>
+        <div><h4>Measured</h4><p class="note" style="margin:-4px 0 8px">Neither run used real Spark. They test how batching behaves at two engine speeds, not how fast Spark is.</p><div class="evs"><div class="ev"><span class="t">Fast stand-in engine, lanes free</span><span class="v">The stand-in sleeps 6 s plus 0.2 ms per partition, so each job took about 8 s. 200 landings of 500 partitions over 302 s made 23 windows and 23 jobs. Every landing was done within 59.7 s: median 48.3 s, p90 54.9 s. The pool never held more than 1 of 3 slots. Local environment, not MWAA; stand-in Spark; ran once.</span></div><div class="ev"><span class="t">Slower stand-in engine, all 3 lanes busy</span><span class="v">The stand-in sleeps 6 s plus 10 ms per partition: about 36 s for 3,000 partitions, 246 s for 24,000. Same landings: 28 windows became 12 jobs, with windows per job 1,1,1,2,1,2,2,2,4,3,2,7. Job size rose, not steadily, from 3,000 to 24,000 partitions. No task failed or retried.</span></div><div class="ev"><span class="t">The tail is one job</span><span class="v">The last job held 48 landings, 24,000 partitions. Its Spark task ran 251.1 s, the last 238.9 s with two of three lanes idle. Those 48 landings took 308 to 378 s, so p95 sat in that range.</span></div></div></div>
+      </div>
+        <div class="sheet">
+    <h3>200 landings in 5 minutes, 100,000 partitions</h3>
+    <div class="tabs" role="group" aria-label="Scenario">
+      <button type="button" id="t-free" aria-pressed="true">Fast stand-in: lanes free</button>
+      <button type="button" id="t-busy" aria-pressed="false">Slower stand-in: all 3 lanes busy</button>
+    </div>
+    <div class="chart" id="c-lanes"></div>
+    <div class="facts" id="lane-facts"></div>
+    <p class="note" id="lane-note"></p>
+  </div>
+
+      <div class="dd-foot"><div><span class="lab">Native Airflow</span>Native Airflow has no debounce, so it adds no window wait; our reserved-slot fix would reuse a stock Airflow pool.</div><div><span class="lab">Topic status</span><span class="pill stock">Designed, not built</span> <span class="lab covers">Covers</span> <span class="chip">R6</span></div><div><span class="lab">Next step</span>Build the claim size cap and rerun stream_busy, about one day; reserved small-batch slots plus an adjustment test, about two days.</div></div>
+    </div>
+    <div class="dd" id="dd-consistency" role="tabpanel" hidden>
+      <p class="ask"><span>The question</span>If positions and trades for one account land seconds apart, which versions does the final PnL use?</p>
+      <p class="answer">The newest of both, under a rule that is designed, not built: each job reads the newest version of every input when it starts and reports that set, and a result older on any input is rejected.</p>
+      <div class="sheet race">
+                <div class="chart" id="c-race"></div>
+        <p class="note">Times in seconds after the trades v5 landing, from a forced-timing test on 100,000 partitions in a local environment, not MWAA. The job labels and the green journal show the proposed read-at-start rule applied to that measured timeline: designed, not built, not re-run. In the test as run, the current code copied versions at claim time and recorded (6, 6), a pair no job computed, for every partition.</p>
+      </div>
+      <div class="cards3">
+        <div><b>The rule</b><span>Each job reads the newest version of every input when it starts and reports that set. The ledger and the output table keep only a set that is not older on any input.</span></div>
+        <div><b>Why it ends on the newest</b><span>Data lands before its event, so the job that starts last has seen every landing. A slower job with older inputs that finishes later is rejected.</span></div>
+        <div><b>Not covered</b><span>A reader can briefly see a mixed set such as (6, 5). If that is not allowed, we need a same-cut gate: an open question for the calc team.</span></div>
+      </div>
+      <div class="dd-foot"><div><span class="lab">Native Airflow</span>Native per-key AND conditions can wait for both inputs, but they pin no versions, and same-key runs can finish out of order.</div><div><span class="lab">Topic status</span><span class="pill stock">Designed, not built</span> <span class="lab covers">Covers</span> <span class="chip">R1</span> <span class="chip">R2</span> <span class="chip">R3</span></div><div><span class="lab">Next step</span>Build the read-at-start report and the ledger rule, then re-run the two-input test at 100,000 partitions. Not yet sized.</div></div>
+    </div>
+    <div class="dd" id="dd-observability" role="tabpanel" hidden>
+      <p class="ask"><span>The question</span>For any one of 100,000 accounts, where do I see its status, why it failed and which inputs it used?</p>
+      <p class="answer">Partly: each batch is a run that turns red when partitions fail, and the journal holds each partition's state and versions. An operator reads it as raw JSON today: no per-partition view is built, and waiting partitions are not tracked.</p>
+      <div class="dd-grid">
+        <div><h4>How it works</h4><ul class="why"><li>Airflow shows the batch. Each batcher run is one Dag run; its check task turns it red when partitions go to failed. If a job dies before publish, its partitions ride once more and that run stays green.</li><li>The journal shows the partition. In the asset state store on v2_pnl, done and failed map each partition to its input versions. Each batch/&lt;run_id&gt;#&lt;i&gt; key holds its state (claimed, running, done, failed), versions, culprits and the error's first 300 characters. The asset's State Store tab lists them as raw JSON, each linked to the task that last wrote it.</li><li>Lineage is a chain: landing events, window key, batch key, v2_pnl event, downstream run. Airflow records which events each run consumed, and each batch key carries its batcher run id.</li><li>Proposed, not built: a status task at the end of v2_ledger, the only writer of done and failed. It writes a summary key under 64 KB, readable on the tab. It upserts one status row per folded partition: state, versions, batch key, error. Joined with the output table, the rows show whether each result was written.</li></ul></div>
+        <div><h4>Measured</h4><div class="evs"><div class="ev"><span class="t">What Airflow shows for one 100,000-partition landing</span><span class="v">Local environment, not MWAA. 6 Dag runs, all succeeded, and 6 asset events. Sizes: landing 2,400,077 bytes, debounced 139, PnL 130, finished 79, two ticks of 14 bytes.</span></div><div class="ev"><span class="t">Where the partition detail sits</span><span class="v">In the state store on v2_pnl: done 4,400,000 bytes, batch key and window key 4,400,078 bytes each. That is 67 times the 64 KB policy default; with two inputs, done reached 7,200,000 bytes. Task writes above it only warn; REST writes, including edits from the tab, are rejected. How the tab renders a 4.4 MB value was not measured.</span></div><div class="ev"><span class="t">Failure, recorded with 6 partitions on 6 October (same batcher and journal code as today)</span><span class="v">KATA003 was poisoned. Spark failed twice, the batch key turned failed, check failed and the run turned red. failed then held only KATA003; the other five were published 56 s after the landing. Until its v4 landed, KATA003 sat in done at positions v1 and in failed at v3. No task failed or retried in any 100,000-partition run, so this path is not exercised at scale.</span></div></div></div>
+      </div>
+        <div class="live" id="replay">
+    <h3>Replay: one landing of 100,000 partitions, as recorded</h3>
+    <p class="note">The dag_run and asset_event rows are the real rows from the metadata database. The state-store card is rebuilt from task timings, because later runs overwrote those keys. Key names are in UTC, so they read 8 October. Press play, or drag to any second.</p>
+    <div class="player">
+      <button type="button" id="play" aria-label="Play">Play</button>
+      <input type="range" id="scrub" min="0" max="95" step="0.25" value="95" aria-label="Seconds since the landing">
+      <span class="clock mono" id="clock">95.0 s</span>
+      <button type="button" id="speed" aria-label="Playback speed">×4</button>
+    </div>
+    <div class="chart" id="c-replay"></div>
+    <p class="say" id="say"></p>
+    <div class="tables">
+      <div class="tcard"><h4>dag_run</h4><ul id="r-runs"></ul></div>
+      <div class="tcard"><h4>asset_event</h4><ul id="r-events"></ul></div>
+      <div class="tcard"><h4>asset_state_store on v2_pnl</h4><ul id="r-store"></ul></div>
+    </div>
+    <p class="note">Repeating this on MWAA 3.3.1 needs an environment and a REST-only version of the run script. That is one of the asks in chapter 6.</p>
+  </div>
+
+      <div class="dd-foot"><div><span class="lab">Native Airflow</span>Native keeps status per run and can filter runs by partition key; no view shows every key's latest state.</div><div><span class="lab">Topic status</span><span class="pill ours">Partial</span> <span class="lab covers">Covers</span> <span class="chip">R7</span> <span class="chip">R3</span></div><div><span class="lab">Next step</span>Build the status task and summary key, about 1 day; recording consumed windows in claim would add waiting partitions.</div></div>
+    </div>
+    <div class="dd" id="dd-rerun" role="tabpanel" hidden>
+      <p class="ask"><span>The question</span>If one account comes out wrong, or we need to recompute a whole set, how do I rerun just that?</p>
+      <p class="answer">A failed partition can be re-queued with one call, and changed input recomputes a partition by itself. Forcing a done partition to recompute, and backfilling a list or a date, are not built yet.</p>
+      <div class="dd-grid">
+        <div><h4>How it works</h4><ul class="why"><li>Built: v2_requeue rings one event on v2_inputs_debounced for listed partitions that are in failed, with the versions they failed on. It skips the debounce window, and claim runs them in their own quarantine job. It still waits for a free batcher run.</li><li>Built: a producer landing with a newer version and a changed marker recomputes that partition, failed or done. For a done partition, the same version or an unchanged marker recomputes nothing.</li><li>To build: v2_recompute takes a list or a selector, such as all done partitions or those landed on a date. It writes the list to one state-store key, rerun/&lt;run_id&gt;, and rings one pointer event with force set.</li><li>To build: claim lets a forced partition ride even when the due rule says no; failed ones still go to quarantine. Recomputing a past business date with that day's inputs needs the date in the key; not designed.</li></ul></div>
+        <div><h4>Measured</h4><div class="evs"><div class="ev"><span class="t">Re-landing one failed partition with a newer version</span><span class="v">About 24 s from landing to its PnL event and 28 s to done, for 1 partition. 10 s window and a 6.5 s stand-in sleep; local environment, not MWAA.</span></div><div class="ev"><span class="t">Native rerun of a set over REST</span><span class="v">Asset partitions have no backfill, so a new run per key is one POST. At MWAA's default 10 requests per second, 100,000 keys take about 2.8 hours. AWS Support can raise the default. Existing runs can be cleared in one bulk call by run-id list; not measured at 100,000.</span></div><div class="ev"><span class="t">Closest measured case for a 100,000-partition recompute</span><span class="v">One 100,000-partition landing: a 65.7 s batcher run, 92.9 s from landing to done. 26 s of it was a stand-in sleep. Local environment, not MWAA; a recompute itself was not measured.</span></div></div></div>
+      </div>
+      <div class="sheet"><ol class="flowchips"><li><span class="n">1</span>Operator triggers v2_recompute once: a list or a selector</li><li><span class="n">2</span>It writes rerun/&lt;run_id&gt; and rings one event, force set</li><li><span class="n">3</span>The event lands on v2_inputs_debounced: no debounce wait</li><li><span class="n">4</span>Batcher claim: forced partitions ride; failed ones go to quarantine</li><li><span class="n">5</span>One Spark job, one PnL event, one ledger fold</li></ol></div>
+      <div class="dd-foot"><div><span class="lab">Native Airflow</span>Natively you clear a key's run by run id; asset partitions have no backfill, so new runs are one call each.</div><div><span class="lab">Topic status</span><span class="pill ours">Partial</span> <span class="lab covers">Covers</span> <span class="chip">R1</span> <span class="chip">R6</span></div><div><span class="lab">Next step</span>Build v2_recompute and a force flag in claim: about 40 lines, 1 day with tests and a 100,000-partition local run.</div></div>
+    </div>
+    <div class="dd" id="dd-failure" role="tabpanel" hidden>
+      <p class="ask"><span>The question</span>If one account breaks the Spark job, do the other 99,999 fail with it?</p>
+      <p class="answer">Airflow retries first; after the last try, only partitions the engine names go to failed, and the rest ride once more. Tested on six partitions locally, never at 100k; if the engine names nobody, the whole batch fails.</p>
+      <div class="dd-grid">
+        <div><h4>How it works</h4><ul class="why"><li>Airflow retries first: spark gets one retry 5 s later, claim and publish get two. Our code records no verdict before the last try.</li><li>After the last try, spark marks its batch key failed. Partitions the engine error names go to failed; ring_retry rings the rest once. A retry batch never isolates again. If the error names none, the whole batch fails.</li><li>A job that ended without publishing is re-rung once, then failed. v2_ledger alone writes failed; check then turns the run red. Failed partitions later ride in their own quarantine job on newer input, or when an operator lists them in v2_requeue.</li><li>Risks: culprits are partition names found in the error text, so the calc must name them; ACC1 also matches ACC12. A Spark outage outlasting one 5 s retry puts the whole batch in failed until newer input or a re-queue. With several inputs, another input's landing can clear a failure without computing it (the multi-input case of deep dive 3).</li></ul></div>
+        <div><h4>Measured</h4><div class="evs"><div class="ev"><span class="t">Six-partition run, 6 October, local environment, not MWAA</span><span class="v">KATA003 poisoned. Spark try 1 failed at 30.6 s, try 2 started 5 s later and failed at 46.2 s. Only then was the batch key marked failed, culprit KATA003.</span></div><div class="ev"><span class="t">Healthy partitions rode once more</span><span class="v">ring_retry sent the 5 healthy partitions as one small event; they were published 56 s after the landing. KATA003 went to failed and the first batcher run ended red.</span></div><div class="ev"><span class="t">Quarantine on newer input</span><span class="v">Poison cleared, positions v4 landed for KATA003 alone. Its own job published it 24 s after the landing and failed ended empty. Totals: 16 Dag runs, 1 red, 3 Spark jobs.</span></div></div></div>
+      </div>
+      <div class="sheet"><ol class="flowchips"><li><span class="n">1</span>Spark task fails: Airflow retries once, 5 s later</li><li><span class="n">2</span>Last try fails: spark marks the batch key failed</li><li><span class="n">3</span>Engine named partitions: only they go to failed; ring_retry sends the rest once more</li><li><span class="n">4</span>Engine named none: the whole batch goes to failed</li><li><span class="n">5</span>Job ended without publishing: re-rung once, failed the second time</li><li><span class="n">6</span>v2_ledger records failed, check turns the run red; failed partitions ride later in a quarantine job or via v2_requeue</li></ol></div>
+      <div class="dd-foot"><div><span class="lab">Native Airflow</span>Natively each partition is its own run, so retry and isolation come free; 100,000 empty runs took 31 minutes at best.</div><div><span class="lab">Topic status</span><span class="pill ours">Partial</span> <span class="lab covers">Covers</span> <span class="chip">R1</span> <span class="chip">R7</span> <span class="chip">R10</span></div><div><span class="lab">Next step</span>Run a 100k failure test with one poisoned partition and one killed worker: about one day of work.</div></div>
+    </div>
+</section>
+
+<section class="ch" id="score">
+  <span class="chno">6 · Requirements, checked</span>
+  <h2>Where this option stands, requirement by requirement</h2>
+  <div class="tbl sheet"><table class="grain score">
+    <thead><tr><th>Requirement</th><th>Status</th><th>Why</th></tr></thead>
+    <tbody><tr class="grp"><td colspan="3">Functional</td></tr><tr><td><b>R8</b> Start work when data lands: the producer sends an event; Airflow does not poll with sensors.</td><td><span class="pill stock">Met</span></td><td>Asset events and deferred waits; no polling sensors in Airflow. The producer's own data detector sits outside Airflow. After an operator unpauses the batcher, work waits for the next landing. </td></tr><tr><td><b>R1</b> Recompute only the partitions whose input changed, using the new input and the latest version of every other input.</td><td><span class="pill stock">Met with a condition</span></td><td>The version orders inputs and the marker, a per-partition change stamp sent with each landing, decides what changed. With two inputs, correctness rests on the read-at-start rule, designed, not built. <a href="#dives" data-goto="consistency">Multi-input consistency</a></td></tr><tr><td><b>R3</b> Bundle many partitions into one Spark job, and keep a per-partition record of the input versions each used.</td><td><span class="pill stock">Met with a condition</span></td><td>One job per run, measured at 100,000. Lineage records the versions claimed for each job; recording the versions actually read, and the versioned output table, are not built. <a href="#dives" data-goto="consistency">Multi-input consistency</a></td></tr><tr><td><b>R4</b> Start downstream jobs when a batch of results is ready.</td><td><span class="pill stock">Met</span></td><td>Downstream Dags chain on one event per batch; each needs a small sweep task until an upstream Airflow change ships. </td></tr><tr><td><b>Ops</b> Isolate a failing partition so its batch still finishes; retry it on newer input or an operator re-queue.</td><td><span class="pill stock">Met with a condition</span></td><td>Tested locally on a six-partition batch, not at 100,000. Isolation needs the engine error to name the bad partitions. <a href="#dives" data-goto="failure">Failure handling</a></td></tr><tr><td><b>Ops</b> Rerun or backfill chosen partitions on demand, including ones already done, for example after a calc fix.</td><td><span class="pill ours">Partial</span></td><td>Re-queue of failed partitions is built. Recomputing a done partition is not built: about 40 lines, 1 day. <a href="#dives" data-goto="rerun">Rerun and backfill</a></td></tr><tr><td><b>R7</b> Explain itself per partition: is it current, why not, what a failure affects, and where its data came from.</td><td><span class="pill ours">Partial</span></td><td>The journal holds the answers, but only as raw JSON on the asset's state-store tab. The status view, about 1 day, is not built. <a href="#dives" data-goto="observability">Observability</a></td></tr><tr class="grp"><td colspan="3">Non-functional</td></tr><tr><td><b>R5</b> Carry 10,000 to 100,000 partitions per business date and 10 to 3,000 calcs a day.</td><td><span class="pill stock">Met with a condition</span></td><td>Measured 100,000 in a local environment, not MWAA, up to 200 landings in 5 minutes. Daily volume is extrapolated, not load-tested. <a href="#dives" data-goto="scale">Scale and cost</a></td></tr><tr><td><b>R6</b> Finish a small adjustment fast, even while large jobs are running.</td><td><span class="pill stock">Met with a condition</span></td><td>A reserved pool for small batches keeps adjustments off the big-job queue: designed, not built. Measured without it: 60 s with free lanes, up to 378 s under load. Also depends on the window length and real Spark start-up. <a href="#dives" data-goto="latency">Latency under load</a></td></tr><tr><td><b>R2</b> Overlapping work on the same partition never leaves a wrong result, and no partition waits on unrelated ones.</td><td><span class="pill stock">Met with a condition</span></td><td>Overlapping jobs would be safe under the read-at-start rule: the newest set wins. Designed and checked on paper, not built or re-tested at 100,000. <a href="#dives" data-goto="consistency">Multi-input consistency</a></td></tr><tr><td><b>C1</b> Use Airflow as designed, not as a host for a second scheduler.</td><td><span class="pill stock">Met with a condition</span></td><td>Airflow owns when, how many and retries. The debounce wait and tick events are interim pieces of ours; the upstream proposals are not yet filed. </td></tr><tr><td><b>R11</b> Track partition state in a standard place with clear platform responsibilities, not in a custom state service.</td><td><span class="pill ours">Partial</span></td><td>Airflow's asset state store, our schema. Values will be split into keys under 64 KB; retention for old keys is not built yet. <a href="#dives" data-goto="scale">Scale and cost</a></td></tr><tr><td><b>R9</b> Constrain degrees of freedom: one way to wire every dataset and grain, so teams do not invent their own.</td><td><span class="pill stock">Met</span></td><td>One mechanism for every dataset and grain; only one calc, revenue PnL, is wired so far. </td></tr><tr><td><b>R10</b> Be testable: the rules are checked by tests, and runs can be repeated and replayed.</td><td><span class="pill ours">Partial</span></td><td>Runs are recorded and replayable. There are no unit tests yet, about 1 day, and nothing has run on MWAA, about 3 days. </td></tr></tbody>
+  </table></div>
+  <h3>Asks</h3>
+  <ol class="asks">
+    <li>Keep this as one option on the table.</li>
+    <li>An MWAA 3.3.1 environment to repeat these runs.</li>
+    <li>A view on where partition lineage should live: Airflow's own tables, or our journal plus a versioned output table.</li>
+  </ol>
+</section>
+
+<footer>Measured on 7 October 2026 in a local environment, not MWAA: Airflow 3.3.2, LocalExecutor, local Postgres, a 10-second debounce window, K = 3. Spark is a stand-in: a sleep of 6 seconds plus 0.2 to 10 ms per partition. Each scenario ran once. Our numbers were re-checked against the metadata database and task logs; the done size and the state-store card were rebuilt. Native numbers come from earlier runs in the repo report. The six-partition failure run is from 6 October, with a stand-in sleep of 6 seconds plus 0.5 s per partition.</footer>
+</main>
+</div>
+
+<script>
+const D = {"one": {"t0": "2026-10-08T01:16:37.196033+00:00", "total": 92.9, "tasks": [{"dag": "v2_debounce", "task": "plan", "map": -1, "state": "success", "start": 1.6, "end": 4.15, "queued": 0.43}, {"dag": "v2_debounce", "task": "hold", "map": -1, "state": "success", "start": 4.32, "end": 12.16, "queued": 11.13}, {"dag": "v2_debounce", "task": "forward", "map": -1, "state": "success", "start": 12.41, "end": 15.97, "queued": 12.35}, {"dag": "v2_batcher", "task": "claim", "map": -1, "state": "success", "start": 16.67, "end": 25.51, "queued": 16.64}, {"dag": "v2_batcher", "task": "run_batch.spark", "map": 0, "state": "success", "start": 25.86, "end": 62.88, "queued": 25.84}, {"dag": "v2_batcher", "task": "run_batch.publish", "map": 0, "state": "success", "start": 63.41, "end": 72.02, "queued": 63.35}, {"dag": "v2_batcher", "task": "finalize", "map": -1, "state": "success", "start": 72.18, "end": 80.35, "queued": 72.17}, {"dag": "v2_ledger", "task": "settle", "map": -1, "state": "success", "start": 80.7, "end": 87.66, "queued": 86.72}, {"dag": "v2_batcher", "task": "tick", "map": -1, "state": "success", "start": 80.74, "end": 82.12, "queued": 80.68}, {"dag": "v2_batcher", "task": "check", "map": -1, "state": "success", "start": 80.75, "end": 82.16, "queued": 80.68}, {"dag": "v2_batcher", "task": "claim", "map": -1, "state": "success", "start": 82.28, "end": 83.16, "queued": 82.27}, {"dag": "v2_batcher", "task": "check", "map": -1, "state": "success", "start": 86.06, "end": 87.1, "queued": 86.03}, {"dag": "v2_ledger", "task": "fold", "map": -1, "state": "success", "start": 88.02, "end": 92.95, "queued": 88.0}], "events": {"first_landing": 0.0, "last_landing": 0.0, "first_forward": 15.99, "last_forward": 15.99, "first_publish": 72.04, "last_publish": 72.04, "first_finalize": 80.36, "last_finalize": 80.36, "last_fold_end": 92.95}, "replay": {"events": [{"t": 0.0, "asset": "v2_inputs_landed", "by": "REST API", "bytes": 2400077, "what": "positions v1 \u00b7 100,000 partitions"}, {"t": 15.99, "asset": "v2_inputs_debounced", "by": "v2_debounce.forward", "bytes": 139, "what": "pointer to window/2026-10-08\u2026 \u00b7 100,000 partitions"}, {"t": 72.04, "asset": "v2_pnl", "by": "v2_batcher.run_batch.publish", "bytes": 130, "what": "pointer to batch key \u00b7 100,000 partitions"}, {"t": 77.95, "asset": "v2_exceptions_tick", "by": "v2_exceptions.sweep", "bytes": 14, "what": "empty tick"}, {"t": 80.36, "asset": "v2_batches_finished", "by": "v2_batcher.finalize", "bytes": 79, "what": "1 batch id"}, {"t": 82.14, "asset": "v2_batcher_tick", "by": "v2_batcher.tick", "bytes": 14, "what": "empty tick"}], "runs": [{"dag": "v2_debounce", "run": "ADPrtcoo", "q": 0.36, "s": 0.4, "e": 19.96, "state": "success"}, {"dag": "v2_batcher", "run": "fm0OhahX", "q": 16.49, "s": 16.54, "e": 82.25, "state": "success"}, {"dag": "v2_exceptions", "run": "opzsKlnA", "q": 72.13, "s": 72.14, "e": 78.13, "state": "success"}, {"dag": "v2_exceptions", "run": "yVtVm2qD", "q": 78.58, "s": 78.59, "e": 81.57, "state": "success"}, {"dag": "v2_ledger", "run": "bRUeKLqU", "q": 80.6, "s": 80.62, "e": 94.8, "state": "success"}, {"dag": "v2_batcher", "run": "4bRgNcmS", "q": 82.2, "s": 82.22, "e": 87.42, "state": "success"}]}}, "stream": {"lands": [0.0, 1.5, 3.0, 4.53, 6.02, 7.54, 9.03, 10.54, 12.03, 13.54, 15.51, 16.55, 18.05, 19.57, 21.08, 22.57, 24.09, 26.6, 27.12, 28.62, 30.14, 31.6, 33.1, 34.6, 37.32, 37.62, 39.23, 40.66, 42.37, 43.72, 45.16, 46.67, 48.17, 49.69, 51.72, 53.16, 54.27, 55.71, 57.25, 58.72, 60.22, 61.83, 63.34, 64.77, 67.3, 68.1, 69.31, 70.77, 72.28, 73.78, 75.37, 77.59, 78.75, 80.28, 82.34, 83.28, 84.77, 86.27, 87.77, 89.28, 90.8, 93.08, 94.53, 96.19, 97.95, 99.05, 100.53, 102.06, 104.32, 105.07, 107.23, 108.34, 109.89, 111.13, 112.61, 114.22, 115.62, 117.14, 119.45, 120.23, 121.68, 124.29, 124.67, 126.23, 128.22, 129.2, 130.69, 132.27, 134.07, 135.7, 136.77, 138.25, 139.78, 141.28, 142.76, 144.29, 146.04, 147.28, 150.1, 150.32, 151.94, 154.08, 154.82, 156.92, 158.25, 159.71, 161.7, 162.75, 164.86, 165.75, 167.26, 168.75, 170.26, 173.61, 173.74, 175.26, 177.96, 178.23, 179.72, 181.21, 182.73, 184.25, 185.9, 188.36, 188.79, 190.27, 192.11, 193.28, 194.78, 196.27, 197.77, 199.32, 201.78, 202.31, 204.6, 205.33, 206.82, 208.81, 209.83, 211.39, 212.84, 214.5, 216.01, 217.38, 219.38, 220.43, 221.89, 223.4, 224.91, 226.66, 228.03, 229.44, 231.68, 232.43, 233.93, 235.45, 236.94, 238.45, 241.3, 241.52, 243.0, 244.51, 247.12, 247.47, 248.99, 250.52, 252.02, 253.56, 256.35, 256.56, 258.83, 259.53, 261.11, 262.55, 264.05, 265.57, 267.19, 268.59, 270.59, 271.88, 273.11, 274.71, 276.13, 277.63, 279.13, 280.64, 282.27, 284.11, 285.16, 287.01, 288.2, 290.31, 291.19, 292.7, 294.2, 295.7, 297.77, 298.82, 300.29, 302.05], "forwards": [13.24, 23.88, 34.31, 48.43, 60.11, 73.75, 90.38, 105.62, 116.31, 130.39, 143.07, 154.48, 169.84, 184.77, 198.65, 211.48, 223.58, 237.4, 251.39, 267.46, 280.89, 294.7, 309.45], "jobs": [{"run": "VH2T51JN", "claim": 13.45, "start": 16.7, "end": 24.46, "partitions": 3000, "windows": [1], "lane": 0}, {"run": "9PeQHzmq", "claim": 24.29, "start": 27.9, "end": 37.4, "partitions": 3500, "windows": [2], "lane": 0}, {"run": "BCDh6vG4", "claim": 34.65, "start": 39.55, "end": 49.17, "partitions": 3500, "windows": [3], "lane": 0}, {"run": "oruegWBU", "claim": 49.08, "start": 53.39, "end": 63.42, "partitions": 4500, "windows": [4], "lane": 0}, {"run": "9vTZyQeG", "claim": 60.82, "start": 65.46, "end": 75.37, "partitions": 4000, "windows": [5], "lane": 0}, {"run": "bNwxb457", "claim": 74.39, "start": 79.39, "end": 89.37, "partitions": 4500, "windows": [6], "lane": 0}, {"run": "HfFHvcLG", "claim": 90.55, "start": 98.49, "end": 108.44, "partitions": 5500, "windows": [7], "lane": 0}, {"run": "kUwsdrML", "claim": 105.86, "start": 110.66, "end": 119.54, "partitions": 4500, "windows": [8], "lane": 0}, {"run": "vgDSMU8a", "claim": 116.8, "start": 121.62, "end": 131.91, "partitions": 4000, "windows": [9], "lane": 0}, {"run": "FQKRlYXe", "claim": 130.8, "start": 136.39, "end": 146.38, "partitions": 4500, "windows": [10], "lane": 0}, {"run": "qPo5Utco", "claim": 143.4, "start": 147.58, "end": 158.62, "partitions": 4000, "windows": [11], "lane": 0}, {"run": "WANeGJkc", "claim": 155.14, "start": 160.15, "end": 168.79, "partitions": 3500, "windows": [12], "lane": 0}, {"run": "qTizLpgU", "claim": 170.36, "start": 175.79, "end": 185.91, "partitions": 5000, "windows": [13], "lane": 0}, {"run": "xLrU9P9o", "claim": 184.86, "start": 190.63, "end": 200.38, "partitions": 5000, "windows": [14], "lane": 0}, {"run": "1rRKqAsv", "claim": 199.05, "start": 204.99, "end": 214.74, "partitions": 5000, "windows": [15], "lane": 0}, {"run": "DWtIclNS", "claim": 211.95, "start": 216.48, "end": 224.75, "partitions": 4000, "windows": [16], "lane": 0}, {"run": "eakYD8fg", "claim": 224.18, "start": 228.62, "end": 239.03, "partitions": 4000, "windows": [17], "lane": 0}, {"run": "3RFAR8Zg", "claim": 237.94, "start": 243.75, "end": 253.19, "partitions": 4500, "windows": [18], "lane": 0}, {"run": "uewcVqfV", "claim": 252.06, "start": 259.57, "end": 268.59, "partitions": 4500, "windows": [19], "lane": 0}, {"run": "0sx1ExAc", "claim": 268.23, "start": 275.99, "end": 285.37, "partitions": 5500, "windows": [20], "lane": 0}, {"run": "1PCf88Xr", "claim": 281.26, "start": 286.06, "end": 294.67, "partitions": 4500, "windows": [21], "lane": 0}, {"run": "zyyAr4Te", "claim": 295.27, "start": 300.57, "end": 312.63, "partitions": 4500, "windows": [22], "lane": 0}, {"run": "lEMBFmiF", "claim": 309.83, "start": 315.0, "end": 324.02, "partitions": 4500, "windows": [23], "lane": 0}], "last_fold": 339.8, "per_partition_s": 0.0002}, "stream_busy": {"lands": [0.0, 1.48, 3.02, 4.51, 6.02, 7.54, 9.03, 10.53, 12.02, 13.52, 15.25, 16.53, 18.05, 19.58, 21.05, 22.56, 24.07, 25.59, 27.09, 28.6, 30.12, 31.63, 33.11, 34.63, 36.31, 37.65, 39.15, 40.67, 42.16, 43.69, 45.18, 46.68, 48.21, 49.69, 51.23, 52.72, 54.22, 55.72, 57.23, 58.8, 60.25, 62.92, 63.26, 64.76, 66.49, 67.85, 70.18, 70.82, 72.3, 73.83, 76.48, 76.82, 78.33, 79.84, 81.34, 82.87, 84.36, 85.88, 87.37, 88.88, 90.42, 91.91, 94.58, 94.91, 96.41, 97.92, 99.42, 100.94, 102.44, 103.94, 105.45, 106.96, 108.49, 109.99, 111.48, 113.0, 114.52, 116.01, 117.54, 119.02, 120.53, 122.11, 123.56, 125.06, 127.16, 128.08, 129.58, 131.56, 132.6, 134.57, 135.6, 137.13, 138.62, 140.12, 141.63, 143.2, 144.65, 147.27, 147.66, 149.17, 150.68, 153.05, 153.7, 156.09, 156.7, 158.21, 159.75, 161.24, 162.76, 164.27, 165.76, 167.26, 168.77, 170.3, 171.81, 173.32, 174.82, 176.31, 177.82, 179.34, 180.86, 182.36, 183.85, 185.35, 187.1, 188.47, 189.89, 191.38, 192.9, 194.4, 196.57, 197.57, 199.8, 200.44, 201.96, 203.44, 204.94, 206.46, 207.97, 209.47, 210.97, 212.47, 213.97, 215.48, 216.99, 218.52, 220.0, 221.54, 223.01, 225.75, 226.03, 227.53, 230.11, 230.58, 232.06, 233.63, 235.08, 236.64, 238.07, 239.59, 241.08, 242.6, 244.11, 246.71, 247.11, 248.62, 250.12, 251.63, 253.15, 254.64, 256.16, 257.67, 259.19, 260.71, 262.21, 263.72, 265.2, 266.71, 268.22, 269.72, 271.22, 272.73, 274.24, 275.74, 277.25, 278.77, 280.25, 281.76, 283.29, 284.77, 286.27, 287.78, 289.3, 290.78, 292.29, 293.82, 295.3, 296.81, 298.32, 299.84], "forwards": [12.98, 22.66, 33.79, 43.91, 53.81, 66.65, 78.27, 88.28, 102.29, 112.73, 123.73, 134.99, 145.86, 157.17, 167.63, 178.72, 189.55, 200.12, 211.03, 222.8, 233.79, 246.86, 256.91, 267.05, 277.19, 286.98, 297.37, 307.32], "jobs": [{"run": "T9lMWc8M", "claim": 13.17, "start": 16.76, "end": 54.12, "partitions": 3000, "windows": [1], "lane": 0}, {"run": "srnTT0KN", "claim": 23.36, "start": 26.62, "end": 63.76, "partitions": 3000, "windows": [2], "lane": 1}, {"run": "ebKrRDvx", "claim": 34.1, "start": 38.12, "end": 85.36, "partitions": 4000, "windows": [3], "lane": 2}, {"run": "7q4yAEQL", "claim": 60.23, "start": 64.9, "end": 138.57, "partitions": 6500, "windows": [4, 5], "lane": 0}, {"run": "BXVZI2DD", "claim": 71.23, "start": 74.97, "end": 117.9, "partitions": 3500, "windows": [6], "lane": 1}, {"run": "bBwjfVIs", "claim": 91.74, "start": 95.91, "end": 183.46, "partitions": 8000, "windows": [7, 8], "lane": 2}, {"run": "v56RoEpX", "claim": 124.52, "start": 128.68, "end": 216.44, "partitions": 8000, "windows": [9, 10], "lane": 1}, {"run": "gAg3Z093", "claim": 144.93, "start": 148.57, "end": 231.46, "partitions": 7500, "windows": [11, 12], "lane": 0}, {"run": "u0Nb7y4q", "claim": 190.13, "start": 195.2, "end": 349.52, "partitions": 14500, "windows": [13, 14, 15, 16], "lane": 2}, {"run": "YIKhl7MM", "claim": 223.29, "start": 227.71, "end": 341.87, "partitions": 10500, "windows": [17, 18, 19], "lane": 1}, {"run": "2jXTIko9", "claim": 238.7, "start": 242.97, "end": 326.04, "partitions": 7500, "windows": [20, 21], "lane": 0}, {"run": "e1FILFyp", "claim": 332.43, "start": 337.27, "end": 588.39, "partitions": 24000, "windows": [22, 23, 24, 25, 26, 27, 28], "lane": 0}], "last_fold": 608.0, "per_partition_s": 0.01}};
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, parent, text){ const e=document.createElementNS(NS,tag); for(const k in attrs) e.setAttribute(k,attrs[k]); if(text!=null) e.textContent=text; if(parent) parent.appendChild(e); return e; }
+function svg(w,h){ return el("svg",{viewBox:`0 0 ${w} ${h}`,role:"img"}); }
+const fmt = n => n.toLocaleString("en-US");
+
+/* Deep dives: one tab at a time; scorecard links open the matching tab */
+(function(){
+  const bar=document.getElementById("ddbar"); if(!bar) return;
+  const btns=[...bar.querySelectorAll("button")], panes=[...document.querySelectorAll(".dd")];
+  function show(id){ btns.forEach(b=>b.setAttribute("aria-selected",b.dataset.dd===id)); panes.forEach(p=>p.hidden=(p.id!=="dd-"+id)); }
+  btns.forEach(b=>b.onclick=()=>show(b.dataset.dd));
+  document.querySelectorAll("[data-goto]").forEach(a=>a.addEventListener("click",()=>show(a.dataset.goto)));
+  show(btns[0].dataset.dd);
+})();
+/* Chapter 1: one partition in native Airflow, with the seven jobs hanging on its run */
+(function(){
+  const W=960,H=300,s=svg(W,H); s.setAttribute("aria-label","One partition in native Airflow: a keyed asset event wakes a Dag run with its task instances; status, rerun and lineage sit on the run; it wakes a downstream run for the same key");
+  const G={}; const grp=(id,keep)=>{ const g=el("g",{class:keep?"":"g"},s); if(!keep) G[id]=g; return g; };
+  const arrow=(g,x1,x2,y)=>{ el("line",{x1,y1:y,x2:x2-6,y2:y,stroke:"var(--faint)","stroke-width":1.4},g); el("path",{d:`M${x2-8},${y-5} L${x2},${y} L${x2-8},${y+5} Z`,fill:"var(--faint)"},g); };
+  const T=(g,x,y,t,st)=>el("text",{x,y,style:"font-family:var(--body);font-size:12.5px;"+(st||"")},g,t);
+  /* the run itself stays visible */
+  const base=grp("run",true);
+  el("rect",{x:232,y:56,width:370,height:196,rx:14,fill:"var(--sheet)",stroke:"var(--work)","stroke-width":1.5},base);
+  el("text",{x:250,y:84,class:"big",style:"font-family:var(--display);font-size:16px"},base,"Dag run");
+  T(base,250,103,"partition key ACC42","fill:var(--quiet)");
+  /* trigger: keyed asset event */
+  const trig=grp("trig");
+  el("rect",{x:18,y:118,width:160,height:52,rx:10,fill:"var(--accent-soft)",stroke:"var(--accent)","stroke-width":1.2},trig);
+  T(trig,32,140,"asset event","fill:var(--ink);font-weight:600"); T(trig,32,158,"key ACC42","fill:var(--quiet)");
+  arrow(trig,178,232,144);
+  /* dispatch: task instances through a pool */
+  const disp=grp("disp");
+  [[252,"task instance"],[424,"task instance"]].forEach(([x,t])=>{ el("rect",{x,y:122,width:158,height:46,rx:8,fill:"var(--paper)",stroke:"var(--work)","stroke-width":1},disp); T(disp,x+14,150,t,"fill:var(--ink)"); });
+  T(disp,252,186,"queued through a pool and max_active_runs","fill:var(--quiet);font-size:11.5px");
+  /* retry */
+  const retry=grp("retry");
+  el("path",{d:"M556,128 a10,10 0 1,1 -2,-6",fill:"none",stroke:"var(--bad)","stroke-width":1.6},retry);
+  el("path",{d:"M551,118 l4,5 l5,-4",fill:"none",stroke:"var(--bad)","stroke-width":1.6},retry);
+  T(retry,520,186,"retry","fill:var(--bad);font-weight:600");
+  /* status */
+  const stat=grp("stat");
+  el("rect",{x:480,y:68,width:108,height:26,rx:13,fill:"#E3F1E8",stroke:"var(--ok)","stroke-width":1},stat);
+  T(stat,494,86,"state: success","fill:var(--ok);font-weight:600;font-size:12px");
+  /* rerun */
+  const rer=grp("rer");
+  el("rect",{x:252,y:206,width:66,height:28,rx:7,fill:"var(--sheet)",stroke:"var(--work)","stroke-width":1.2},rer);
+  T(rer,268,225,"Clear","fill:var(--ink);font-weight:600");
+  T(rer,328,225,"or trigger a run for this key","fill:var(--quiet);font-size:12px");
+  /* lineage: the run records the events it consumed */
+  const lin=grp("lin");
+  el("path",{d:"M300,252 C300,282 98,282 98,172",fill:"none",stroke:"var(--accent)","stroke-width":1.4,"stroke-dasharray":"5 4"},lin);
+  T(lin,118,292,"the run records the events it consumed","fill:var(--accent);font-size:12px");
+  /* dependencies: output event wakes the downstream run for the same key */
+  const dep=grp("dep");
+  arrow(dep,602,650,144);
+  el("rect",{x:650,y:118,width:120,height:52,rx:10,fill:"var(--accent-soft)",stroke:"var(--accent)","stroke-width":1.2},dep);
+  T(dep,662,140,"asset event","fill:var(--ink);font-weight:600"); T(dep,662,158,"key ACC42","fill:var(--quiet)");
+  arrow(dep,770,800,144);
+  el("rect",{x:800,y:96,width:144,height:96,rx:12,fill:"var(--sheet)",stroke:"var(--work)","stroke-width":1.3},dep);
+  T(dep,814,124,"downstream run","fill:var(--ink);font-weight:600"); T(dep,814,144,"same key ACC42","fill:var(--quiet)");
+  document.getElementById("c-jobs").appendChild(s);
+  const J=[
+    {k:"Overview",on:Object.keys(G),title:"One partition in native Airflow",mean:"Native Airflow: the calculation Dag gets one run per partition, with its own task instances and events.",how:"Each downstream Dag gives the same partition another run. Every orchestration job hangs on these runs."},
+    {k:"Trigger",on:["trig"],mean:"Start the calculation when an input lands.",how:"An asset event wakes the Dag. With asset partitions, each changed partition gets its own keyed event and its own run."},
+    {k:"Dependencies",on:["dep"],mean:"Run the calculation, then chain the next ones: the DAG.",how:"Dags are chained by asset events. A partitioned downstream Dag gets a run per key."},
+    {k:"Dispatch",on:["disp"],mean:"Hand work to workers, and cap how many run at once.",how:"Task instances, queued through pools and max_active_runs."},
+    {k:"Retry",on:["retry","disp"],mean:"Retry a failed piece of work.",how:"Task instance retries. One partition per run, so retries are per partition."},
+    {k:"Status",on:["stat"],mean:"Show what is done, failed or waiting.",how:"Run and task state in the UI. Runs can be filtered by partition key."},
+    {k:"Rerun",on:["rer"],mean:"Run a piece of work again on demand.",how:"Clear a run, or trigger a run for one key."},
+    {k:"Lineage",on:["lin","trig"],mean:"Record which inputs produced each result.",how:"Asset events attached to each run."},
+  ];
+  const bar=document.getElementById("jobbar"), card=document.getElementById("jobcard"); let cur=0;
+  J.forEach((st,i)=>{ const b=document.createElement("button"); b.type="button"; b.setAttribute("role","tab"); b.innerHTML=(i?`<b>${i}</b>`:"")+st.k; b.onclick=()=>show(i); bar.appendChild(b); });
+  function show(i){ cur=i; const st=J[i];
+    [...bar.children].forEach((b,k)=>b.setAttribute("aria-selected",k===i));
+    Object.entries(G).forEach(([id,g])=>g.classList.toggle("dim",!st.on.includes(id)));
+    card.innerHTML=`<div><span class="n">${i?("Job "+i+" of 7"):"Overview"}</span><h3>${st.title||st.k}</h3><p>${st.mean}</p></div>
+      <div class="meta"><div><span class="lab">${i?"How native Airflow does it":"In short"}</span><span style="color:var(--ink);font-size:14.5px">${st.how}</span></div></div>`;
+  }
+  document.getElementById("jb-prev").onclick=()=>show(Math.max(0,cur-1));
+  document.getElementById("jb-next").onclick=()=>show(Math.min(J.length-1,cur+1));
+  show(0);
+})();
+/* Chapter 3: the route as one diagram, stepped through part by part */
+(function(){
+  const W=960,H=330,s=svg(W,H); s.setAttribute("aria-label","The route: landings, debounce, batcher with three lanes, ledger and downstream, writing keys in Airflow's asset state store");
+  const G={}; const grp=id=>{ const g=el("g",{class:"g"},s); G[id]=g; return g; };
+  const node=(id,x,w,title,sub,ours)=>{ const g=grp(id);
+    el("rect",{x,y:56,width:w,height:100,rx:12,fill:ours?"#FBF4E6":"var(--sheet)",stroke:ours?"#C99A3E":"var(--work)","stroke-width":1.4},g);
+    el("text",{x:x+14,y:82,class:"big",style:"font-family:var(--display);font-size:15px"},g,title);
+    sub.forEach((t,i)=>el("text",{x:x+14,y:104+i*16,style:"font-family:var(--body);font-size:12.5px"},g,t)); return g; };
+  const arrow=(x1,x2,y)=>{ el("line",{x1,y1:y,x2:x2-6,y2:y,stroke:"var(--faint)","stroke-width":1.4},s); el("path",{d:`M${x2-8},${y-5} L${x2},${y} L${x2-8},${y+5} Z`,fill:"var(--faint)"},s); };
+  node("land",20,130,"Landings",["REST call, task","outlet or watcher"],false);
+  node("deb",195,140,"Debounce",["waits a short window,","then emits 1 event"],true);
+  const b=node("bat",380,210,"Batcher",["claim, then 1 engine job"],false);
+  [0,1,2].forEach(k=>{ el("rect",{x:394+k*64,y:116,width:58,height:28,rx:5,fill:"var(--accent-soft)",stroke:"var(--accent)","stroke-width":1},b); el("text",{x:394+k*64+29,y:134,"text-anchor":"middle",style:"fill:var(--accent);font-size:11px"},b,"lane "+(k+1)); });
+  node("led",635,140,"Ledger",["folds finished","batches"],false);
+  node("down",820,124,"Downstream",["next calculation"],false);
+  arrow(150,195,106); arrow(335,380,106); arrow(590,635,106); arrow(775,820,106);
+  /* state store */
+  const st=grp("store");
+  el("rect",{x:180,y:214,width:620,height:92,rx:14,fill:"var(--paper)",stroke:"var(--rule)","stroke-width":1.2},st);
+  el("text",{x:196,y:236,style:"font-size:12px;fill:var(--faint)"},st,"Airflow asset state store, on the output asset");
+  const key=(id,x,w,label)=>{ const g=grp(id); el("rect",{x,y:248,width:w,height:40,rx:8,fill:"var(--sheet)",stroke:"var(--work)","stroke-width":1},g); el("text",{x:x+w/2,y:273,"text-anchor":"middle",style:"fill:var(--ink);font-family:var(--body);font-size:12.5px"},g,label); return g; };
+  key("kwin",196,150,"window key: partitions");
+  key("kbat",410,150,"batch key: versions");
+  key("kjr",624,160,"journal: done · failed");
+  const dash=(g,x1,x2)=>el("line",{x1,y1:156,x2,y2:248,stroke:"var(--faint)","stroke-width":1.2,"stroke-dasharray":"4 4"},G[g]);
+  dash("kwin",265,271); dash("kbat",485,485); dash("kjr",705,704);
+  el("line",{x1:560,y1:248,x2:655,y2:156,stroke:"var(--faint)","stroke-width":1,"stroke-dasharray":"2 4"},G["kbat"]);
+  /* ticks */
+  const tk=grp("tick");
+  [[265,"deb"],[485,"bat"],[705,"led"],[882,"down"]].forEach(([cx])=>{ el("path",{d:`M${cx-14},50 C${cx-14},26 ${cx+14},26 ${cx+14},50`,fill:"none",stroke:"#C99A3E","stroke-width":1.6},tk); el("path",{d:`M${cx+9},45 L${cx+14},52 L${cx+19},45`,fill:"none",stroke:"#C99A3E","stroke-width":1.6},tk); });
+  el("text",{x:912,y:28,"text-anchor":"end",style:"fill:#9A6E1E;font-size:11px"},tk,"ticks");
+  document.getElementById("c-route").appendChild(s);
+  const STEPS=[
+    {k:"Overview",on:Object.keys(G),title:"Airflow schedules batches; partitions travel as data",
+     text:"Four Dags in a row after the landing. The partition list rides with the run and sits in the state store, so Airflow never sees a partition as an object.",
+     piece:"Asset events chain the Dags", whose:[["stock","Stock machinery"],["ours","Our rules"]], jobs:["All seven"]},
+    {k:"Landing",on:["land"],title:"Landing",text:"A producer sends one asset event per landing: the dataset, its version, and the partitions it touched.",
+     piece:"An asset event on <code>v2_inputs_landed</code>: a REST call, a task outlet, or a watcher on a queue",whose:[["stock","Stock"]],jobs:["Trigger"]},
+    {k:"Debounce",on:["deb","kwin"],title:"Debounce",text:"Waits a short window after the first landing, then writes the merged partition list to a window key and emits one small event.",
+     note:"Our choice, because an engine job pays start-up per job.",piece:"<code>v2_debounce</code>: a deferred wait, then forward",whose:[["ours","Ours, interim"]],jobs:["Trigger"]},
+    {k:"Batcher",on:["bat","kbat"],title:"Batcher and lanes",text:"Its first task, claim, picks the partitions whose inputs changed and writes a batch key. Then one engine job runs. A lane is one batcher run; up to K run at once, 3 here.",
+     note:"Batch size has no cap yet.",piece:"<code>v2_batcher</code>: <code>max_active_runs = K</code>, a pool of K slots",whose:[["stock","Stock"],["ours","Claim and failure rules ours"]],jobs:["Dispatch","Retry"]},
+    {k:"Ledger",on:["led","kjr","kbat"],title:"Ledger and journal",text:"The only Dag that writes the journal. It folds each finished batch into done and failed, per partition and input version.",
+     note:"No status view yet. Deep dive 3 shows how it handles two inputs landing close together.",piece:"<code>asset_state_store</code> on the output asset; done and failed are written only by <code>v2_ledger</code>",whose:[["stock","Stock store"],["ours","Our schema"]],jobs:["Status","Lineage","Rerun"]},
+    {k:"Downstream",on:["down","kbat"],title:"Downstream",text:"The next calculation gets one event per batch. It reads the partition list from the batch key.",
+     note:"It needs our small helper and its own sweep task.",piece:"One asset event per batch, pointing at the batch key",whose:[["stock","Stock event"],["ours","Pointer format ours"]],jobs:["Dependencies"]},
+    {k:"Late events",on:["tick","deb","bat","led","down"],title:"Ticks for late events",text:"An event that lands while a Dag is busy would wait for the next one. A small sweep task rings a tick, an empty event, so it gets a run.",
+     note:"Interim until Airflow attaches every unconsumed event to a new run.",piece:"Tick events from sweep tasks",whose:[["ours","Ours, interim"]],jobs:["Trigger"]},
+  ];
+  const ROWS={"Overview": [["Sizes in the 100,000-partition run", "landing event      2,400,077 bytes\ndebounced event          139 bytes\nbatch event              130 bytes\ntick                      14 bytes\n\nThe big lists live in the state store:\nwindow key and batch key, 4.4 MB each"]], "Landing": [["asset_event on v2_inputs_landed \u00b7 2,400,077 bytes", "{\"dataset\": \"positions\",\n \"version\": 1,\n \"partitions\": {\"X000001\": \"1:X000001\",\n                \"X000002\": \"1:X000002\",\n                ... 99,998 more},\n \"from_rest_api\": true}        <- added by Airflow"]], "Debounce": [["asset_event on v2_inputs_debounced \u00b7 139 bytes", "{\"window\": \"window/2026-10-08T01:16:37...\",\n \"window_end\": \"2026-10-08T01:16:37...\",\n \"n_partitions\": 100000,\n \"bells\": 1}"], ["state store key window/... \u00b7 4.4 MB", "{\"partitions\": {\n    \"X000001\": {\"positions\": [1, \"1:X000001\"]},\n    ... 99,999 more},\n \"bells\": 1,\n \"window_end\": \"2026-10-08T01:16:37.196033+00:00\"}"]], "Batcher": [["state store key batch/<batcher run>#0 \u00b7 4.4 MB", "{\"state\": \"done\",        <- claimed, running, done\n \"versions\": {\n    \"X000001\": {\"positions\": [1, \"1:X000001\"]},\n    ... 99,999 more},\n \"retry\": false,\n \"culprits\": [],\n \"error\": null}"]], "Ledger": [["asset_event on v2_batches_finished \u00b7 79 bytes", "{\"batch_ids\": [\n    \"asset_triggered__2026-10-08T01:16:53..._fm0OhahX#0\"]}"], ["state store key done, the journal \u00b7 4.4 MB with one input", "{\"X000001\": {\"positions\": [1, \"1:X000001\"]},\n \"X000002\": {\"positions\": [1, \"1:X000002\"]},\n ... 99,998 more}"]], "Downstream": [["asset_event on v2_pnl \u00b7 130 bytes", "{\"batch\": \"batch/asset_triggered__...fm0OhahX#0\",\n \"n_partitions\": 100000,\n \"datasets\": [\"positions\"]}"]], "Late events": [["asset_event on a private tick asset \u00b7 14 bytes", "{\"tick\": true}"]]};
+  const bar=document.getElementById("stepbar"), card=document.getElementById("stepcard"); let cur=0;
+  STEPS.forEach((st,i)=>{ const btn=document.createElement("button"); btn.type="button"; btn.setAttribute("role","tab"); btn.innerHTML=(i?`<b>${i}</b>`:"")+st.k; btn.onclick=()=>show(i); bar.appendChild(btn); });
+  function show(i){ cur=i; const st=STEPS[i];
+    [...bar.children].forEach((b,k)=>b.setAttribute("aria-selected",k===i));
+    Object.entries(G).forEach(([id,g])=>g.classList.toggle("dim",!st.on.includes(id)));
+    const pills=st.whose.map(([c,t])=>`<span class="pill ${c}">${t}</span>`).join(" ");
+    const chips=st.jobs.map(j=>`<span class="chip">${j}</span>`).join("");
+    card.innerHTML=`<div><span class="n">${i?("Part "+i+" of 6"):"Overview"}</span><h3>${st.title}</h3><p>${st.text}</p>${st.note?`<p class="note2">${st.note}</p>`:""}</div>
+      <div class="meta"><div><span class="lab">Airflow piece</span>${st.piece}</div><div><span class="lab">Whose</span>${pills}</div><div><span class="lab">Chapter 2 jobs it covers</span>${chips}</div></div>
+      <div class="rows"><span class="lab">${i?"What it writes, from the 100,000-partition run":"What travels"}</span>${(ROWS[st.k]||[]).map(([h,c])=>`<div class="rowbox"><span class="rh">${h}</span><pre>${c.replace(/&/g,"&amp;").replace(/</g,"&lt;")}</pre></div>`).join("")}</div>`;
+  }
+  document.getElementById("st-prev").onclick=()=>show(Math.max(0,cur-1));
+  document.getElementById("st-next").onclick=()=>show(Math.min(STEPS.length-1,cur+1));
+  show(0);
+})();
+/* "Where the 100,000 go": the same picture for every way of scheduling */
+(function(){
+  function drawing(kind){
+    const W=280,H=210,s=svg(W,H);
+    if(kind==="runs"){            /* 100,000 runs x 1 task: 400 squares, each 250 runs */
+      const n=20,c=11.6,ox=(W-n*c)/2+1,oy=4;
+      for(let r=0;r<n;r++)for(let k=0;k<n;k++){ const x=ox+k*c,y=oy+r*(c-1.4);
+        el("rect",{x,y,width:c-2.6,height:c-3.6,rx:1.6,fill:"var(--sheet)",stroke:"var(--work)","stroke-width":.9},s);
+        el("circle",{cx:x+(c-2.6)/2,cy:y+(c-3.6)/2,r:1.25,fill:"var(--work)"},s); }
+      s.setAttribute("aria-label","100,000 runs, each with one task");
+    } else if(kind==="tasks"){    /* 1 run x 100,000 tasks: one box, 400 dots, one transaction */
+      el("rect",{x:14,y:6,width:W-28,height:H-34,rx:10,fill:"var(--sheet)",stroke:"var(--work)","stroke-width":1.4},s);
+      const n=20,c=11.4,ox=(W-n*c)/2+c/2,oy=16;
+      for(let r=0;r<n;r++)for(let k=0;k<n;k++) el("circle",{cx:ox+k*c,cy:oy+r*8.4,r:2.1,fill:"var(--work)"},s);
+      el("rect",{x:14,y:H-22,width:W-28,height:18,rx:4,fill:"var(--bad)",opacity:.14},s);
+      el("text",{x:W/2,y:H-9,"text-anchor":"middle",style:"fill:var(--bad);font-weight:600"},s,"all created in one transaction");
+      s.setAttribute("aria-label","One run holding 100,000 tasks, created in one transaction");
+    } else if(kind==="batches"){  /* 1 run x 100 tasks of 1,000 */
+      el("rect",{x:14,y:6,width:W-28,height:H-34,rx:10,fill:"var(--sheet)",stroke:"var(--work)","stroke-width":1.4},s);
+      const n=10,c=23,ox=(W-n*c)/2+c/2,oy=22;
+      for(let r=0;r<n;r++)for(let k=0;k<n;k++) el("circle",{cx:ox+k*c,cy:oy+r*15.6,r:5,fill:"var(--work)"},s);
+      el("text",{x:W/2,y:H-9,"text-anchor":"middle"},s,"101 task rows in all");
+      s.setAttribute("aria-label","One run holding 100 tasks of 1,000 partitions each");
+    } else {                      /* this route: 1 run x 1 engine task, partitions as a list */
+      el("rect",{x:10,y:30,width:120,height:120,rx:12,fill:"var(--accent-soft)",stroke:"var(--accent)","stroke-width":1.6},s);
+      el("circle",{cx:70,cy:90,r:13,fill:"var(--accent)"},s);
+      el("text",{x:70,y:168,"text-anchor":"middle"},s,"1 run, 1 engine task");
+      el("line",{x1:130,y1:90,x2:170,y2:90,stroke:"var(--accent)","stroke-width":1.4,"stroke-dasharray":"4 3"},s);
+      el("rect",{x:172,y:34,width:92,height:112,rx:6,fill:"var(--sheet)",stroke:"var(--faint)","stroke-width":1},s);
+      for(let i=0;i<9;i++) el("rect",{x:182,y:46+i*10.5,width:i%3===2?50:72,height:4,rx:2,fill:"var(--faint)",opacity:.6},s);
+      el("text",{x:218,y:166,"text-anchor":"middle"},s,"100,000 partitions");
+      el("text",{x:218,y:181,"text-anchor":"middle"},s,"as a list in");
+      el("text",{x:218,y:196,"text-anchor":"middle"},s,"the state store");
+      s.setAttribute("aria-label","One run with one engine task; the 100,000 partitions ride as a list in the state store");
+    }
+    return s;
+  }
+  function panel(host,c){
+    const d=document.createElement("div"); d.className="shape "+(c.tone||"");
+    d.innerHTML=`<h4>${c.title}</h4><span class="sub">${c.sub}</span>`;
+    d.appendChild(drawing(c.kind));
+    if(c.key){ const k=document.createElement("span"); k.className="key"; k.textContent=c.key; d.appendChild(k); }
+    const b=document.createElement("span"); b.className="big"; b.textContent=c.big; d.appendChild(b);
+    const p=document.createElement("p"); p.textContent=c.text; d.appendChild(p);
+    if(c.inside!=null){ d.classList.add("clickable"); d.tabIndex=0; d.title="Look inside"; const go=()=>window.__inside&&window.__inside(c.inside); d.onclick=go; d.onkeydown=e=>{ if(e.key==="Enter") go(); };
+      const m=document.createElement("span"); m.className="look"; m.textContent="Look inside ↓"; d.appendChild(m); }
+    host.appendChild(d);
+  }
+  const nat=document.getElementById("shapes-native");
+  panel(nat,{inside:0,kind:"runs",title:"100,000 runs × 1 task",sub:"native asset partitions",key:"each square: 250 runs, each with its own task",
+    big:"3,698",text:"of 100,000 runs finished after 26 minutes."});
+  panel(nat,{inside:1,kind:"tasks",title:"1 run × 100,000 tasks",sub:"native dynamic task mapping",key:"each dot: 250 task rows",
+    big:"317 s",text:"scheduler frozen. Its health limit is 30 seconds."});
+  panel(nat,{inside:2,kind:"batches",tone:"mid",title:"1 run × 100 tasks",sub:"native mapping over batches of 1,000",key:"each dot: one task of 1,000 partitions",
+    big:"38 s",text:"It works, but it knows nothing per partition."});
+  const ours=document.getElementById("shapes-ours"); if(ours){
+  panel(ours,{kind:"ours",tone:"good",title:"1 run × 1 engine task",sub:"partitions as data",key:"",big:"93 s",text:"from landing to done, for one landing of 100,000 partitions."});
+  const t=document.createElement("div"); t.className="shape-text";
+  t.innerHTML=`<p>Airflow objects for that landing, whatever the partition count:</p>
+    <div class="row"><span><b>6</b>asset events</span><span><b>6</b>runs</span><span><b>25</b>task instances</span></div>
+    <p>Compare the first picture in chapter 3: there, the same landing is 100,000 runs.</p>`;
+  ours.appendChild(t);
+  }
+})();
+/* Chapter 2, look inside: which tables get rows, and why each way is slow */
+(function(){
+  const W=960,H=212;
+  const cyl=(g,x,y,w,label,count,hot)=>{ const h=46, ry=7, col=hot?"var(--bad)":"var(--work)";
+    el("path",{d:`M${x},${y+ry} L${x},${y+h} A${w/2},${ry} 0 0,0 ${x+w},${y+h} L${x+w},${y+ry}`,fill:"var(--sheet)",stroke:col,"stroke-width":1.2},g);
+    el("ellipse",{cx:x+w/2,cy:y+ry,rx:w/2,ry,fill:"var(--sheet)",stroke:col,"stroke-width":1.2},g);
+    el("text",{x:x+w/2,y:y+30,"text-anchor":"middle",style:"font-family:var(--body);font-size:12px;fill:var(--ink)"},g,label);
+    el("text",{x:x+w/2,y:y+h+16,"text-anchor":"middle",style:"font-size:11px;fill:"+(hot?"var(--bad)":"var(--quiet)")},g,count); };
+  const stage=(g,x,w,n,title,sub)=>{ el("rect",{x,y:14,width:w,height:76,rx:12,fill:"var(--sheet)",stroke:"var(--work)","stroke-width":1.3},g);
+    el("circle",{cx:x+20,cy:36,r:11,fill:"var(--bad)"},g); el("text",{x:x+20,y:40,"text-anchor":"middle",style:"fill:#fff;font-size:12px;font-weight:600"},g,n);
+    el("text",{x:x+38,y:41,class:"big",style:"font-family:var(--display);font-size:14.5px"},g,title);
+    el("text",{x:x+16,y:68,style:"font-family:var(--body);font-size:12.5px;fill:var(--quiet)"},g,sub); };
+  const arrow=(g,x1,x2,y)=>{ el("line",{x1,y1:y,x2:x2-6,y2:y,stroke:"var(--faint)","stroke-width":1.4},g); el("path",{d:`M${x2-8},${y-5} L${x2},${y} L${x2-8},${y+5} Z`,fill:"var(--faint)"},g); };
+  const V=[
+   {tab:"100,000 runs × 1 task",draw:g=>{
+      stage(g,16,292,"1","API server registers keys","inside the producer's one request");
+      stage(g,334,292,"2","Scheduler creates runs","one run per queued key");
+      stage(g,652,292,"3","Scheduler finishes runs","visits every run at least twice");
+      arrow(g,308,334,52); arrow(g,626,652,52);
+      cyl(g,18,128,90,"asset_event","100,000"); cyl(g,116,128,96,"queue rows","100,000",true); cyl(g,220,128,86,"key log","100,000");
+      el("text",{x:164,y:118,"text-anchor":"middle",style:"font-family:var(--body);font-size:11.5px;fill:var(--bad);font-weight:600"},g,"no index");
+      cyl(g,350,128,120,"dag_run","100,000"); cyl(g,486,128,124,"task_instance","100,000");
+      cyl(g,700,128,196,"dag_run · task_instance","state updated, twice each"); },
+    why:[["Registering keys","Each key is three inserts plus a lookup on the queue table, which has no index. About 5 ms per key, slower as the table grows. One request must finish in the 5-second client timeout, so the producer sends 500 keys at a time, one request after another: 25 minutes for 100,000."],
+         ["Creating runs","The scheduler turns each queued key into a dag_run and a task_instance, at most 500 per loop. This kept pace with registration."],
+         ["Finishing runs","Each run needs at least two scheduler visits, and new runs are visited first. While runs kept arriving, finished ones waited: after 26 minutes, 3,698 were marked finished though 80,900 tasks had succeeded."]],
+    fix:"With an index on the queue table and two schedulers: about 20 minutes to register the keys, 31 minutes to finish all 100,000 runs. MWAA gives no database access to add the index."},
+   {tab:"1 run × 100,000 tasks",draw:g=>{
+      stage(g,16,292,"1","Upstream task returns ids","one list of 100,000 partitions");
+      stage(g,334,292,"2","Scheduler expands the task","one loop, one database transaction");
+      stage(g,652,292,"3","Scheduler heartbeat stops","until the transaction ends");
+      arrow(g,308,334,52); arrow(g,626,652,52);
+      cyl(g,120,128,96,"xcom","1 list");
+      cyl(g,400,128,160,"task_instance","100,000 inserts, one by one",true);
+      el("path",{d:"M800,90 C800,118 560,118 520,96",fill:"none",stroke:"var(--bad)","stroke-width":1.4,"stroke-dasharray":"5 4"},g);
+      el("text",{x:700,y:132,"text-anchor":"middle",style:"font-family:var(--body);font-size:12px;fill:var(--bad)"},g,"health check restarts it: rollback, start again");
+      el("text",{x:770,y:175,"text-anchor":"middle",style:"font-family:var(--display);font-size:30px;font-weight:700;fill:var(--bad)"},g,"317 s");
+      el("text",{x:770,y:197,"text-anchor":"middle",style:"font-family:var(--body);font-size:12px;fill:var(--quiet)"},g,"frozen at 100,000; limit 30 s"); },
+    why:[["One list","A single upstream task returns all 100,000 partition ids."],
+         ["One transaction","The scheduler expands the mapped task inside one loop and one transaction: 100,000 single-row inserts into task_instance, about 3 ms of Python work each. The database itself is mostly idle."],
+         ["Frozen scheduler","The heartbeat stops until the transaction ends: 62 s at 10,000, 117 s at 30,000, 317 s at 100,000. Above about 5,000 tasks it outlives the 30-second health threshold, so a health check would restart it and the work rolls back."]],
+    fix:"Measured with empty tasks that never reach a worker. Real tasks would then each start their own process."},
+   {tab:"1 run × 100 tasks",draw:g=>{
+      stage(g,16,292,"1","Upstream task splits ids","100 lists of 1,000");
+      stage(g,334,292,"2","Scheduler expands 100 tasks","a small, fast transaction");
+      stage(g,652,292,"3","100 tasks run","38 s with a no-op task");
+      arrow(g,308,334,52); arrow(g,626,652,52);
+      cyl(g,400,128,160,"task_instance","101 rows");
+      el("text",{x:800,y:150,"text-anchor":"middle",style:"font-family:var(--body);font-size:13px;fill:var(--ink)"},g,"Fixed lists:");
+      el("text",{x:800,y:170,"text-anchor":"middle",style:"font-family:var(--body);font-size:12.5px;fill:var(--quiet)"},g,"no idea which partitions changed,");
+      el("text",{x:800,y:188,"text-anchor":"middle",style:"font-family:var(--body);font-size:12.5px;fill:var(--quiet)"},g,"no record of what is done"); },
+    why:[["Split","One task splits the ids into 100 lists of 1,000."],
+         ["Expand","The scheduler expands 100 mapped tasks: 101 task rows in all, a small transaction."],
+         ["Run","38 seconds with a no-op task. This keeps the object count low, but the lists are fixed: nothing knows which partitions changed, and nothing records what is done per partition."]],
+    fix:"This is the right direction for the object count. What it lacks is the per-partition knowledge."},
+  ];
+  const bar=document.getElementById("insidebar"), host=document.getElementById("c-inside"), why=document.getElementById("inside-why"), fix=document.getElementById("inside-fix");
+  const panels=()=>[...document.querySelectorAll("#shapes-native .shape")];
+  V.forEach((v,i)=>{ const b=document.createElement("button"); b.type="button"; b.setAttribute("role","tab"); b.innerHTML=`<b>${i+1}</b>Inside: ${v.tab}`; b.onclick=()=>show(i); bar.appendChild(b); });
+  function show(i){ const v=V[i];
+    [...bar.children].forEach((b,k)=>b.setAttribute("aria-selected",k===i));
+    panels().forEach((p,k)=>p.classList.toggle("sel",k===i));
+    const s=svg(W,H); s.setAttribute("aria-label","Inside: "+v.tab); const g=el("g",{},s); v.draw(g); host.replaceChildren(s);
+    why.innerHTML=v.why.map(([t,x],k)=>`<li><span class="num">${k+1}</span><b>${t}</b><span>${x}</span></li>`).join("");
+    fix.textContent=v.fix; }
+  window.__inside=i=>{ show(i); document.getElementById("c-inside").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"}); };
+  show(0);
+})();
+/* Scale deep dive: value sizes against the 64 KB state-store limit (log scale) */
+(function(){
+  const host=document.getElementById("c-sizes"); if(!host) return;
+  const rows=[
+    ["window key","state store",4400078],["batch key","state store",4400078],
+    ["journal, one input","state store",4400000],["journal, two inputs","state store",7200000],
+    ["XCom, claim to spark, per run","XCom",5500000]];
+  const W=960,L=230,R=90,top=28,rh=40,H=top+rows.length*rh+40, lo=Math.log10(10e3), hi=Math.log10(20e6);
+  const x=v=>L+(W-L-R)*(Math.log10(v)-lo)/(hi-lo), s=svg(W,H); s.setAttribute("aria-label","Value sizes on a log scale against the 64 KB state-store limit");
+  [[10e3,"10 KB"],[100e3,"100 KB"],[1e6,"1 MB"],[10e6,"10 MB"]].forEach(([v,t])=>{ el("line",{x1:x(v),x2:x(v),y1:top-8,y2:top+rows.length*rh,class:"grid"},s); el("text",{x:x(v),y:H-12,"text-anchor":"middle"},s,t); });
+  const lim=65535; el("line",{x1:x(lim),x2:x(lim),y1:top-14,y2:top+rows.length*rh+4,stroke:"var(--bad)","stroke-width":2},s);
+  el("text",{x:x(lim)+6,y:top-4,style:"fill:var(--bad);font-weight:600;font-size:12px"},s,"limit 64 KB");
+  rows.forEach(([lab,kind,v],i)=>{ const y=top+i*rh;
+    el("text",{x:0,y:y+18,class:"lbl"},s,lab); el("text",{x:0,y:y+33,style:"font-size:11px"},s,kind);
+    el("rect",{x:L,y:y+6,width:x(v)-L,height:22,rx:4,fill:kind==="XCom"?"var(--work)":"var(--accent)"},s);
+    const mb=(v/1e6).toFixed(1)+" MB", times=Math.round(v/lim)+"×";
+    el("text",{x:x(v)+8,y:y+22,class:"big",style:"font-size:13px"},s,mb+(kind==="XCom"?"":"  ·  "+times)); });
+  host.appendChild(s);
+})();
+/* Consistency deep dive: the race as a timeline, today versus with the fix */
+(function(){
+  const host=document.getElementById("c-race"); if(!host) return;
+  const W=960,H=270,L=180,R=24,max=420, x=t=>L+(W-L-R)*t/max;
+  const lanes={land:34,A:92,B:150,J:212};
+  function draw(fix){
+    const s=svg(W,H); s.setAttribute("aria-label",fix?"Race timeline with the fix":"Race timeline today");
+    for(let t=0;t<=420;t+=60){ el("line",{x1:x(t),x2:x(t),y1:16,y2:H-28,class:"grid"},s); el("text",{x:x(t),y:H-10,"text-anchor":"middle"},s,t+" s"); }
+    [["Landings",lanes.land],["Job for positions v6",lanes.A],["Job for trades v6",lanes.B],["Journal (done)",lanes.J]].forEach(([t,y])=>el("text",{x:0,y:y+5,class:"lbl"},s,t));
+    /* landings */
+    [[0,"trades v5"],[129,"positions v6"],[162,"trades v6"]].forEach(([t,lab],i)=>{ el("circle",{cx:x(t),cy:lanes.land,r:6,fill:"var(--accent)"},s);
+      el("text",{x:x(t)+(i===2?10:8),y:lanes.land-(i===2?-18:10),style:"font-size:12px;fill:var(--ink);font-family:var(--body)"},s,lab); });
+    /* jobs: claim, spark, fold */
+    const job=(y,claim,spark,fold,label,bad)=>{
+      el("rect",{x:x(claim[0]),y:y-10,width:x(claim[1])-x(claim[0]),height:20,rx:3,fill:"var(--gap)"},s);
+      el("rect",{x:x(spark[0]),y:y-12,width:x(spark[1])-x(spark[0]),height:24,rx:4,fill:bad?"var(--sheet)":"var(--accent-soft)",stroke:bad?"var(--work)":"var(--accent)","stroke-width":1.2},s);
+      el("text",{x:x(spark[0])+10,y:y+5,style:"font-size:12.5px;fill:var(--ink);font-family:var(--body);font-weight:600"},s,label);
+      el("rect",{x:x(fold[0]),y:y-10,width:x(fold[1])-x(fold[0]),height:20,rx:3,fill:"var(--work)"},s);
+      el("text",{x:x(fold[1])+6,y:y+4,style:"font-size:11px"},s,"folded"); };
+    job(lanes.A,[145,160],[161,284],[318,337], fix?"reads (6, 5) at start":"computes (6, 5)", !fix);
+    job(lanes.B,[180,193],[194,316],[343,362], fix?"reads (6, 6) at start":"computes (4, 6): copied positions v4", !fix);
+    el("text",{x:x(145),y:lanes.A+28,style:"font-size:10.5px"},s,"claim");
+    /* journal */
+    const seg=(a,b,lab,col,txtcol)=>{ el("rect",{x:x(a),y:lanes.J-14,width:x(b)-x(a),height:28,rx:4,fill:col},s); el("text",{x:x(a)+8,y:lanes.J+5,style:"font-size:12.5px;font-weight:600;font-family:var(--body);fill:"+txtcol},s,lab); };
+    seg(123,337,"(4, 5)","var(--paper)","var(--ink)");
+    seg(337,362,"(6,5)","var(--paper)","var(--ink)");
+    seg(362,420,"(6, 6)",fix?"#E3F1E8":"#F6E1DE",fix?"var(--ok)":"var(--bad)");
+    const tx=x(420);
+    el("text",{x:tx,y:lanes.J-24,"text-anchor":"end",style:"font-size:12.5px;font-weight:600;font-family:var(--body);fill:"+(fix?"var(--ok)":"var(--bad)")},s,fix?"(6, 6) was computed by the trades job":"(6, 6) was computed by no job");
+    host.replaceChildren(s);
+  }
+  draw(true);
+})();
+/* Chart 2: inside the 93 seconds (Gantt of the critical path, from task_instance rows) */
+(function(){
+  const one=D.one, T={}; one.tasks.forEach(t=>{ const k=t.dag+"."+t.task; if(!(k in T)) T[k]=t; });
+  const ev=one.events, total=one.total;
+  const winEnd=10.0, marginEnd=ev.first_finalize+5;
+  const spark=T["v2_batcher.run_batch.spark"], engStart=spark.start+8.4, engEnd=engStart+26.0;
+  const rows=[
+    {lab:"debounce · plan",t:T["v2_debounce.plan"]},
+    {lab:"debounce · hold",t:T["v2_debounce.hold"],segs:[[T["v2_debounce.hold"].start,winEnd,"c-wait"],[winEnd,T["v2_debounce.hold"].end,"c-work"]]},
+    {lab:"debounce · forward",t:T["v2_debounce.forward"]},
+    {lab:"batcher · claim",t:T["v2_batcher.claim"]},
+    {lab:"batcher · spark",t:spark,segs:[[spark.start,engStart,"c-work"],[engStart,engEnd,"c-engine"],[engEnd,spark.end,"c-work"]]},
+    {lab:"batcher · publish",t:T["v2_batcher.run_batch.publish"]},
+    {lab:"batcher · finalize",t:T["v2_batcher.finalize"]},
+    {lab:"ledger · settle",t:T["v2_ledger.settle"],segs:[[T["v2_ledger.settle"].start,marginEnd,"c-wait"],[marginEnd,T["v2_ledger.settle"].end,"c-work"]]},
+    {lab:"ledger · fold",t:T["v2_ledger.fold"]},
+  ];
+  const W=960,L=160,R=30,top=30,rh=26,H=top+rows.length*rh+44,max=100;
+  const s=svg(W,H); s.setAttribute("aria-label","Gantt of one 100,000-partition landing: 93 seconds from landing to done.");
+  const x=v=>L+(W-L-R)*v/max;
+  for(let t=0;t<=100;t+=10){ el("line",{x1:x(t),x2:x(t),y1:top-8,y2:top+rows.length*rh,class:"grid"},s); el("text",{x:x(t),y:top+rows.length*rh+16,"text-anchor":"middle"},s,t+" s"); }
+  el("rect",{x:x(0),y:top-8,width:x(winEnd)-x(0),height:rows.length*rh+8,fill:"var(--wait)",opacity:.08},s);
+  rows.forEach((r,i)=>{ const y=top+i*rh;
+    el("text",{x:0,y:y+15,class:"lbl"},s,r.lab);
+    (r.segs||[[r.t.start,r.t.end,"c-work"]]).forEach(([a,b,c])=>{ if(b>a) el("rect",{x:x(a),y:y+3,width:Math.max(1.5,x(b)-x(a)),height:rh-8,rx:2,class:c},s); });
+  });
+  const marks=[[0,"landing"],[ev.first_forward,"forwarded"],[ev.first_publish,"published"],[total,"done "+total.toFixed(0)+" s"]];
+  marks.forEach(([t,l],i)=>{ el("line",{x1:x(t),x2:x(t),y1:top-14,y2:top+rows.length*rh,stroke:"var(--ink)","stroke-width":1,opacity:.5},s);
+    el("text",{x:x(t)+(i===3?-4:4),y:top-16,"text-anchor":i===3?"end":"start",class:"big",style:"font-size:12px"},s,l); });
+  { const co=document.getElementById("c-one"); if(co) co.appendChild(s); }
+  const wait=winEnd+5, eng=26, work=total-wait-eng;
+  const sp=document.getElementById("split");
+  [[total.toFixed(0)+" s","Landing to done"],[wait.toFixed(0)+" s","Designed waits: 10 s window, 5 s ledger margin"],[eng+" s","Engine stand-in (real Spark goes here)"],[work.toFixed(0)+" s","Airflow work: moving JSON, starting tasks, scheduling"]]
+    .forEach(([v,t])=>{ const d=document.createElement("div"); d.innerHTML=`<span class="v">${v}</span><span class="t">${t}</span>`; sp.appendChild(d); });
+})();
+
+/* Chart 3: lanes over time, free vs busy (same scale) */
+(function(){
+  const host=document.getElementById("c-lanes"), facts=document.getElementById("lane-facts"), note=document.getElementById("lane-note");
+  const META={
+    stream:{facts:[["200","landings in 5 minutes"],["23","windows"],["23","Spark jobs"],["60 s","worst landing to done"]],
+      note:"Each stand-in job took about 8 s, so a batcher run was always free when a window closed: every window got its own job, and no two jobs ran at once."},
+    stream_busy:{facts:[["200","landings in 5 minutes"],["28","windows"],["12","Spark jobs"],["24 of 28","windows rode in shared jobs"]],
+      note:"With the slower stand-in (6 s plus 10 ms per partition) all three lanes filled, and waiting windows rode the next free lane together, up to 7 at a time. Nothing caps a merged job yet: the last one carried 24,000 partitions and ran 251 seconds, 239 of them with two lanes idle. That is most of the 308-second tail."},
+  };
+  function draw(name){
+    const d=D[name], W=960, L=110, R=24, max=620, x=v=>L+(W-L-R)*v/max;
+    const lanes=Math.max(3,1+Math.max(...d.jobs.map(j=>j.lane))), top=20, H=top+40+lanes*44+40;
+    const s=svg(W,H); s.setAttribute("aria-label",name==="stream"?"Lanes free: 23 windows, 23 jobs, one lane used.":"All 3 lanes busy: 28 windows, 12 jobs.");
+    for(let t=0;t<=600;t+=60){ el("line",{x1:x(t),x2:x(t),y1:top,y2:H-30,class:"grid"},s); el("text",{x:x(t),y:H-12,"text-anchor":"middle"},s,t+" s"); }
+    el("text",{x:0,y:top+12,class:"lbl"},s,"Landings");
+    d.lands.forEach(t=>el("rect",{x:x(t)-.5,y:top+2,width:1,height:14,class:"c-faint"},s));
+    el("text",{x:0,y:top+34,class:"lbl"},s,"Windows");
+    d.forwards.forEach(t=>el("circle",{cx:x(t),cy:top+29,r:3.2,class:"c-accent"},s));
+    for(let i=0;i<lanes;i++){ const y=top+48+i*44; el("text",{x:0,y:y+22,class:"lbl"},s,"Lane "+(i+1)); el("line",{x1:L,x2:W-R,y1:y+36,y2:y+36,class:"axis"},s); }
+    d.jobs.forEach(j=>{ const y=top+48+j.lane*44, w=Math.max(2,x(j.end)-x(j.start)), merged=j.windows.length>1;
+      el("rect",{x:x(j.start),y:y+4,width:w,height:28,rx:4,class:merged?"c-accent":"c-soft",stroke:"var(--accent)","stroke-width":1},s);
+      if(w>34) el("text",{x:x(j.start)+5,y:y+22,style:"fill:"+(merged?"#fff":"var(--ink)")+";font-size:11px"},s,(j.partitions/1000).toFixed(j.partitions%1000?1:0)+"k"+(merged?" · "+j.windows.length+"w":""));
+    });
+    el("line",{x1:x(d.last_fold),x2:x(d.last_fold),y1:top,y2:H-30,stroke:"var(--ink)","stroke-width":1.2},s);
+    el("text",{x:x(d.last_fold)-4,y:H-30-4,"text-anchor":"end",class:"big",style:"font-size:12px"},s,"all done "+Math.round(d.last_fold)+" s");
+    host.replaceChildren(s);
+    facts.innerHTML=META[name].facts.map(([v,t])=>`<span><b>${v}</b> ${t}</span>`).join("");
+    note.textContent=META[name].note+" Light bars: one window. Dark bars: several windows merged (w = windows).";
+  }
+  const bf=document.getElementById("t-free"), bb=document.getElementById("t-busy");
+  function pick(n){ bf.setAttribute("aria-pressed",n==="stream"); bb.setAttribute("aria-pressed",n==="stream_busy"); draw(n); try{localStorage.setItem("lanes",n)}catch(e){} }
+  bf.onclick=()=>pick("stream"); bb.onclick=()=>pick("stream_busy");
+  let start="stream"; try{ start=localStorage.getItem("lanes")||"stream"; }catch(e){}
+  pick(start);
+})();
+
+/* copy button, chapter rail highlight, arrow keys between chapters */
+/* Replay of the recorded 93-second run */
+(function(){
+  const one=D.one, R=one.replay, T={}; one.tasks.forEach(t=>{ const k=t.dag+"."+t.task; if(!(k in T)) T[k]=t; });
+  const sp=T["v2_batcher.run_batch.spark"];
+  const store=[
+    {k:"window/<landing time>",from:15.55,v:"100,000 partitions with version and marker · 4.4 MB",by:"written by debounce.forward"},
+    {k:"batch/<batcher run>#0",from:25.5,v:"state claimed · 100,000 partitions · 4.4 MB",by:"written by batcher.claim",steps:[[sp.start+4,"state running"],[71.6,"state done"]]},
+    {k:"done",from:92.9,v:"100,000 partitions at positions v1 · 4.4 MB",by:"written only by ledger.fold"},
+    {k:"failed",from:92.9,v:"empty",by:"written only by ledger.fold"},
+    {k:"ledger/cutoff",from:92.9,v:"time of the last folded batch",by:"written only by ledger.fold"},
+  ];
+  const SAY=[
+    [0,"One REST call lands 100,000 partitions as one asset event of 2.4 MB. The debounce Dag gets one run."],
+    [4.3,"hold is a deferred wait until 10 seconds after the landing. It holds no worker."],
+    [12.4,"forward writes the window key with all 100,000 partitions and emits one small pointer event."],
+    [16.5,"The batcher gets one run. claim decides which partitions ride and writes the batch key."],
+    [25.9,"One Spark task for all 100,000 partitions. The 26-second stand-in sleep is inside it."],
+    [63.4,"publish emits one pointer event on v2_pnl for downstream Dags. One event, not 100,000."],
+    [72.2,"finalize tells the ledger the batch is final. The example downstream Dag reads the batch key."],
+    [80.6,"The ledger waits a 5-second margin, then folds the batch into done."],
+    [92.9,"Done in 93 seconds: six runs, two of them empty follow-ups, six asset events, one Spark job."],
+  ];
+  const scrub=document.getElementById("scrub"), clock=document.getElementById("clock"), say=document.getElementById("say");
+  const lr=document.getElementById("r-runs"), le=document.getElementById("r-events"), ls=document.getElementById("r-store");
+  const dags=["v2_debounce","v2_batcher","v2_ledger","v2_exceptions"], W=960, L=120, Rr=20, top=8, rh=24, H=top+dags.length*rh+26, max=95;
+  const x=v=>L+(W-L-Rr)*v/max, s=svg(W,H); s.setAttribute("aria-label","Dag runs over the 95 seconds of the replay");
+  for(let t=0;t<=90;t+=10){ el("line",{x1:x(t),x2:x(t),y1:top,y2:top+dags.length*rh,class:"grid"},s); el("text",{x:x(t),y:H-6,"text-anchor":"middle"},s,t+" s"); }
+  dags.forEach((d,i)=>el("text",{x:0,y:top+i*rh+16,class:"lbl"},s,d));
+  R.runs.forEach(r=>{ const i=dags.indexOf(r.dag), side=r.dag==="v2_exceptions";
+    el("rect",{x:x(r.s),y:top+i*rh+4,width:Math.max(2,x(Math.min(r.e,max))-x(r.s)),height:rh-8,rx:2,class:side?"c-gap":"c-soft",stroke:"var(--accent)","stroke-width":side?0:1},s); });
+  const head=el("line",{x1:x(0),x2:x(0),y1:top-4,y2:top+dags.length*rh+2,stroke:"var(--bad)","stroke-width":2},s);
+  document.getElementById("c-replay").appendChild(s);
+  const li=(b,txt,isNew,pre)=>`<li class="${isNew?"new":""}">${pre||""}<b>${b}</b><span>${txt}</span></li>`;
+  const esc=v=>String(v).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+  function render(t){
+    clock.textContent=t.toFixed(1)+" s"; const hx=x(Math.min(t,max)); head.setAttribute("x1",hx); head.setAttribute("x2",hx);
+    let line=SAY[0][1]; SAY.forEach(([a,b])=>{ if(t>=a) line=b; }); say.textContent=line;
+    const runs=R.runs.filter(r=>t>=r.q).map(r=>{ const st=t<r.s?"queued":(t<r.e?"running":"success");
+      return li(esc(r.dag+" · "+r.run), st==="running"?"running now":(st==="queued"?"queued":"finished at "+r.e.toFixed(0)+" s"), t-r.q<4, `<span class="st ${st}">${st}</span>`); });
+    lr.innerHTML=runs.length?runs.join(""):'<li class="none">no runs yet</li>';
+    const evs=R.events.filter(e=>t>=e.t).map(e=>li(esc(e.asset), esc(`${e.what} · ${e.bytes>=1e6?(e.bytes/1e6).toFixed(1)+" MB":e.bytes+" B"} · by ${e.by}`), t-e.t<4));
+    le.innerHTML=evs.length?evs.join(""):'<li class="none">no events yet</li>';
+    const keys=store.filter(k=>t>=k.from).map(k=>{ let v=k.v; (k.steps||[]).forEach(([a,b])=>{ if(t>=a) v=v.replace(/state \w+/,b); }); return li(esc(k.k), esc(v+" · "+k.by), t-k.from<4); });
+    ls.innerHTML=keys.length?keys.join(""):'<li class="none">no keys yet</li>';
+  }
+  let playing=false, last=0, speed=4; const btn=document.getElementById("play"), spd=document.getElementById("speed");
+  function frame(ts){ if(!playing) return; const dt=last?(ts-last)/1000:0; last=ts; let t=+scrub.value+dt*speed;
+    if(t>=95){ t=95; playing=false; btn.textContent="Play"; } scrub.value=t; render(t); if(playing) requestAnimationFrame(frame); }
+  btn.onclick=()=>{ if(playing){ playing=false; btn.textContent="Play"; return; } if(+scrub.value>=95) scrub.value=0; playing=true; last=0; btn.textContent="Pause"; requestAnimationFrame(frame); };
+  spd.onclick=()=>{ speed=speed===4?1:(speed===1?10:4); spd.textContent="×"+speed; };
+  scrub.oninput=()=>{ playing=false; btn.textContent="Play"; render(+scrub.value); };
+  render(+scrub.value);
+})();
+const secs=[...document.querySelectorAll("section.ch")], links=[...document.querySelectorAll("nav.rail a")];
+const io=new IntersectionObserver(es=>es.forEach(en=>{ if(en.isIntersecting){ links.forEach(a=>a.classList.toggle("on",a.getAttribute("href")==="#"+en.target.id)); } }),{rootMargin:"-40% 0px -55% 0px"});
+secs.forEach(s=>io.observe(s));
+document.addEventListener("keydown",e=>{
+  if(e.target.closest("input,textarea")) return;
+  if(e.key!=="ArrowRight"&&e.key!=="ArrowLeft") return;
+  const y=window.scrollY+80; let i=secs.findIndex(s=>s.offsetTop>y);
+  if(i<0) i=secs.length; const to=e.key==="ArrowRight"? secs[i] : secs[Math.max(0,i-2)];
+  if(to){ e.preventDefault(); to.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"}); }
+});
+</script>
